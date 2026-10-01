@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Skin Care Clinic - Modern Enterprise Edition">
+    <title>Skin Care Clinic - Mobile Edition</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- PWA Manifest for Standalone/APK Wrapping -->
+    <link rel="manifest" href='data:application/manifest+json,{
+        "name": "Skin Care Clinic",
+        "short_name": "SkinCare",
+        "start_url": "./",
+        "display": "standalone",
+        "background_color": "#f8fafc",
+        "theme_color": "#0284c7"
+    }'>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #0284c7;
+            --surface: #ffffff;
+            --background: #f8fafc;
+            --text-main: #0f172a;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--background); 
+            color: var(--text-main); 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+        @media print {
+            body.print-batch * { visibility: hidden !important; }
+            body.print-batch #printable-token-batch, body.print-batch #printable-token-batch * { visibility: visible !important; }
+            body.print-batch #printable-token-batch { 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                display: block !important; background: #ffffff !important;
+            }
+
+            body.print-single * { visibility: hidden !important; }
+            body.print-single #printable-single-token, body.print-single #printable-single-token * { visibility: visible !important; }
+            body.print-single #printable-single-token { 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                display: flex !important; align-items: center; justify-content: center; background: #ffffff !important; 
+            }
+
+            body.print-rx * { visibility: hidden !important; }
+            body.print-rx #printable-rx, body.print-rx #printable-rx * { visibility: visible !important; }
+            body.print-rx #printable-rx { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+
+            @page { size: A4; margin: 10mm; }
+            
+            .a4-page {
+                display: grid; 
+                grid-template-columns: repeat(4, 44.5mm); 
+                grid-template-rows: repeat(5, 52mm);
+                gap: 3mm; page-break-after: always; break-after: page; 
+                box-sizing: border-box; width: 100%; height: 100%; background: #ffffff !important;
+            }
+            .token-card {
+                border: 1px dashed #94a3b8 !important; box-sizing: border-box; padding: 6px;
+                display: flex; flex-direction: column; justify-content: space-between; 
+                background: #ffffff !important; overflow: hidden; break-inside: avoid;
+            }
+            .batch-header { text-align: center; font-size: 8px; font-weight: 800; border-bottom: 0.5px solid #cbd5e1; padding-bottom: 2px; text-transform: uppercase; color: #0f172a; }
+            .batch-subheader { font-size: 6px; text-align: center; color: #475569; margin-top: 1px; }
+            .batch-main { display: flex; align-items: center; justify-content: space-between; flex-grow: 1; padding: 4px 0; }
+            .batch-qr { width: 22mm; height: 22mm; display: flex; align-items: center; justify-content: center; }
+            .batch-qr img, .batch-qr canvas { width: 100% !important; height: 100% !important; }
+            .batch-info { width: calc(100% - 24mm); text-align: center; }
+            .batch-number { font-size: 16px; font-weight: 900; margin: 2px 0; color: #0f172a; letter-spacing: -0.5px; }
+            .batch-footer { font-size: 5px; color: #64748b; text-align: center; border-top: 0.5px solid #cbd5e1; padding-top: 2px; font-weight: 600; }
+        }
+
+        .card-surface { 
+            background: var(--surface); 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.03), 0 4px 6px -4px rgb(0 0 0 / 0.03);
+            transition: all 0.2s ease;
+        }
+        .view-layer { transition: opacity 0.2s ease; }
+        .view-hidden { opacity: 0; pointer-events: none; position: absolute; visibility: hidden; }
+        .view-active { opacity: 1; position: relative; visibility: visible; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 relative bg-slate-50">
+
+    <!-- Startup PIN Lock Screen Overlay -->
+    <div id="startup-pin-modal" class="fixed inset-0 bg-slate-900/90 z-[200] flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="card-surface bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
+            <div class="w-14 h-14 bg-sky-100 text-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-md">
+                <i data-lucide="lock" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-black text-slate-900">Skin Care Clinic Security</h2>
+                <p class="text-xs text-slate-500 mt-1">Enter 4-digit PIN to access application</p>
+            </div>
+            <div class="flex justify-center gap-3">
+                <input type="password" maxlength="1" id="pin-1" class="w-12 h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-sky-500 focus:outline-none" oninput="ClinicApp.Security.onPinInput(1, event)" onkeydown="ClinicApp.Security.onKeyDown(1, event)">
+                <input type="password" maxlength="1" id="pin-2" class="w-12 h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-sky-500 focus:outline-none" oninput="ClinicApp.Security.onPinInput(2, event)" onkeydown="ClinicApp.Security.onKeyDown(2, event)">
+                <input type="password" maxlength="1" id="pin-3" class="w-12 h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-sky-500 focus:outline-none" oninput="ClinicApp.Security.onPinInput(3, event)" onkeydown="ClinicApp.Security.onKeyDown(3, event)">
+                <input type="password" maxlength="1" id="pin-4" class="w-12 h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-sky-500 focus:outline-none" oninput="ClinicApp.Security.onPinInput(4, event)" onkeydown="ClinicApp.Security.onKeyDown(4, event)">
+            </div>
+            <button onclick="ClinicApp.Security.verifyPin()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-sky-600/20 transition-all">Unlock System</button>
+        </div>
+    </div>
+
+    <!-- Offline Indicator Banner -->
+    <div id="offline-banner" role="alert" class="bg-amber-500 text-slate-950 px-4 py-1.5 text-xs font-bold text-center hidden sticky top-0 z-[60] shadow-sm">
+        <i data-lucide="wifi-off" class="w-3.5 h-3.5 inline mr-1"></i> Offline Mode Active
+    </div>
+
+    <!-- Main Header Navigation -->
+    <header id="main-header" class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-[1400px] mx-auto px-4 py-3.5 flex justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-gradient-to-br from-sky-500 to-sky-700 rounded-2xl text-white shadow-md shadow-sky-500/20">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 id="app-header-clinic" class="text-sm md:text-base font-extrabold text-slate-900 tracking-tight">Skin Care Clinic</h1>
+                    <p id="app-header-doctor" class="text-[11px] text-sky-600 font-bold uppercase tracking-wider">Dr. D. Srinivas — M.D. (Derm)</p>
+                </div>
+            </div>
+
+            <nav class="flex items-center gap-2">
+                <div class="hidden md:flex bg-slate-100 p-1 rounded-xl border border-slate-200 items-center gap-1">
+                    <button onclick="ClinicApp.UI.switchTab('reception')" id="desktop-nav-reception" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-sky-600 text-white shadow-sm transition-all">Reception</button>
+                    <button onclick="ClinicApp.UI.switchTab('scanner')" id="desktop-nav-scanner" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-all">📷 Scan QR</button>
+                    <button onclick="ClinicApp.UI.switchTab('doctor')" id="desktop-nav-doctor" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-all">🩺 Doctor Cabin</button>
+                </div>
+
+                <button onclick="ClinicApp.UI.toggleMenu(true)" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl border border-slate-200 transition-all shadow-sm">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Side Menu Drawer -->
+    <div id="side-menu-overlay" class="fixed inset-0 bg-slate-900/60 z-[100] hidden backdrop-blur-sm transition-opacity" onclick="ClinicApp.UI.toggleMenu(false)"></div>
+    <aside id="side-menu-drawer" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[101] transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div class="flex items-center gap-2">
+                <div class="p-2 bg-sky-100 text-sky-700 rounded-xl"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+                <span class="font-extrabold text-slate-900 text-sm">Clinic Management</span>
+            </div>
+            <button onclick="ClinicApp.UI.toggleMenu(false)" class="p-2 text-slate-400 hover:text-slate-700 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-4 flex-1 space-y-1.5 overflow-y-auto">
+            <button onclick="ClinicApp.UI.switchTab('reception'); ClinicApp.UI.toggleMenu(false);" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-sky-50 hover:text-sky-700 text-slate-700 font-bold text-xs transition-all">
+                <div class="p-2 bg-sky-100 text-sky-600 rounded-xl"><i data-lucide="monitor" class="w-4 h-4"></i></div> Reception Dashboard
+            </button>
+            <button onclick="ClinicApp.UI.switchTab('scanner'); ClinicApp.UI.toggleMenu(false);" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-xs transition-all">
+                <div class="p-2 bg-emerald-100 text-emerald-600 rounded-xl"><i data-lucide="scan" class="w-4 h-4"></i></div> QR Scanner Window
+            </button>
+            <button onclick="ClinicApp.UI.switchTab('doctor'); ClinicApp.UI.toggleMenu(false);" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-sky-50 hover:text-sky-700 text-slate-700 font-bold text-xs transition-all">
+                <div class="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><i data-lucide="stethoscope" class="w-4 h-4"></i></div> Doctor Cabin & Rx Pad
+            </button>
+            <button onclick="ClinicApp.UI.requestSecureTab('analytics'); ClinicApp.UI.toggleMenu(false);" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-amber-50 text-slate-700 font-bold text-xs transition-all border border-amber-100/50">
+                <div class="p-2 bg-amber-100 text-amber-700 rounded-xl"><i data-lucide="lock" class="w-4 h-4"></i></div> Finance & Revenue
+            </button>
+            <button onclick="ClinicApp.UI.switchTab('settings'); ClinicApp.UI.toggleMenu(false);" class="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all">
+                <div class="p-2 bg-slate-200 text-slate-700 rounded-xl"><i data-lucide="settings" class="w-4 h-4"></i></div> Clinic Configuration
+            </button>
+        </div>
+        <div class="p-4 border-t border-slate-100 bg-slate-50 text-center">
+            <p class="text-[10px] font-semibold text-slate-400">Skin Care Clinic Enterprise • v2.3</p>
+        </div>
+    </aside>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-[1400px] w-full mx-auto p-4 md:p-8 relative">
+
+        <!-- ================= RECEPTION VIEW ================= -->
+        <section id="view-reception" class="view-layer view-active grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
+            <div class="xl:col-span-4 flex flex-col gap-4">
+                <div class="card-surface rounded-3xl p-5 md:p-6 space-y-4 bg-white">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-sky-600"></i> Quick Actions</h2>
+                        <span id="current-date-reception" class="text-[11px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200"></span>
+                    </div>
+
+                    <button onclick="ClinicApp.TokenSystem.promptWalkin()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold p-4 rounded-2xl text-xs shadow-lg shadow-sky-600/20 flex items-center justify-between group transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-white/20 rounded-xl"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
+                            <div class="text-left">
+                                <div class="font-extrabold text-sm">Register Walk-in & Print QR Card</div>
+                                <div class="text-[10px] text-sky-100 font-medium">Assign token & generate printable QR ticket</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 opacity-70 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                    <button onclick="ClinicApp.UI.switchTab('scanner')" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold p-4 rounded-2xl text-xs shadow-lg shadow-emerald-600/20 flex items-center justify-between group transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-white/20 rounded-xl"><i data-lucide="scan" class="w-5 h-5"></i></div>
+                            <div class="text-left">
+                                <div class="font-extrabold text-sm">Scan QR Ticket</div>
+                                <div class="text-[10px] text-emerald-100 font-medium">Camera scanner or photo upload</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 opacity-70 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                    <button onclick="ClinicApp.TokenSystem.promptBatchPrint()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold p-4 rounded-2xl text-xs shadow-lg shadow-indigo-600/20 flex items-center justify-between group transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-white/20 rounded-xl"><i data-lucide="printer" class="w-5 h-5"></i></div>
+                            <div class="text-left">
+                                <div class="font-extrabold text-sm">Print A4 Batch Cards</div>
+                                <div class="text-[10px] text-indigo-100 font-medium">Generate 200+ pre-printed QR cards</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 opacity-70 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue List -->
+            <div class="xl:col-span-8 flex flex-col gap-4">
+                <div class="card-surface rounded-3xl p-5 md:p-6 flex-1 flex flex-col bg-white">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 gap-2">
+                        <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-sky-600"></i> Live Waiting Queue</h2>
+                        <span id="queue-counter-badge" class="bg-sky-50 text-sky-700 border border-sky-200/80 px-3 py-1 rounded-full text-xs font-extrabold">0 Waiting</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3.5 top-3 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="queue-search-input" oninput="ClinicApp.UI.filterQueue(this.value)" placeholder="Search patient name or token number..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-sky-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="overflow-y-auto max-h-[420px] flex-1 pr-1">
+                        <div id="reception-queue-mobile-list" class="space-y-2.5"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= DEDICATED SCANNER WINDOW ================= -->
+        <section id="view-scanner" class="view-layer view-hidden w-full max-w-xl mx-auto space-y-4">
+            <div class="card-surface rounded-3xl p-6 bg-white text-center space-y-5">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="scan" class="w-4 h-4 text-emerald-600"></i> QR Scanner Hub
+                    </h2>
+                    <button onclick="ClinicApp.UI.switchTab('reception')" class="text-xs bg-slate-100 hover:bg-slate-200 font-bold px-3 py-1.5 rounded-xl text-slate-700 transition-all">Back</button>
+                </div>
+
+                <div class="relative w-full bg-slate-950 rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center shadow-inner">
+                    <div id="qr-reader-viewport" class="w-full h-full"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/20 transition-all">
+                        <i data-lucide="camera" class="w-4 h-4"></i> Snap / Upload QR Photo
+                        <input type="file" accept="image/*" capture="environment" onchange="ClinicApp.Scanner.handleFileScan(event)" class="hidden">
+                    </label>
+
+                    <button onclick="ClinicApp.Scanner.manualTokenPrompt()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all">
+                        <i data-lucide="keyboard" class="w-4 h-4"></i> Type Token Number
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-slate-500 leading-relaxed">If camera permission is blocked by your browser, tap <strong>Snap / Upload QR Photo</strong> to use your phone camera directly.</p>
+            </div>
+        </section>
+
+        <!-- ================= DOCTOR VIEW ================= -->
+        <section id="view-doctor" class="view-layer view-hidden grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
+            <div class="xl:col-span-5 flex flex-col gap-4">
+                <div class="card-surface border-2 border-sky-500/20 rounded-3xl p-6 bg-white flex flex-col justify-between shadow-xl shadow-sky-500/5">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-sky-700 bg-sky-50 border border-sky-200 px-3 py-1 rounded-full">Now Serving</span>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all">
+                                <span class="text-[11px] font-extrabold text-slate-700">Auto-Pilot</span>
+                                <input type="checkbox" id="autopilot-toggle" onchange="ClinicApp.TokenSystem.toggleAutopilot(this)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                            </label>
+                        </div>
+
+                        <div class="text-center py-4">
+                            <h3 id="doc-active-token" class="text-6xl font-black text-slate-900 my-1 tracking-tight">#---</h3>
+                            <p id="doc-active-name" class="text-base font-extrabold text-sky-600 mt-1">No Patient Inside</p>
+                            
+                            <div id="doc-emr-badge" class="mt-3 hidden bg-indigo-50 border border-indigo-200 rounded-2xl p-3 text-xs text-indigo-900 font-semibold text-left shadow-sm">
+                                <div class="flex items-center gap-1.5 text-indigo-700 font-bold mb-0.5"><i data-lucide="info" class="w-4 h-4"></i> <span id="emr-visit-title">1st Visit</span></div>
+                                <p id="emr-last-seen" class="text-[11px] text-indigo-600"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="doctor-actions-panel" class="space-y-2.5 pt-4 border-t border-slate-100 mt-4">
+                        <button onclick="ClinicApp.TokenSystem.callNext()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all">
+                            <i data-lucide="megaphone" class="w-4 h-4"></i> Call Next & Announce (Multilingual)
+                        </button>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <button onclick="ClinicApp.TokenSystem.updateActiveStatus('No-Show')" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all">
+                                <i data-lucide="user-x" class="w-4 h-4"></i> No Show
+                            </button>
+                            <button onclick="ClinicApp.TokenSystem.updateActiveStatus('Completed')" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Complete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescription Quick-Pad -->
+            <div class="xl:col-span-7 card-surface rounded-3xl p-6 bg-white flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i data-lucide="file-plus" class="w-4 h-4 text-sky-600"></i> Digital Rx Quick-Pad</h2>
+                        <span class="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full font-bold">Standard Print</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Diagnosis</label>
+                               <input type="text" id="rx-complaint" placeholder="e.g. Acne Vulgaris" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-sky-500">
+                            </div>
+                            <div>
+                               <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Common Meds</label>
+                               <select onchange="ClinicApp.Prescription.appendMed(this)" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-sky-500">
+                                   <option value="">+ Select Drug...</option>
+                                   <option value="Tab. Cetirizine 10mg - 1 OD x 5 days">Tab. Cetirizine 10mg (OD)</option>
+                                   <option value="Cap. Doxycycline 100mg - 1 BD x 7 days">Cap. Doxycycline 100mg (BD)</option>
+                                   <option value="Clindamycin Gel - Apply night">Clindamycin Gel (Night)</option>
+                                   <option value="Moisturizing Cream - Apply twice daily">Moisturizing Cream (BD)</option>
+                               </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Prescription Body</label>
+                            <textarea id="rx-body" rows="4" placeholder="Medications and dosage..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-sky-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-3 mt-4">
+                    <button onclick="ClinicApp.Prescription.printRx()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print Prescription Slip
+                    </button>
+                    <button onclick="ClinicApp.Prescription.clear()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-3.5 rounded-2xl text-xs transition-all">Clear</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ANALYTICS & FINANCE VIEW ================= -->
+        <section id="view-analytics" class="view-layer view-hidden w-full max-w-5xl mx-auto space-y-5">
+            <div class="flex flex-wrap justify-between items-center card-surface rounded-3xl px-5 py-4 gap-3 bg-white">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-amber-50 text-amber-600 rounded-2xl border border-amber-200"><i data-lucide="lock-open" class="w-5 h-5"></i></div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Finance & Revenue Hub</h3>
+                        <p class="text-[11px] text-slate-500">Secure session active</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="ClinicApp.Analytics.exportPDF()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"><i data-lucide="file-down" class="w-4 h-4"></i> PDF</button>
+                    <button onclick="ClinicApp.Analytics.resetDailyShift()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Shift</button>
+                    <button onclick="ClinicApp.UI.lockAnalytics()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all">Lock</button>
+                </div>
+            </div>
+
+            <div class="card-surface rounded-3xl p-6 bg-white">
+                <h3 class="text-xs font-extrabold text-slate-900 flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <i data-lucide="indian-rupee" class="w-4 h-4 text-emerald-600"></i> Editable Consultation Fees (Applies Immediately)
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1.5">1st Visit Fee (₹)</label>
+                        <input type="number" id="fee-setting-1st" min="0" onchange="ClinicApp.Settings.updateFees()" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-extrabold text-sky-700 focus:outline-none focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1.5">2nd Visit Fee (₹)</label>
+                        <input type="number" id="fee-setting-2nd" min="0" onchange="ClinicApp.Settings.updateFees()" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-extrabold text-indigo-700 focus:outline-none focus:border-sky-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="card-surface rounded-3xl p-5 bg-white"><p class="text-[10px] font-extrabold text-slate-400 uppercase">Total Tokens</p><h3 id="stat-total-tokens" class="text-3xl font-black text-sky-600 mt-1">0</h3></div>
+                <div class="card-surface rounded-3xl p-5 bg-white"><p class="text-[10px] font-extrabold text-slate-400 uppercase">Patients Seen</p><h3 id="stat-total-seen" class="text-3xl font-black text-emerald-600 mt-1">0</h3></div>
+                <div class="card-surface rounded-3xl p-5 bg-white"><p class="text-[10px] font-extrabold text-slate-400 uppercase">No-Shows</p><h3 id="stat-total-missed" class="text-3xl font-black text-amber-600 mt-1">0</h3></div>
+                <div class="card-surface rounded-3xl p-5 bg-white"><p class="text-[10px] font-extrabold text-slate-400 uppercase">Avg Time</p><h3 id="stat-avg-time" class="text-3xl font-black text-indigo-600 mt-1">0m</h3></div>
+            </div>
+
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-6 shadow-xl shadow-emerald-600/10 flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-200">Total Gross Revenue Collected</p>
+                    <h3 id="stat-total-revenue" class="text-4xl font-black mt-1">₹0</h3>
+                </div>
+                <div class="p-4 bg-white/10 rounded-2xl backdrop-blur-md"><i data-lucide="indian-rupee" class="w-8 h-8"></i></div>
+            </div>
+
+            <div class="card-surface rounded-3xl p-6 bg-white">
+                <h2 class="text-xs font-extrabold text-slate-900 mb-4 pb-3 border-b border-slate-100">Financial Audit Log</h2>
+                <div class="overflow-x-auto max-h-[280px]">
+                    <table class="w-full text-left text-xs">
+                        <thead><tr class="text-slate-400 text-[10px] uppercase border-b border-slate-200"><th class="pb-2.5">Token</th><th class="pb-2.5">Patient</th><th class="pb-2.5">Type</th><th class="pb-2.5">Seen Time</th><th class="pb-2.5 text-right">Fee</th></tr></thead>
+                        <tbody id="analytics-review-body" class="divide-y divide-slate-100 text-slate-700 font-semibold"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SETTINGS VIEW ================= -->
+        <section id="view-settings" class="view-layer view-hidden w-full max-w-3xl mx-auto space-y-4">
+            <div class="card-surface rounded-3xl p-6 md:p-8 bg-white">
+                <h2 class="text-sm font-extrabold text-slate-900 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4 text-sky-600"></i> Clinic Configuration & Voice</h2>
+                <div class="space-y-5">
+                    <div class="p-5 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-3">
+                        <h3 class="text-xs font-extrabold text-indigo-900 flex items-center gap-2"><i data-lucide="languages" class="w-4 h-4 text-indigo-600"></i> Multilingual Voice Announcements</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-indigo-800 uppercase mb-1.5">Announcement Language</label>
+                                <select id="set-voice-lang" onchange="ClinicApp.Settings.updateVoice()" class="w-full bg-white border border-indigo-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500">
+                                    <option value="en-IN">English (India)</option>
+                                    <option value="hi-IN">Hindi (हिंदी)</option>
+                                    <option value="te-IN">Telugu (తెలుగు)</option>
+                                    <option value="ta-IN">Tamil (தமிழ்)</option>
+                                    <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                                    <option value="bn-IN">Bengali (বাংলা)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-indigo-800 uppercase mb-1.5">Custom Template</label>
+                                <input type="text" id="set-voice-template" onchange="ClinicApp.Settings.updateVoice()" placeholder="Token {token}, {name}, please proceed." class="w-full bg-white border border-indigo-200 rounded-2xl px-4 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="settings-form" onsubmit="ClinicApp.Settings.save(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Clinic Name</label><input type="text" id="set-clinic" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Doctor Name</label><input type="text" id="set-doctor" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Address</label><input type="text" id="set-address" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Avg Wait (Mins)</label><input type="number" id="set-avg" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold"></div>
+                        </div>
+                        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-sky-600/20 transition-all mt-4">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex justify-around items-center z-40 shadow-2xl">
+        <button onclick="ClinicApp.UI.switchTab('reception')" id="mob-nav-reception" class="flex flex-col items-center text-sky-600 text-[10px] font-extrabold gap-1 transition-all"><i data-lucide="monitor" class="w-5 h-5"></i> Reception</button>
+        <button onclick="ClinicApp.UI.switchTab('scanner')" id="mob-nav-scanner" class="flex flex-col items-center text-slate-400 hover:text-slate-700 text-[10px] font-extrabold gap-1 transition-all"><i data-lucide="scan" class="w-5 h-5"></i> Scan</button>
+        <button onclick="ClinicApp.UI.switchTab('doctor')" id="mob-nav-doctor" class="flex flex-col items-center text-slate-400 hover:text-slate-700 text-[10px] font-extrabold gap-1 transition-all"><i data-lucide="stethoscope" class="w-5 h-5"></i> Doctor</button>
+        <button onclick="ClinicApp.UI.requestSecureTab('analytics')" id="mob-nav-analytics" class="flex flex-col items-center text-slate-400 hover:text-slate-700 text-[10px] font-extrabold gap-1 transition-all"><i data-lucide="lock" class="w-5 h-5 text-amber-500"></i> Finance</button>
+        <button onclick="ClinicApp.UI.toggleMenu(true)" class="flex flex-col items-center text-slate-400 hover:text-slate-700 text-[10px] font-extrabold gap-1 transition-all"><i data-lucide="menu" class="w-5 h-5"></i> Menu</button>
+    </nav>
+
+    <!-- Standard A4/Letter Prescription Slip Template -->
+    <div id="printable-rx" class="hidden p-8 text-black bg-white max-w-[210mm] mx-auto font-sans leading-relaxed">
+        <div class="border-b-2 border-slate-900 pb-4 mb-4 flex justify-between items-start">
+            <div>
+                <h2 id="rx-print-clinic" class="text-xl font-black uppercase text-sky-800">Skin Care Clinic</h2>
+                <p id="rx-print-doctor" class="text-xs font-bold text-slate-700 mt-0.5">Dr. D. Srinivas — M.D. (Derm)</p>
+                <p class="text-[10px] text-slate-500">Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad</p>
+            </div>
+            <div class="text-right text-xs font-semibold text-slate-600">
+                <p><strong>Date:</strong> <span id="rx-print-date">--</span></p>
+                <p><strong>Token:</strong> <span id="rx-print-token">#000</span></p>
+            </div>
+        </div>
+        <div class="py-2 mb-4 border-b border-slate-200">
+            <p class="text-xs"><strong>Patient Name:</strong> <span id="rx-print-name" class="text-sm font-bold">Name</span></p>
+        </div>
+        <div class="py-4 min-h-[300px]">
+            <p class="font-black uppercase text-xs text-sky-800 mb-2">Rx (Prescription / Treatment Plan):</p>
+            <div id="rx-print-body" class="whitespace-pre-wrap font-mono text-xs text-slate-900 leading-relaxed">-</div>
+        </div>
+        <div class="pt-8 border-t border-slate-200 flex justify-between items-end text-xs text-slate-500 mt-12">
+            <p>Fee valid for 10 days only. No appointment by phone.</p>
+            <div class="text-center">
+                <div class="h-10"></div>
+                <p class="font-bold border-t border-slate-400 pt-1 px-6">Doctor's Signature</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Individual Walk-in Token Card Print Container -->
+    <div id="printable-single-token" class="hidden text-black font-sans w-full">
+        <div class="token-card" style="width: 55mm; height: 65mm; border: 1.5px dashed #64748b !important; padding: 8px; margin: auto;">
+            <div class="batch-header" id="single-print-clinic" style="font-size: 9px; font-weight: 800; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; text-transform: uppercase;">Skin Care Clinic</div>
+            <div class="batch-subheader" id="single-print-doctor" style="font-size: 7px; color: #475569; margin-top: 2px;">Dr. D. Srinivas</div>
+            <div class="batch-main" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; padding: 4px 0;">
+                <div class="batch-qr single-qr-box" style="width: 25mm; height: 25mm; margin: 2px 0;"></div>
+                <div class="batch-number" id="single-print-token" style="font-size: 20px; font-weight: 900; margin: 2px 0; color: #0f172a;">#001</div>
+                <div id="single-print-name" style="font-size: 9px; font-weight: 700; color: #1e293b;">Patient Name</div>
+            </div>
+            <div class="batch-footer" id="single-print-footer" style="font-size: 5.5px; color: #64748b; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 3px; font-weight: 600;">Khaleelwadi, Nizamabad</div>
+        </div>
+    </div>
+
+    <!-- A4 Batch Sheet Pre-Print Container -->
+    <div id="printable-token-batch" class="hidden text-black font-sans w-full"></div>
+
+    <!-- Script Application Logic -->
+    <script>
+        const ClinicApp = (function() {
+            "use strict";
+
+            const Utils = {
+                generateUUID: () => crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2),
+                escapeHTML: (str) => {
+                    if (!str) return '';
+                    const div = document.createElement('div');
+                    div.appendChild(document.createTextNode(str));
+                    return div.innerHTML;
+                },
+                toast: (title, icon = 'success') => {
+                    if(navigator.vibrate) navigator.vibrate(40);
+                    Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 1800, background: '#ffffff', color: '#0f172a' });
+                },
+                speak: (tokenNo, name) => {
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        let template = internalState.settings.voiceTemplate || "Token number {token}, {name}, please proceed to doctor cabin.";
+                        let text = template.replace('{token}', tokenNo).replace('{name}', name);
+                        
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.lang = internalState.settings.voiceLang || 'en-IN';
+                        utterance.rate = 0.95;
+                        utterance.pitch = 1.0;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
+            };
+
+            const SecurityModule = {
+                init() {
+                    setTimeout(() => {
+                        const firstInput = document.getElementById('pin-1');
+                        if(firstInput) firstInput.focus();
+                    }, 300);
+                },
+                onPinInput(idx, e) {
+                    const val = e.target.value;
+                    if(val && idx < 4) {
+                        document.getElementById(`pin-${idx + 1}`).focus();
+                    }
+                },
+                onKeyDown(idx, e) {
+                    if(e.key === 'Backspace' && !e.target.value && idx > 1) {
+                        document.getElementById(`pin-${idx - 1}`).focus();
+                    }
+                },
+                verifyPin() {
+                    const p1 = document.getElementById('pin-1').value;
+                    const p2 = document.getElementById('pin-2').value;
+                    const p3 = document.getElementById('pin-3').value;
+                    const p4 = document.getElementById('pin-4').value;
+                    const enteredPin = p1 + p2 + p3 + p4;
+
+                    if(enteredPin === '0415') {
+                        document.getElementById('startup-pin-modal').classList.add('hidden');
+                        Utils.toast('Access Granted');
+                    } else {
+                        Utils.toast('Incorrect PIN (Try 0415)', 'error');
+                        ['pin-1', 'pin-2', 'pin-3', 'pin-4'].forEach(id => document.getElementById(id).value = '');
+                        document.getElementById('pin-1').focus();
+                    }
+                }
+            };
+
+            const STORAGE_KEY = "SkinCareClinic_Nizamabad_v2_3";
+            let internalState = {
+                queue: [], tokenCounter: 1, activeTokenId: null, autopilot: false,
+                fees: { first: 500, second: 400 },
+                settings: {
+                    clinicName: "Skin Care Clinic", doctorName: "Dr. D. Srinivas — M.D. (Derm)", tagline: "Skin Specialist (R.No.37094)",
+                    clinicAddress: "Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad", clinicTimings: "Mon - Sat: 9:30 AM - 2:00 PM & 4:30 PM - 8:00 PM", avgWaitMins: 10,
+                    voiceLang: "en-IN", voiceTemplate: "Token number {token}, {name}, please proceed to doctor cabin."
+                }
+            };
+
+            const loadState = () => {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) internalState = { ...internalState, ...JSON.parse(saved) };
+                } catch(e) {}
+            };
+
+            const saveState = () => {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(internalState)); } catch(e) {}
+            };
+
+            const State = new Proxy(internalState, {
+                set(target, prop, value) {
+                    target[prop] = value;
+                    saveState();
+                    UI.renderAll();
+                    return true;
+                }
+            });
+
+            let analyticsUnlocked = false;
+
+            const UI = {
+                init() {
+                    SecurityModule.init();
+                    lucide.createIcons();
+                    this.startClock();
+                    this.switchTab('reception');
+                    this.renderAll();
+                },
+
+                toggleMenu(show) {
+                    const overlay = document.getElementById('side-menu-overlay');
+                    const drawer = document.getElementById('side-menu-drawer');
+                    if(show) { overlay.classList.remove('hidden'); setTimeout(() => drawer.classList.remove('translate-x-full'), 10); }
+                    else { drawer.classList.add('translate-x-full'); setTimeout(() => overlay.classList.add('hidden'), 300); }
+                },
+
+                requestSecureTab(tabId) {
+                    if(analyticsUnlocked) return this.switchTab(tabId);
+                    Swal.fire({
+                        title: 'Secure Access', text: 'Enter password (Jyothi23):', input: 'password',
+                        showCancelButton: true, confirmButtonColor: '#0284c7', background: '#ffffff', color: '#0f172a'
+                    }).then(res => {
+                        if(res.isConfirmed && res.value === 'Jyothi23') { analyticsUnlocked = true; this.switchTab(tabId); Utils.toast('Unlocked'); }
+                        else if(res.isConfirmed) Utils.toast('Incorrect Password', 'error');
+                    });
+                },
+
+                lockAnalytics() { analyticsUnlocked = false; this.switchTab('reception'); Utils.toast('Locked'); },
+
+                switchTab(tabId) {
+                    if(tabId !== 'scanner') Scanner.stop();
+                    document.querySelectorAll('.view-layer').forEach(el => {
+                        el.classList.remove('view-active'); el.classList.add('view-hidden');
+                    });
+                    const target = document.getElementById(`view-${tabId}`);
+                    if(target) { target.classList.remove('view-hidden'); target.classList.add('view-active'); }
+                    
+                    ['reception', 'scanner', 'doctor', 'analytics'].forEach(id => {
+                        const mobBtn = document.getElementById(`mob-nav-${id}`);
+                        if(mobBtn) {
+                            if(id === tabId) {
+                                mobBtn.className = "flex flex-col items-center text-sky-600 text-[10px] font-extrabold gap-1 transition-all";
+                            } else {
+                                mobBtn.className = "flex flex-col items-center text-slate-400 hover:text-slate-700 text-[10px] font-extrabold gap-1 transition-all";
+                            }
+                        }
+                    });
+
+                    if(tabId === 'scanner') Scanner.start();
+                    if(tabId === 'settings' || tabId === 'analytics') SettingsManager.populateForm();
+                },
+
+                startClock() {
+                    setInterval(() => {
+                        const date = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                        const el = document.getElementById('current-date-reception');
+                        if(el) el.textContent = date;
+                    }, 1000);
+                },
+
+                renderAll() {
+                    document.getElementById('app-header-clinic').textContent = State.settings.clinicName;
+                    document.getElementById('app-header-doctor').textContent = State.settings.doctorName;
+                    this.renderQueue();
+                    this.renderDoctorPanel();
+                    AnalyticsModule.render();
+                    lucide.createIcons();
+                },
+
+                filterQueue(query) { this.renderQueue(query.toLowerCase().trim()); },
+
+                renderQueue(searchQuery = '') {
+                    const waiting = State.queue.filter(q => q.status === 'Waiting' && (!searchQuery || q.name.toLowerCase().includes(searchQuery) || q.tokenNo.toLowerCase().includes(searchQuery)));
+                    document.getElementById('queue-counter-badge').textContent = `${waiting.length} Waiting`;
+                    
+                    const listContainer = document.getElementById('reception-queue-mobile-list');
+                    if(listContainer) {
+                        listContainer.innerHTML = waiting.length === 0 ? `<p class="text-center text-slate-400 text-xs font-semibold py-8">No matching patients in queue</p>` : waiting.map((p, i) => `
+                            <div class="card-surface p-4 rounded-2xl flex justify-between items-center gap-3 bg-white hover:border-sky-200 transition-all">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-black text-sky-600 text-sm tracking-tight">${p.tokenNo}</span>
+                                        <span class="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full font-bold">${p.visitType} Visit (₹${p.fee})</span>
+                                    </div>
+                                    <p class="font-extrabold text-slate-900 text-xs mt-1">${Utils.escapeHTML(p.name)}</p>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="ClinicApp.TokenSystem.printSingleToken('${p.id}')" class="bg-sky-50 hover:bg-sky-100 text-sky-700 p-2.5 rounded-xl text-xs font-bold transition-all" title="Print QR Card"><i data-lucide="printer" class="w-4 h-4"></i></button>
+                                    <button onclick="ClinicApp.TokenSystem.callSpecific('${p.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-2.5 rounded-xl text-xs font-bold transition-all" title="Call Patient"><i data-lucide="megaphone" class="w-4 h-4"></i></button>
+                                    <button onclick="ClinicApp.TokenSystem.cancel('${p.id}')" class="bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 p-2.5 rounded-xl transition-all" title="Cancel"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                },
+
+                renderDoctorPanel() {
+                    const active = State.queue.find(q => q.id === State.activeTokenId);
+                    document.getElementById('autopilot-toggle').checked = State.autopilot;
+                    document.getElementById('doc-active-token').textContent = active ? active.tokenNo : '#---';
+                    document.getElementById('doc-active-name').textContent = active ? Utils.escapeHTML(active.name) : 'Available';
+
+                    const emrBadge = document.getElementById('doc-emr-badge');
+                    if(active) {
+                        const pastVisits = State.queue.filter(q => q.name.toLowerCase() === active.name.toLowerCase() && q.status === 'Completed');
+                        if(pastVisits.length > 1) {
+                            emrBadge.classList.remove('hidden');
+                            document.getElementById('emr-visit-title').textContent = `${pastVisits.length}th Visit Record`;
+                            document.getElementById('emr-last-seen').textContent = `Last seen: ${pastVisits[pastVisits.length - 2].completedAtTime || 'Earlier today'}`;
+                        } else { emrBadge.classList.add('hidden'); }
+                    } else { emrBadge.classList.add('hidden'); }
+                }
+            };
+
+            const Scanner = {
+                instance: null,
+                isScanning: false,
+                async start() {
+                    if(this.instance) await this.stop();
+                    setTimeout(async () => {
+                        try {
+                            this.instance = new Html5Qrcode("qr-reader-viewport");
+                            this.isScanning = true;
+                            await this.instance.start(
+                                { facingMode: "environment" },
+                                { fps: 10, qrbox: { width: 200, height: 200 } },
+                                (text) => this.handleScannedData(text),
+                                () => {}
+                            );
+                        } catch(err) {
+                            const vp = document.getElementById('qr-reader-viewport');
+                            if(vp) vp.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs font-semibold">Live camera blocked by browser.<br>Use <strong>Snap / Upload QR Photo</strong> or <strong>Type Token Number</strong> below.</div>`;
+                        }
+                    }, 250);
+                },
+                async stop() {
+                    this.isScanning = false;
+                    if(this.instance) {
+                        try { 
+                            if(this.instance.isScanning) await this.instance.stop(); 
+                            await this.instance.clear(); 
+                        } catch(e){}
+                        this.instance = null;
+                    }
+                },
+                async handleFileScan(e) {
+                    if(e.target.files && e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        const html5QrCode = new Html5Qrcode("qr-reader-viewport");
+                        try {
+                            const decodedText = await html5QrCode.scanFile(file, true);
+                            await html5QrCode.clear();
+                            this.handleScannedData(decodedText);
+                        } catch(err) {
+                            Utils.toast('Could not read QR from photo', 'error');
+                            try { await html5QrCode.clear(); } catch(e){}
+                        }
+                    }
+                },
+                manualTokenPrompt() {
+                    Swal.fire({
+                        title: 'Type Token Number',
+                        html: `<input type="text" id="manual-token" placeholder="e.g. OPD-001 or 001" class="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-sky-500">`,
+                        showCancelButton: true, confirmButtonColor: '#0284c7', confirmButtonText: 'Proceed', background: '#ffffff', color: '#0f172a',
+                        preConfirm: () => document.getElementById('manual-token').value.trim()
+                    }).then(res => {
+                        if(res.isConfirmed && res.value) {
+                            this.handleScannedData(res.value);
+                        }
+                    });
+                },
+                handleScannedData(tokenNoScanned) {
+                    if(!tokenNoScanned) return;
+                    Swal.fire({
+                        title: `Token: ${tokenNoScanned}`,
+                        html: `
+                            <input type="text" id="scan-name" placeholder="Patient Full Name" class="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-sky-500">
+                        `,
+                        showCancelButton: true, confirmButtonColor: '#0284c7', background: '#ffffff', color: '#0f172a',
+                        preConfirm: () => document.getElementById('scan-name').value.trim() || 'Walk-in Patient'
+                    }).then(res => {
+                        if(res.isConfirmed) {
+                            const t = {
+                                id: Utils.generateUUID(),
+                                tokenNo: tokenNoScanned.startsWith('OPD-') ? tokenNoScanned.toUpperCase() : `OPD-${tokenNoScanned.padStart(3, '0')}`,
+                                name: res.value,
+                                visitType: '1st',
+                                fee: State.fees.first,
+                                status: 'Waiting',
+                                timestamp: Date.now()
+                            };
+                            State.queue = [...State.queue, t];
+                            Utils.toast(`Registered ${t.tokenNo}`);
+                            UI.switchTab('reception');
+                        }
+                    });
+                }
+            };
+
+            const TokenSystem = {
+                createObj(data) {
+                    const obj = { id: Utils.generateUUID(), tokenNo: `OPD-${String(State.tokenCounter).padStart(3, '0')}`, status: 'Waiting', timestamp: Date.now(), ...data };
+                    State.tokenCounter++;
+                    return obj;
+                },
+                callNext() {
+                    const waiting = State.queue.filter(q => q.status === 'Waiting');
+                    if(waiting.length === 0) return Utils.toast('Queue Empty', 'info');
+                    if(State.activeTokenId) this.updateActiveStatus('Completed', false);
+                    
+                    const next = waiting[0];
+                    State.activeTokenId = next.id;
+                    const nQ = [...State.queue];
+                    const idx = nQ.findIndex(q => q.id === next.id);
+                    nQ[idx].status = 'Serving';
+                    nQ[idx].calledAtTimestamp = Date.now();
+                    nQ[idx].calledAtTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                    State.queue = nQ;
+                    
+                    Utils.speak(next.tokenNo, next.name);
+                    Utils.toast(`Calling ${next.tokenNo}`);
+                },
+                callSpecific(id) {
+                    if(State.activeTokenId) this.updateActiveStatus('Completed', false);
+                    State.activeTokenId = id;
+                    const nQ = [...State.queue];
+                    const idx = nQ.findIndex(q => q.id === id);
+                    nQ[idx].status = 'Serving';
+                    nQ[idx].calledAtTimestamp = Date.now();
+                    nQ[idx].calledAtTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                    State.queue = nQ;
+                    
+                    Utils.speak(nQ[idx].tokenNo, nQ[idx].name);
+                    Utils.toast(`Calling ${nQ[idx].tokenNo}`);
+                },
+                updateActiveStatus(status, notify = true) {
+                    if(!State.activeTokenId) return;
+                    const nQ = [...State.queue];
+                    const idx = nQ.findIndex(q => q.id === State.activeTokenId);
+                    if(idx > -1) {
+                        nQ[idx].status = status;
+                        if(status === 'Completed') {
+                            nQ[idx].completedAtTimestamp = Date.now();
+                            nQ[idx].completedAtTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                        }
+                    }
+                    State.activeTokenId = null;
+                    State.queue = nQ;
+                    if(notify) Utils.toast(`Marked as ${status}`);
+
+                    if(State.autopilot && status === 'Completed') {
+                        setTimeout(() => { if(State.queue.filter(q => q.status === 'Waiting').length > 0) this.callNext(); }, 1500);
+                    }
+                },
+                cancel(id) {
+                    State.queue = State.queue.filter(q => q.id !== id);
+                    Utils.toast('Cancelled');
+                },
+                toggleAutopilot(el) { State.autopilot = el.checked; Utils.toast(`Auto-Pilot ${State.autopilot ? 'On' : 'Off'}`); },
+                promptWalkin() {
+                    Swal.fire({
+                        title: 'Register Walk-in Patient',
+                        html: `
+                            <input type="text" id="spot-name" placeholder="Patient Full Name" class="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-sky-500">
+                        `,
+                        showCancelButton: true, confirmButtonColor: '#0284c7', confirmButtonText: 'Register & Print Card', background: '#ffffff', color: '#0f172a',
+                        preConfirm: () => document.getElementById('spot-name').value.trim() || 'Walk-in Patient'
+                    }).then(res => {
+                        if(res.isConfirmed) {
+                            const t = this.createObj({
+                                name: res.value,
+                                visitType: '1st',
+                                fee: State.fees.first
+                            });
+                            State.queue = [...State.queue, t];
+                            this.printSingleToken(t.id);
+                            Utils.toast(`Registered ${t.tokenNo}`);
+                        }
+                    });
+                },
+                printSingleToken(id) {
+                    const t = State.queue.find(q => q.id === id);
+                    if(!t) return;
+                    document.getElementById('single-print-clinic').textContent = State.settings.clinicName;
+                    document.getElementById('single-print-doctor').textContent = State.settings.doctorName;
+                    document.getElementById('single-print-token').textContent = t.tokenNo;
+                    document.getElementById('single-print-name').textContent = Utils.escapeHTML(t.name);
+                    document.getElementById('single-print-footer').textContent = State.settings.clinicAddress;
+
+                    const qrBox = document.querySelector('#printable-single-token .single-qr-box');
+                    qrBox.innerHTML = "";
+                    try {
+                        new QRCode(qrBox, { text: t.tokenNo, width: 80, height: 80, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M });
+                    } catch(e){}
+
+                    let st = document.getElementById('dyn-print-style');
+                    if(!st) { st = document.createElement('style'); st.id = 'dyn-print-style'; document.head.appendChild(st); }
+                    document.body.className = 'print-single';
+                    st.innerHTML = `@page { size: auto; margin: 10mm; }`;
+
+                    setTimeout(() => window.print(), 500);
+                },
+                promptBatchPrint() {
+                    Swal.fire({
+                        title: 'Quick Batch Print (200+ Cards)',
+                        html: `
+                            <p class="text-xs text-slate-500 mb-2">Enter total tokens to generate (20 cards per A4 page):</p>
+                            <input type="number" id="batch-count" value="200" min="20" max="500" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-sky-500">
+                        `,
+                        showCancelButton: true, confirmButtonColor: '#0284c7', background: '#ffffff', color: '#0f172a',
+                        preConfirm: () => parseInt(document.getElementById('batch-count').value, 10) || 200
+                    }).then(res => {
+                        if(res.isConfirmed) {
+                            const count = res.value;
+                            const batch = [];
+                            for(let i=0; i<count; i++) {
+                                batch.push(this.createObj({ name: 'Pre-Print', visitType: '1st', fee: State.fees.first }));
+                            }
+                            PrintService.printBatch(batch);
+                            Utils.toast(`Generated ${count} QR tokens ready for print`);
+                        }
+                    });
+                }
+            };
+
+            const PrescriptionModule = {
+                appendMed(sel) {
+                    if(!sel.value) return;
+                    const b = document.getElementById('rx-body');
+                    b.value = b.value ? b.value + "\n" + sel.value : sel.value;
+                    sel.value = "";
+                },
+                clear() { document.getElementById('rx-complaint').value = ""; document.getElementById('rx-body').value = ""; },
+                printRx() {
+                    const active = State.queue.find(q => q.id === State.activeTokenId);
+                    if(!active) return Utils.toast('No active patient', 'error');
+                    document.getElementById('rx-print-clinic').textContent = State.settings.clinicName;
+                    document.getElementById('rx-print-doctor').textContent = State.settings.doctorName;
+                    document.getElementById('rx-print-token').textContent = active.tokenNo;
+                    document.getElementById('rx-print-name').textContent = Utils.escapeHTML(active.name);
+                    document.getElementById('rx-print-date').textContent = new Date().toLocaleDateString('en-IN');
+                    document.getElementById('rx-print-body').textContent = document.getElementById('rx-body').value || 'No medications prescribed';
+                    
+                    let st = document.getElementById('dyn-print-style');
+                    if(!st) { st = document.createElement('style'); st.id = 'dyn-print-style'; document.head.appendChild(st); }
+                    document.body.className = 'print-rx';
+                    st.innerHTML = `@page { size: A4; margin: 15mm; }`;
+                    
+                    setTimeout(() => window.print(), 300);
+                }
+            };
+
+            const AnalyticsModule = {
+                render() {
+                    const totalGiven = State.queue.length;
+                    const comp = State.queue.filter(q => q.status === 'Completed');
+                    const miss = State.queue.filter(q => q.status === 'No-Show');
+
+                    document.getElementById('stat-total-tokens').textContent = totalGiven;
+                    document.getElementById('stat-total-seen').textContent = comp.length;
+                    document.getElementById('stat-total-missed').textContent = miss.length;
+                    
+                    let rev = 0, ms = 0, vc = 0;
+                    comp.forEach(p => {
+                        rev += p.fee || 0;
+                        if(p.calledAtTimestamp && p.completedAtTimestamp) { ms += (p.completedAtTimestamp - p.calledAtTimestamp); vc++; }
+                    });
+                    document.getElementById('stat-total-revenue').textContent = `₹${rev.toLocaleString()}`;
+                    document.getElementById('stat-avg-time').textContent = `${vc > 0 ? Math.round((ms/vc)/60000) : 0}m`;
+
+                    const tbody = document.getElementById('analytics-review-body');
+                    if(tbody) {
+                        tbody.innerHTML = comp.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold">No completed records yet</td></tr>` : [...comp].reverse().map(p => `
+                            <tr class="border-b border-slate-100">
+                                <td class="py-3 font-bold text-sky-600">${p.tokenNo}</td>
+                                <td class="py-3 font-extrabold text-slate-900 truncate max-w-[120px]">${Utils.escapeHTML(p.name)}</td>
+                                <td class="py-3 text-[11px] text-indigo-600 font-bold">${p.visitType} Visit</td>
+                                <td class="py-3 text-[11px] text-slate-500">${p.completedAtTime || '--'}</td>
+                                <td class="py-3 text-right font-extrabold text-emerald-600">₹${p.fee}</td>
+                            </tr>
+                        `).join('');
+                    }
+                },
+                resetDailyShift() {
+                    Swal.fire({
+                        title: 'Reset Daily Shift?',
+                        text: 'This will clear today’s queue and reset token counter to #001 for tomorrow. Fee settings will remain saved.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'Yes, Reset Shift',
+                        background: '#ffffff', color: '#0f172a'
+                    }).then(res => {
+                        if(res.isConfirmed) {
+                            State.queue = [];
+                            State.tokenCounter = 1;
+                            State.activeTokenId = null;
+                            Utils.toast('Daily Shift Reset Completed');
+                            UI.switchTab('reception');
+                        }
+                    });
+                },
+                exportPDF() {
+                    const doc = new window.jspdf.jsPDF();
+                    const comp = State.queue.filter(q => q.status === 'Completed');
+                    let rev = 0; comp.forEach(p => rev += (p.fee || 0));
+                    doc.setFontSize(16); doc.text(State.settings.clinicName, 14, 20);
+                    doc.setFontSize(10); doc.text(`Financial Audit Report — ${new Date().toLocaleDateString()} | Seen: ${comp.length} | Revenue: Rs.${rev}`, 14, 28);
+                    let y = 40;
+                    comp.forEach(p => { if(y > 270) { doc.addPage(); y = 20; } doc.text(`${p.tokenNo} - ${p.name} (${p.visitType} Visit - Rs.${p.fee})`, 14, y); y += 7; });
+                    doc.save(`Finance_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+                    Utils.toast('PDF Exported');
+                }
+            };
+
+            const SettingsManager = {
+                populateForm() {
+                    const s = State.settings;
+                    document.getElementById('set-clinic').value = s.clinicName;
+                    document.getElementById('set-doctor').value = s.doctorName;
+                    document.getElementById('set-address').value = s.clinicAddress;
+                    document.getElementById('set-avg').value = s.avgWaitMins;
+                    document.getElementById('fee-setting-1st').value = State.fees.first;
+                    document.getElementById('fee-setting-2nd').value = State.fees.second;
+                    document.getElementById('set-voice-lang').value = s.voiceLang || 'en-IN';
+                    document.getElementById('set-voice-template').value = s.voiceTemplate || '';
+                },
+                save(e) {
+                    e.preventDefault();
+                    State.settings = { 
+                        ...State.settings, 
+                        clinicName: document.getElementById('set-clinic').value.trim(), 
+                        doctorName: document.getElementById('set-doctor').value.trim(), 
+                        clinicAddress: document.getElementById('set-address').value.trim(), 
+                        avgWaitMins: parseInt(document.getElementById('set-avg').value,10)||10,
+                        voiceLang: document.getElementById('set-voice-lang').value,
+                        voiceTemplate: document.getElementById('set-voice-template').value.trim()
+                    };
+                    Utils.toast('Settings Saved');
+                },
+                updateFees() {
+                    const f1 = parseInt(document.getElementById('fee-setting-1st').value,10);
+                    const f2 = parseInt(document.getElementById('fee-setting-2nd').value,10);
+                    if(!isNaN(f1) && !isNaN(f2)) { State.fees = { first: f1, second: f2 }; Utils.toast('Fees Updated'); }
+                },
+                updateVoice() {
+                    State.settings = {
+                        ...State.settings,
+                        voiceLang: document.getElementById('set-voice-lang').value,
+                        voiceTemplate: document.getElementById('set-voice-template').value.trim()
+                    };
+                }
+            };
+
+            const PrintService = {
+                printBatch(tokensArray) {
+                    let st = document.getElementById('dyn-print-style');
+                    if(!st) { st = document.createElement('style'); st.id = 'dyn-print-style'; document.head.appendChild(st); }
+                    document.body.className = 'print-batch';
+                    st.innerHTML = `@page { size: A4; margin: 10mm; }`;
+
+                    const cont = document.getElementById('printable-token-batch');
+                    cont.innerHTML = "";
+                    const pages = Math.ceil(tokensArray.length / 20);
+                    const dateStr = new Date().toLocaleDateString('en-IN');
+                    for(let p=0; p<pages; p++) {
+                        const page = document.createElement('div'); page.className = "a4-page";
+                        tokensArray.slice(p * 20, (p + 1) * 20).forEach(t => {
+                            const card = document.createElement('div'); card.className = "token-card";
+                            card.innerHTML = `<div class="batch-header">${Utils.escapeHTML(State.settings.clinicName)}</div><div class="batch-subheader">${Utils.escapeHTML(State.settings.doctorName)} | ${dateStr}</div><div class="batch-main"><div class="batch-qr qr-box"></div><div class="batch-info"><div class="batch-number">${t.tokenNo}</div><div style="font-size:5px;">Scan Token</div></div></div><div class="batch-footer">${Utils.escapeHTML(State.settings.clinicAddress)}</div>`;
+                            page.appendChild(card);
+                            try{ new QRCode(card.querySelector('.qr-box'), { text: t.tokenNo, width: 60, height: 60, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M }); }catch(e){}
+                        });
+                        cont.appendChild(page);
+                    }
+                    setTimeout(() => window.print(), 1200);
+                }
+            };
+
+            return { init: () => { loadState(); UI.init(); }, UI, TokenSystem, Scanner, Prescription: PrescriptionModule, Analytics: AnalyticsModule, Settings: SettingsManager, Security: SecurityModule, Utils };
+        })();
+
+        document.addEventListener('DOMContentLoaded', ClinicApp.init);
+    </script>
+</body>
+</html>
