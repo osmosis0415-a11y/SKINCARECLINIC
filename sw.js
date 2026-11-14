@@ -1,7 +1,7 @@
 // Offline cache for Skin Care Clinic. Everything the app needs is stored on
 // the phone at install; later visits load from the cache and refresh it
 // quietly in the background when there is a connection.
-const C='clinic-v6';
+const C='clinic-v7';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
  './vendor/icons.js','./vendor/dialogs.js','./vendor/qrcode.min.js','./vendor/html5-qrcode.min.js',
  './vendor/jspdf.umd.min.js','./vendor/PlusJakartaSans.woff2'];
