@@ -4,36 +4,30 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font:0.875rem system-ui,sans-serif;background:#f8fafc;color:#0f172a;padding-bottom:2.5rem}
-header{background:#fff;border-bottom:1px solid #e2e8f0;padding:0.625rem 0.875rem;position:sticky;top:0;z-index:5}h1{font-size:1rem;margin:0}header small{color:#0284c7;font-weight:700}
-nav{display:flex;gap:0.375rem;margin-top:0.5rem;flex-wrap:wrap}button,.b{background:#0284c7;color:#fff;border:0;border-radius:0.75rem;padding:0.625rem 0.875rem;font-weight:700;cursor:pointer;font-size:0.8125rem;display:inline-block}
-.g{background:#e2e8f0;color:#0f172a}.r{background:#dc2626}.ok{background:#059669}.am{background:#d97706}nav button{background:#e2e8f0;color:#334155}nav button.on{background:#0284c7;color:#fff}
-main{max-width:56.25rem;margin:auto;padding:0.875rem}section{display:none}section.on{display:block}.c{background:#fff;border:1px solid #e2e8f0;border-radius:1.125rem;padding:0.875rem;margin-bottom:0.75rem}
-input,select,textarea{width:100%;padding:0.625rem;border:1px solid #cbd5e1;border-radius:0.75rem;font:inherit;margin:0.25rem 0}.row{display:flex;gap:0.5rem;align-items:center;justify-content:space-between}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.125rem,1fr));gap:0.5rem}.big{font-size:3.5rem;font-weight:900;text-align:center;margin:0.375rem 0}.m{color:#64748b;font-size:0.6875rem}
-table{width:100%;border-collapse:collapse;font-size:0.75rem}td,th{padding:0.375rem 0.25rem;border-bottom:1px solid #e2e8f0;text-align:left}
-#lock{position:fixed;inset:0;background:#0f172ae6;z-index:50;display:flex;align-items:center;justify-content:center}#lock div{background:#fff;padding:1.5rem;border-radius:1.25rem;width:17.5rem;text-align:center}
-#off{display:none;background:#f59e0b;text-align:center;padding:0.25rem;font-weight:700}#ps,#pb,#pr{display:none}
-@media print{body>*{display:none!important}body.ps #ps,body.pr #pr,body.pb #pb{display:block!important}@page{margin:10mm}
-.pg{display:grid;grid-template-columns:repeat(4,44.5mm);grid-auto-rows:52mm;gap:3mm;break-after:page}
-.tk{border:1px dashed #94a3b8;padding:0.3125rem;text-align:center;font-size:0.5rem;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;break-inside:avoid;background:#fff}
-.tk b{font-size:0.9375rem;display:block}.tk .q{display:flex;justify-content:center}.tk .q img,.tk .q canvas{width:22mm!important;height:22mm!important}}
-html{-webkit-text-size-adjust:100%}input,select,textarea{font-size:1rem}button,.b{min-height:2.75rem;touch-action:manipulation}
-header{padding-top:calc(0.625rem + env(safe-area-inset-top))}.swal2-popup{max-width:92vw}
-@media(max-width:40rem){body{padding-bottom:calc(5.25rem + env(safe-area-inset-bottom))}main{padding:0.625rem}
-nav{position:fixed;left:0;right:0;bottom:0;margin:0;background:#fff;border-top:1px solid #e2e8f0;padding:0.375rem 0.375rem calc(0.375rem + env(safe-area-inset-bottom));z-index:20;flex-wrap:nowrap;gap:0.25rem}
-nav button{flex:1;padding:0.375rem 0.125rem;font-size:0.6875rem;border-radius:0.625rem;min-height:3rem;line-height:1.25}
-.grid{grid-template-columns:1fr 1fr}.big{font-size:2.75rem}.row{flex-wrap:wrap}.c{padding:0.75rem;border-radius:1rem}td,th{font-size:0.6875rem}#lock div{width:90%}
-#ql .row>div:last-child{display:flex;gap:0.375rem;width:100%}#ql .row>div:last-child button{flex:1}}
-@media(max-width:23.75rem){.grid{grid-template-columns:1fr}}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding-bottom:6.5rem}
-header{padding:0.75rem 1rem calc(0.75rem + env(safe-area-inset-top));box-shadow:0 1px 0.5rem #0000000d}.hd{display:flex;align-items:center;gap:0.875rem;max-width:56.25rem;margin:auto}.ht{flex:1;min-width:0}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:0.875rem 'Plus Jakarta Sans',system-ui,sans-serif;background:#f8fafc;color:#0f172a;padding-bottom:6.5rem}
+header{background:#fff;border-bottom:1px solid #e2e8f0;padding:0.75rem 1rem calc(0.75rem + env(safe-area-inset-top));position:sticky;top:0;z-index:5;box-shadow:0 1px 0.5rem #0000000d}
+.hd{display:flex;align-items:center;gap:0.875rem;max-width:56.25rem;margin:auto}.ht{flex:1;min-width:0}
 .lg{width:3.5rem;height:3.5rem;border-radius:1.125rem;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;display:grid;place-items:center;box-shadow:0 0.5rem 1rem -0.375rem #0284c799;flex:none}
-h1{font-size:1.25rem;font-weight:800;letter-spacing:-.02em}header small{display:block;font-size:0.8125rem;letter-spacing:.08em;text-transform:uppercase;margin-top:0.125rem}
+h1{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:0}
+header small{color:#0284c7;font-weight:700;display:block;font-size:0.8125rem;letter-spacing:.08em;text-transform:uppercase;margin-top:0.125rem}
 svg.lucide{width:1.375rem;height:1.375rem}.lg svg{width:1.625rem;height:1.625rem}
+button,.b{background:#0284c7;color:#fff;border:0;border-radius:0.75rem;padding:0.625rem 0.875rem;font-weight:700;cursor:pointer;font-size:0.8125rem;display:inline-block;min-height:2.75rem;touch-action:manipulation}
+.g{background:#e2e8f0;color:#0f172a}.r{background:#dc2626}.ok{background:#059669}.am{background:#d97706}
+.lt{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
 .ib{background:#f1f5f9;color:#334155;width:2.875rem;height:2.875rem;padding:0;display:grid;place-items:center;border-radius:1rem;border:1px solid #e2e8f0;flex:none}
-.ib.s{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}.ib.e{background:#ecfdf5;color:#047857;border-color:#a7f3d0}.ib.t{color:#94a3b8}
-input,select,textarea{background:#f8fafc;border-radius:1rem}.c{border-radius:1.625rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 0.625rem 0.9375rem -0.1875rem #00000008}
+.ib.s{background:#f0f9ff;color:#0369a1;border-color:#bae6fd}.ib.e{background:#ecfdf5;color:#047857;border-color:#a7f3d0}.ib.w{background:#fffbeb;color:#b45309;border-color:#fde68a}.ib.t{color:#94a3b8}
+main{max-width:56.25rem;margin:auto;padding:0.875rem}section{display:none}section.on{display:block}
+.c{background:#fff;border:1px solid #e2e8f0;border-radius:1.625rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 0.625rem 0.9375rem -0.1875rem #00000008}
+input,select,textarea{width:100%;padding:0.625rem;border:1px solid #cbd5e1;border-radius:1rem;font:inherit;font-size:1rem;margin:0.25rem 0;background:#f8fafc}
+.row{display:flex;gap:0.5rem;align-items:center;justify-content:space-between}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.125rem,1fr));gap:0.5rem}
+.big{font-size:3.5rem;font-weight:900;text-align:center;margin:0.375rem 0}.m{color:#64748b;font-size:0.6875rem}
+table{width:100%;border-collapse:collapse;font-size:0.75rem}td,th{padding:0.375rem 0.25rem;border-bottom:1px solid #e2e8f0;text-align:left}
+#lock{position:fixed;inset:0;background:#0f172ae6;z-index:50;display:flex;align-items:center;justify-content:center}#lock div{background:#fff;padding:1.5rem;border-radius:1.25rem;width:18.75rem;text-align:center}
+#off{display:none;background:#f59e0b;text-align:center;padding:0.25rem;font-weight:700}#ps,#pb,#pr{display:none}
+.swal2-popup{max-width:92vw}
 .sh{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;border-bottom:1px solid #e2e8f0;padding-bottom:0.875rem;margin-bottom:1rem}
 .sh .t{display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:800;letter-spacing:.08em;color:#94a3b8;text-transform:uppercase}.sh .t.d{color:#0f172a;font-size:1.125rem;letter-spacing:0;text-transform:none}
 .chip{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6.1875rem;padding:0.4375rem 0.9375rem;font-weight:700;font-size:0.8125rem;color:#475569;white-space:nowrap}.chip.bl{background:#f0f9ff;border-color:#bae6fd;color:#0369a1;font-weight:800}
@@ -51,29 +45,223 @@ nav button.on{color:#2563eb}nav button svg{width:1.625rem;height:1.625rem}nav bu
 .dh{display:flex;justify-content:space-between;align-items:center;padding:1rem;background:#f8fafc;border-bottom:1px solid #e2e8f0;margin-bottom:0.5rem}
 .mi{display:flex;align-items:center;gap:0.875rem;width:calc(100% - 1.5rem);margin:0.375rem 0.75rem 0;background:none;color:#334155;text-align:left;padding:0.75rem;border-radius:1rem;font-size:0.875rem}
 .mi .ic{width:2.5rem;height:2.5rem;border-radius:0.75rem;display:grid;place-items:center;background:#e0f2fe;color:#0284c7;flex:none}
-@media(max-width:40rem){body{padding-bottom:calc(6.5rem + env(safe-area-inset-bottom))}}
+.lchips{display:flex;gap:0.375rem;justify-content:center;flex-wrap:wrap;margin:0.625rem 0}
+.lchips button{min-height:2.25rem;padding:0.375rem 0.75rem;border-radius:0.625rem;background:#f1f5f9;color:#0f172a;font-weight:800;border:1px solid #cbd5e1}
+.lchips button.on{background:#0284c7;color:#fff;border-color:#0284c7}
+
+/* Optional Toggle Grid in Settings & Modals */
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(12.5rem,1fr));gap:0.5rem;margin:0.625rem 0}
+.opt-item{display:flex;align-items:center;gap:0.5rem;background:#f8fafc;border:1px solid #e2e8f0;padding:0.5rem 0.75rem;border-radius:0.75rem;font-size:0.78125rem;font-weight:700;color:#334155;cursor:pointer}
+.opt-item input{width:1.125rem;height:1.125rem;margin:0;accent-color:#0284c7;flex:none}
+
+/* Token Card Designs (Shared between Live Preview & Print) */
+.tk-stage{background:#e2e8f0;border-radius:1.125rem;padding:1rem;display:flex;justify-content:center;align-items:center;overflow-x:auto;margin:0.625rem 0}
+.tk{
+  border:0.09375rem solid #0f172a;
+  padding:0.375rem 0.625rem;
+  text-align:center;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#000;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  break-inside:avoid;
+  background:#fff;
+  width:94mm;
+  height:64mm;
+  flex:none;
+  position:relative;
+}
+.tk .q{display:flex;justify-content:center;align-items:center}
+.tk .q img,.tk .q canvas{width:18.5mm!important;height:18.5mm!important}
+.tk-vbadge{display:inline-block;font-size:0.5rem;font-weight:900;padding:1px 0.3125rem;border-radius:0.25rem;text-transform:uppercase;letter-spacing:.04em;margin-left:0.25rem;vertical-align:middle}
+.tk-v1{background:#e0f2fe;color:#0369a1;border:1px solid #0284c7}
+.tk-v2{background:#d1fae5;color:#047857;border:1px solid #059669}
+.tk.v-acc-1{border-top:0.21875rem solid #0284c7}
+.tk.v-acc-2{border-top:0.21875rem solid #059669}
+.tk-te-hd{font-size:0.5625rem;font-weight:800;color:#1e293b;line-height:1.15;margin:1px 0}
+.tk-ph{font-size:0.53125rem;font-weight:800;color:#0f172a;line-height:1.1}
+.tk-addr{font-size:0.4375rem;font-weight:600;color:#334155;line-height:1.1;margin-top:1px}
+
+/* Design 1: Classic Stamped Slip */
+.tk-classic .tk-top{font-size:0.59375rem;font-weight:700;letter-spacing:.04em}
+.tk-classic .tk-doc{font-size:1.0625rem;font-weight:900;letter-spacing:.02em;line-height:1.05;margin-top:1px}
+.tk-classic .tk-deg{font-size:0.5625rem;font-weight:700;text-align:right;width:84%;margin:0 auto;line-height:1.1}
+.tk-classic .tk-cln{font-size:0.84375rem;font-weight:900;letter-spacing:.03em;margin-bottom:1px}
+.tk-classic .tk-mid{display:flex;align-items:center;justify-content:space-between;text-align:left;font-size:0.65625rem;font-weight:700;border-top:1px solid #cbd5e1;border-bottom:1px solid #cbd5e1;padding:0.125rem 0}
+.tk-classic .tk-no{font-size:1.1875rem;font-weight:900;color:#b91c1c;display:inline-block;line-height:1.05;margin-left:0.1875rem}
+.tk-classic .tk-dt{font-size:0.71875rem;font-weight:800;border-bottom:1px solid #000;padding:0 0.1875rem}
+.tk-classic .tk-apt{font-size:0.625rem;font-weight:600;line-height:1.2}
+.tk-classic .tk-apt b{font-size:0.75rem;font-weight:900;display:block}
+.tk-classic .tk-wt{font-size:0.5625rem;font-weight:700;line-height:1.25}
+.tk-classic .tk-te{font-size:0.5625rem;font-weight:700;line-height:1.2}
+
+/* Design 2: Split Boarding-Pass Stub */
+.tk.tk-split{flex-direction:row;padding:0;border:0.09375rem solid #0f172a}
+.tk-split .sp-l{width:62%;padding:0.375rem 0.5rem;display:flex;flex-direction:column;justify-content:space-between;text-align:left}
+.tk-split .sp-r{width:38%;border-left:0.09375rem dashed #475569;padding:0.3125rem;display:flex;flex-direction:column;justify-content:space-between;align-items:center;background:#f8fafc}
+.tk-split .sp-pill{display:inline-block;background:#0f172a;color:#fff;font-size:0.5rem;font-weight:800;padding:0.09375rem 0.3125rem;border-radius:0.25rem;letter-spacing:.04em;width:fit-content}
+.tk-split .sp-doc{font-size:0.90625rem;font-weight:900;line-height:1.1;margin-top:0.125rem}
+.tk-split .sp-deg{font-size:0.5rem;font-weight:700;color:#334155}
+.tk-split .sp-cln{font-size:0.71875rem;font-weight:900;letter-spacing:.02em;color:#0284c7;border-bottom:1px solid #cbd5e1;padding-bottom:0.125rem}
+.tk-split .sp-info{font-size:0.5625rem;line-height:1.3;font-weight:700}
+.tk-split .sp-info b{font-size:0.65625rem;display:block;color:#0f172a}
+.tk-split .sp-te{font-size:0.5rem;font-weight:700;line-height:1.15;border-top:1px solid #cbd5e1;padding-top:0.125rem}
+.tk-split .sp-th{font-size:0.53125rem;font-weight:900;letter-spacing:.08em;background:#0f172a;color:#fff;width:100%;text-align:center;padding:0.125rem 0;border-radius:0.1875rem}
+.tk-split .sp-no{font-size:1.5rem;font-weight:900;color:#b91c1c;line-height:1}
+.tk-split .sp-dt{font-size:0.5625rem;font-weight:800;border-top:1px solid #cbd5e1;width:100%;text-align:center;padding-top:0.125rem}
+
+/* Design 3: Bold Elderly-Friendly Badge */
+.tk.tk-badge{padding:0;border:0.125rem solid #0f172a}
+.tk-badge .bg-hd{background:#0f172a;color:#fff;padding:0.25rem 0.5rem;display:flex;justify-content:space-between;align-items:center}
+.tk-badge .bg-hd b{font-size:0.78125rem;font-weight:900;letter-spacing:.02em}
+.tk-badge .bg-hd span{font-size:0.5rem;font-weight:700;background:#fff;color:#0f172a;padding:0.09375rem 0.3125rem;border-radius:0.25rem}
+.tk-badge .bg-sub{font-size:0.625rem;font-weight:900;background:#f1f5f9;padding:0.15625rem 0.5rem;border-bottom:1px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center}
+.tk-badge .bg-body{display:flex;align-items:center;justify-content:space-between;padding:0.25rem 0.625rem;flex:1}
+.tk-badge .bg-box{border:0.125rem solid #0f172a;border-radius:0.625rem;padding:0.1875rem 0.5625rem;text-align:center;min-width:25mm}
+.tk-badge .bg-box small{font-size:0.46875rem;font-weight:800;display:block;text-transform:uppercase}
+.tk-badge .bg-box b{font-size:1.625rem;font-weight:900;line-height:1;color:#b91c1c}
+.tk-badge .bg-meta{text-align:right;font-size:0.5625rem;font-weight:700;line-height:1.3}
+.tk-badge .bg-meta b{font-size:0.65625rem;display:block}
+.tk-badge .bg-ft{background:#fef3c7;border-top:1px solid #0f172a;padding:0.15625rem 0.375rem;font-size:0.53125rem;font-weight:800;line-height:1.2}
+
+/* Design 4: Compact Mini Grid (20 per A4, 44.5mm x 52mm) */
+.tk.tk-mini{width:44.5mm;height:52mm;border:1px dashed #334155;padding:0.21875rem;font-size:0.45rem}
+.tk-mini .mn-top{font-size:0.425rem;font-weight:800;background:#0f172a;color:#fff;padding:1px 0.1875rem;border-radius:0.125rem}
+.tk-mini .mn-doc{font-size:0.59375rem;font-weight:900;line-height:1.05;margin-top:1px}
+.tk-mini .mn-cln{font-size:0.4875rem;font-weight:800;color:#0369a1}
+.tk-mini .mn-no{font-size:0.9375rem;font-weight:900;color:#b91c1c;line-height:1.05}
+.tk-mini .q img,.tk-mini .q canvas{width:16mm!important;height:16mm!important}
+.tk-mini .mn-ft{font-size:0.40625rem;font-weight:700;line-height:1.12;border-top:1px solid #cbd5e1;padding-top:0.09375rem}
+
+/* Design 5: 80mm Thermal POS Receipt */
+.tk.tk-thermal{width:72mm;height:auto;min-height:74mm;border:1px solid #000;border-top:0.1875rem dashed #000;border-bottom:0.1875rem dashed #000;padding:0.4375rem;font-family:'Courier New',monospace}
+.tk-thermal .th-cln{font-size:0.875rem;font-weight:900;letter-spacing:.03em}
+.tk-thermal .th-doc{font-size:0.71875rem;font-weight:800}
+.tk-thermal .th-ban{background:#000;color:#fff;font-size:1.25rem;font-weight:900;padding:0.21875rem;margin:0.1875rem 0;letter-spacing:.04em}
+.tk-thermal .q img,.tk-thermal .q canvas{width:23mm!important;height:23mm!important;margin:0.125rem 0}
+.tk-thermal .th-row{display:flex;justify-content:space-between;font-size:0.59375rem;font-weight:700;border-bottom:1px dashed #000;padding:0.125rem 0;margin-bottom:0.125rem}
+.tk-thermal .th-ft{font-size:0.53125rem;font-weight:700;line-height:1.22;font-family:Arial,sans-serif}
+
+@media(max-width:40rem){
+  body{padding-bottom:calc(6.5rem + env(safe-area-inset-bottom))}
+  main{padding:0.625rem}
+  .grid{grid-template-columns:1fr 1fr}
+  .big{font-size:2.75rem}
+  .row{flex-wrap:wrap}
+  .c{padding:0.75rem;border-radius:1rem}
+  td,th{font-size:0.6875rem}
+  #lock div{width:90%}
+  #ql .row>div:last-child{display:flex;gap:0.375rem;width:100%;margin-top:0.375rem}
+  #ql .row>div:last-child button{flex:1}
+}
+@media(max-width:23.75rem){.grid{grid-template-columns:1fr}}
+@media print{
+  body>*{display:none!important}
+  body.ps #ps,body.pr #pr,body.pb #pb{display:block!important}
+  @page{margin:8mm}
+  .pg{
+    display:grid;
+    grid-template-columns:repeat(2,94mm);
+    grid-auto-rows:64mm;
+    gap:4mm;
+    break-after:page;
+    justify-content:center;
+  }
+  .pg.pg-mini{
+    grid-template-columns:repeat(4,44.5mm);
+    grid-auto-rows:52mm;
+    gap:3mm;
+  }
+  .pg.pg-thermal{
+    grid-template-columns:repeat(2,72mm);
+    grid-auto-rows:auto;
+    gap:6mm;
+  }
+  .tk-split .sp-pill,.tk-split .sp-th,.tk-badge .bg-hd,.tk-badge .bg-ft,.tk-mini .mn-top,.tk-thermal .th-ban,.tk-vbadge,.tk.v-acc-1,.tk.v-acc-2{
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+}
 html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;border-radius:1rem;background:#f8fafc}.sz b{display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:.375rem}.sz input{padding:0;margin:0;border:0;background:none;accent-color:#2563eb;height:2rem}
 @media print{html{font-size:16px!important}}
 </style></head><body>
-<div id="lock"><div><h3>🔒 Enter PIN</h3><input id="pin" type="password" inputmode="numeric" maxlength="4" style="text-align:center;font-size:1.375rem" onkeydown="if(event.key==='Enter')A.pin()"><button onclick="A.pin()" style="width:100%">Unlock</button></div></div>
+<div id="lock"><div><h3>🔒 Enter PIN</h3><input id="pin" type="password" inputmode="numeric" maxlength="4" style="text-align:center;font-size:1.375rem" onkeydown="if(event.key==='Enter')A.pin()"><button onclick="A.pin()" style="width:100%;margin-top:0.375rem">Unlock</button><button onclick="A.resetPinPrompt()" class="g" style="width:100%;margin-top:0.5rem;background:#f1f5f9;color:#64748b;font-size:0.6875rem;min-height:2.25rem">Forgot PIN? Reset</button></div></div>
 <div id="off">Offline mode</div>
 <header><div class="hd"><div class="lg"><i data-lucide="activity"></i></div><div class="ht"><h1 id="hn"></h1><small id="hd"></small></div><button class="ib" onclick="A.menu(1)"><i data-lucide="menu"></i></button></div></header>
 <nav id="nav"><button data-t="rec" class="on"><i data-lucide="monitor"></i>Reception</button><button data-t="scan"><i data-lucide="scan"></i>Scan</button><button data-t="fin"><i data-lucide="lock"></i>Finance</button><button onclick="A.menu(1)"><i data-lucide="menu"></i>Menu</button></nav>
 <div id="ov" onclick="A.menu(0)"></div><aside id="dr"><div class="dh"><b>Clinic Management</b><button class="ib" onclick="A.menu(0)"><i data-lucide="x"></i></button></div>
-<button class="mi" onclick="A.go('rec');A.menu(0)"><span class="ic"><i data-lucide="monitor"></i></span>Reception</button><button class="mi" onclick="A.go('scan');A.menu(0)"><span class="ic"><i data-lucide="scan"></i></span>Scan</button><button class="mi" onclick="A.go('fin');A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Finance</button><button class="mi" onclick="A.go('set');A.menu(0)"><span class="ic"><i data-lucide="settings"></i></span>Settings</button><button class="mi" onclick="A.lang();A.menu(0)"><span class="ic"><i data-lucide="languages"></i></span><span id="lbt">తెలుగు</span></button><div class="sz"><b><span>Text size</span><span id="szv">100%</span></b><input type="range" id="sz" min="85" max="160" step="5" value="100" oninput="A.size(this.value)"></div></aside>
+<button class="mi" onclick="A.go('rec');A.menu(0)"><span class="ic"><i data-lucide="monitor"></i></span>Reception</button><button class="mi" onclick="A.go('scan');A.menu(0)"><span class="ic"><i data-lucide="scan"></i></span>Scan</button><button class="mi" onclick="A.go('fin');A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Finance</button><button class="mi" onclick="A.go('set');A.menu(0)"><span class="ic"><i data-lucide="settings"></i></span>Settings &amp; Token Studio</button><button class="mi" onclick="A.lang();A.menu(0)"><span class="ic"><i data-lucide="languages"></i></span><span id="lbt">తెలుగు</span></button><div class="sz"><b><span>Text size</span><span id="szv">100%</span></b><input type="range" id="sz" min="85" max="160" step="5" value="100" oninput="A.size(this.value)"></div></aside>
 <main>
-<section id="rec" class="on"><div class="c"><div class="sh"><span class="t"><i data-lucide="user-plus"></i>Quick Actions</span><span class="chip" id="dt"></span></div><button class="qa b1" onclick="A.walkin()"><span class="ic"><i data-lucide="user-plus"></i></span><span class="tx"><b>Register Walk-in &amp; Print QR Card</b><small>Auto-assign next sequential token</small></span><i data-lucide="chevron-right"></i></button><button class="qa b2" onclick="A.go('scan')"><span class="ic"><i data-lucide="scan"></i></span><span class="tx"><b>Scan QR Ticket</b><small>Smart visit-type auto-detection</small></span><i data-lucide="chevron-right"></i></button><button class="qa b3" onclick="A.batch()"><span class="ic"><i data-lucide="printer"></i></span><span class="tx"><b>Print A4 Batch Cards</b><small>Pre-print sheets with custom date</small></span><i data-lucide="chevron-right"></i></button><button class="am" id="ub" onclick="A.undo()" style="display:none;width:100%"></button></div>
+<section id="rec" class="on"><div class="c"><div class="sh"><span class="t"><i data-lucide="user-plus"></i>Quick Actions</span><span class="chip" id="dt"></span></div><button class="qa b1" onclick="A.walkin()"><span class="ic"><i data-lucide="user-plus"></i></span><span class="tx"><b>Register Walk-in &amp; Print QR Card</b><small>Optional design picker, visit type &amp; instant print</small></span><i data-lucide="chevron-right"></i></button><button class="qa b2" onclick="A.go('scan')"><span class="ic"><i data-lucide="scan"></i></span><span class="tx"><b>Scan QR Ticket</b><small>Smart visit-type auto-detection</small></span><i data-lucide="chevron-right"></i></button><button class="qa b3" onclick="A.batch()"><span class="ic"><i data-lucide="printer"></i></span><span class="tx"><b>Print A4 Batch Cards</b><small>All 5 token designs &amp; optional fields</small></span><i data-lucide="chevron-right"></i></button><button class="am" id="ub" onclick="A.undo()" style="display:none;width:100%"></button></div>
 <div class="c"><div class="row"><span class="m">NOW SERVING</span><label><input type="checkbox" id="ap" style="width:auto" onchange="S.auto=this.checked;commit()"> Auto-Pilot</label></div>
 <div class="big" id="dtk">#---</div><p id="dnm" style="text-align:center;font-weight:800;color:#0284c7"></p><p id="dhi" class="m" style="text-align:center"></p>
-<button class="ok" style="width:100%" onclick="A.next()">📢 Call Next</button><div class="grid" style="margin-top:0.5rem"><button class="am" onclick="A.done('No-Show')">No Show</button><button onclick="A.done('Completed')">✔ Complete</button></div></div>
+<button class="ok" style="width:100%" onclick="A.next()">📢 Call Next</button><div class="grid" style="margin-top:0.5rem"><button class="am" onclick="A.done('No-Show')">No Show</button><button class="lt" onclick="A.late()">⏳ Late (+3–18)</button><button onclick="A.done('Completed')">✔ Complete</button></div></div>
 <div class="c"><div class="sh"><span class="t d"><i data-lucide="users"></i>Live Waiting Queue</span><span class="chip bl" id="wc"></span></div><div class="sr"><i data-lucide="search"></i><input id="srch" placeholder="Search patient name or token number..." oninput="render()"></div><div id="ql"></div></div><div class="c" id="rxc" style="display:none"><b>Rx pad</b><input id="rd" placeholder="Diagnosis"><select onchange="A.med(this)"><option value="">+ Common drug…</option><option>Tab. Cetirizine 10mg - 1 OD x 5 days</option><option>Cap. Doxycycline 100mg - 1 BD x 7 days</option><option>Clindamycin Gel - Apply night</option><option>Moisturizing Cream - Apply twice daily</option></select><textarea id="rb" rows="5" placeholder="Medications and dosage"></textarea>
 <div class="grid"><button onclick="A.rx()">🖨 Print Rx</button><button class="g" onclick="$('rd').value=$('rb').value=''">Clear</button></div></div></section>
-<section id="scan"><div class="c"><div id="qr" style="min-height:15rem;background:#020617;border-radius:0.75rem"></div><div class="grid" style="margin-top:0.5rem"><label class="b ok" style="text-align:center">📷 Snap / Upload<input type="file" accept="image/*" capture="environment" hidden onchange="A.file(event)"></label><button onclick="A.manual()">⌨ Type token</button></div><p class="m">Each QR holds token + date (e.g. OPD-012|2026-11-14). Cards of another date ask for confirmation. Scan date and time are saved with the token.</p></div></section>
+<section id="scan">
+  <div class="c">
+    <div id="qr" style="min-height:15rem;background:#020617;border-radius:0.75rem"></div>
+    <div class="grid" style="margin-top:0.5rem">
+      <label class="b ok" style="text-align:center">📷 Snap / Upload<input type="file" accept="image/*" capture="environment" hidden onchange="A.file(event)"></label>
+      <button onclick="A.manual()">⌨ Type token</button>
+    </div>
+    <p class="m" style="margin-top:0.5rem"><b>Tip:</b> If your browser blocks live camera access on local `file://` URLs, use <b>Snap / Upload</b> or <b>Type token</b> above.</p>
+  </div>
+</section>
 <section id="fin"><div class="c"><div class="row" style="flex-wrap:wrap"><b>Finance</b><span><button class="g" onclick="A.csv()">CSV</button> <button class="ok" onclick="A.pdf()">PDF</button> <button class="r" onclick="A.reset()">Reset shift</button> <button class="g" onclick="A.lock()">Lock</button></span></div>
 <div class="grid"><label>1st visit ₹<input type="number" id="f1" min="0" onchange="A.fees()"></label><label>2nd visit ₹<input type="number" id="f2" min="0" onchange="A.fees()"></label></div></div>
 <div class="grid" id="st"></div><div class="c" style="overflow-x:auto"><table><thead><tr><th>Token</th><th>Patient</th><th>Visit</th><th>Scanned / Seen</th><th>Fee</th></tr></thead><tbody id="fb"></tbody></table></div>
 <div class="c" style="overflow-x:auto"><b>Audit log</b><table><thead><tr><th>When</th><th>Action</th><th>Token / Patient</th></tr></thead><tbody id="lg"></tbody></table></div></section>
-<section id="set"><div class="c"><b>Clinic &amp; voice</b><input id="sn" placeholder="Clinic name"><input id="sd" placeholder="Doctor"><input id="sa" placeholder="Address"><select id="sl"><option value="en-IN">English</option><option value="hi-IN">Hindi</option><option value="te-IN">Telugu</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="bn-IN">Bengali</option></select><input id="stp" placeholder="Template using {token} and {name}"><label><input type="checkbox" id="srx" style="width:auto"> Show Rx pad on reception</label><label>Return-visit window (days)<input id="swin" type="number" min="0"></label><button onclick="A.cfg()" style="width:100%">Save</button></div>
+<section id="set">
+<div class="c">
+  <div class="sh"><span class="t d"><i data-lucide="layout-template"></i>Token Card Design Studio &amp; Optional Fields</span><span class="chip bl" id="dsn-chip"></span></div>
+  <p class="m" style="margin:0 0 0.375rem">1. Select default design &amp; choose which design types are enabled in Reception menus:</p>
+  <div class="lchips" id="dsn-tabs">
+    <button type="button" data-d="classic" onclick="A.setDesign('classic')">1. Classic Slip (8/A4)</button>
+    <button type="button" data-d="split" onclick="A.setDesign('split')">2. Split Boarding Pass (8/A4)</button>
+    <button type="button" data-d="badge" onclick="A.setDesign('badge')">3. Bold Badge (8/A4)</button>
+    <button type="button" data-d="mini" onclick="A.setDesign('mini')">4. Economy Mini (20/A4)</button>
+    <button type="button" data-d="thermal" onclick="A.setDesign('thermal')">5. 80mm Thermal POS</button>
+  </div>
+  <div class="opt-grid" id="dsn-en-grid"></div>
+
+  <p class="m" style="margin:0.75rem 0 0.375rem">2. Toggle optional elements printed on token cards (live preview updates instantly):</p>
+  <div class="opt-grid" id="tk-opt-grid">
+    <label class="opt-item"><input type="checkbox" id="opt_qr" onchange="A.togOpt('showQR',this.checked)"> QR Code (Scan Ticket)</label>
+    <label class="opt-item"><input type="checkbox" id="opt_val" onchange="A.togOpt('showValidity',this.checked)"> "FEE VALID FOR 10 DAYS"</label>
+    <label class="opt-item"><input type="checkbox" id="opt_tehd" onchange="A.togOpt('showTeHeader',this.checked)"> Telugu Doctor/Clinic Header</label>
+    <label class="opt-item"><input type="checkbox" id="opt_ph" onchange="A.togOpt('showPhone',this.checked)"> Clinic Phone Number</label>
+    <label class="opt-item"><input type="checkbox" id="opt_vb" onchange="A.togOpt('showVisitBadge',this.checked)"> 1st / 2nd Visit Color Badge</label>
+    <label class="opt-item"><input type="checkbox" id="opt_apt" onchange="A.togOpt('showApptTime',this.checked)"> Appointment Time</label>
+    <label class="opt-item"><input type="checkbox" id="opt_wt" onchange="A.togOpt('showWaitTime',this.checked)"> Waiting Time (2–12 Hrs)</label>
+    <label class="opt-item"><input type="checkbox" id="opt_late" onchange="A.togOpt('showLateRule',this.checked)"> Telugu Late Rule (3–18)</label>
+    <label class="opt-item"><input type="checkbox" id="opt_addr" onchange="A.togOpt('showAddr',this.checked)"> Clinic Address Footer</label>
+  </div>
+
+  <div class="tk-stage" id="tk-prev"></div>
+  <div class="grid">
+    <button class="ok" onclick="A.testPrint()">🖨 Test Print Single Slip</button>
+    <button onclick="A.batch()">📄 Print Full A4 Batch</button>
+  </div>
+</div>
+<div class="c"><b>Clinic, Bilingual Header &amp; Voice</b>
+  <input id="sn" placeholder="Clinic name (English)">
+  <input id="sd" placeholder="Doctor (English)">
+  <input id="stec" placeholder="Telugu header (e.g. డా. డి. శ్రీనివాస్ — స్కిన్ కేర్ క్లినిక్)">
+  <input id="sph" placeholder="Clinic phone number (optional, e.g. +91 98480 XXXXX)">
+  <input id="sa" placeholder="Address">
+  <input id="stm" placeholder="Appointment time (e.g. 9:30 AM to 2:00 PM)">
+  <input id="swt" placeholder="Waiting time text (e.g. Waiting Time : 2 to 12 Hrs Approximately)">
+  <input id="slt" placeholder="Telugu late arrival text">
+  <select id="sl"><option value="en-IN">English</option><option value="hi-IN">Hindi</option><option value="te-IN">Telugu</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="bn-IN">Bengali</option></select>
+  <input id="stp" placeholder="Template using {token} and {name}">
+  <label class="opt-item" style="margin:0.375rem 0"><input type="checkbox" id="srx"> Show Rx pad on reception</label>
+  <label class="opt-item" style="margin:0.375rem 0"><input type="checkbox" id="swp"> Ask for token design &amp; visit type on Walk-in</label>
+  <label>Return-visit window (days)<input id="swin" type="number" min="0"></label>
+  <button onclick="A.cfg()" style="width:100%;margin-top:0.375rem">Save Settings</button>
+</div>
 <div class="c"><b>Security &amp; backup</b><div class="grid" style="margin-top:0.375rem"><button class="g" onclick="A.secret('pin')">Change PIN</button><button class="g" onclick="A.secret('pass')">Change password</button><button class="g" onclick="A.backup()">⬇ Backup</button><label class="b g" style="text-align:center">⬆ Restore<input type="file" accept=".json" hidden onchange="A.restore(event)"></label></div></div></section>
 </main>
 <div id="ps"></div><div id="pb"></div><div id="pr"></div>
@@ -85,74 +273,754 @@ const ft=t=>t?new Date(t).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-d
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hash=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
 Swal=Swal.mixin({didOpen:e=>tr(e)});
-const TE={'Text size':'అక్షరాల పరిమాణం',"Quick Actions": "త్వరిత చర్యలు", "Register Walk-in & Print QR Card": "వాక్-ఇన్ నమోదు & QR కార్డ్ ప్రింట్", "Auto-assign next sequential token": "తదుపరి టోకెన్ ఆటోమేటిక్‌గా ఇవ్వబడుతుంది", "Scan QR Ticket": "QR టికెట్ స్కాన్", "Smart visit-type auto-detection": "సందర్శన రకం ఆటోమేటిక్‌గా గుర్తింపు", "Print A4 Batch Cards": "A4 బ్యాచ్ కార్డులు ప్రింట్", "Pre-print sheets with custom date": "తేదీతో ముందే ప్రింట్ చేసిన షీట్లు", "Live Waiting Queue": "లైవ్ వెయిటింగ్ క్యూ", "Menu": "మెనూ", "Clinic Management": "క్లినిక్ నిర్వహణ", "Waiting": "వేచి ఉన్నారు", "Search patient name or token number...": "రోగి పేరు లేదా టోకెన్ వెతకండి...","Reception": "రిసెప్షన్", "Scan": "స్కాన్", "Finance": "ఫైనాన్స్", "Settings": "సెట్టింగ్స్", "Walk-in & Print QR": "వాక్-ఇన్ & QR ప్రింట్", "Scan QR": "QR స్కాన్ చేయండి", "Print A4 Batch": "A4 బ్యాచ్ ప్రింట్", "Waiting queue": "వేచి ఉన్న రోగులు", "NOW SERVING": "ఇప్పుడు పిలిచినది", "Auto-Pilot": "ఆటో-పైలట్", "Call Next": "తదుపరి వారిని పిలవండి", "No Show": "రాలేదు", "Complete": "పూర్తి", "Available": "ఖాళీగా ఉంది", "No patients waiting": "ఎవరూ వేచి లేరు", "Rx pad": "ప్రిస్క్రిప్షన్", "Print Rx": "ప్రిస్క్రిప్షన్ ప్రింట్", "Clear": "తొలగించు", "Snap / Upload": "ఫోటో తీయండి / అప్‌లోడ్", "Type token": "టోకెన్ టైప్ చేయండి", "Reset shift": "షిఫ్ట్ రీసెట్", "Lock": "లాక్", "Tokens": "టోకెన్లు", "Seen": "చూసినవారు", "No-shows": "రానివారు", "Avg time": "సగటు సమయం", "Revenue": "ఆదాయం", "Token": "టోకెన్", "Patient": "రోగి", "Visit": "సందర్శన", "Scanned / Seen": "స్కాన్ / చూసిన సమయం", "Fee": "ఫీజు", "1st visit ₹": "మొదటి సందర్శన ఫీజు ₹", "2nd visit ₹": "రెండో సందర్శన ఫీజు ₹", "Audit log": "కార్యకలాపాల లాగ్", "When": "ఎప్పుడు", "Action": "చర్య", "Token / Patient": "టోకెన్ / రోగి", "No completed visits yet": "ఇంకా పూర్తయిన సందర్శనలు లేవు", "No activity yet": "ఇంకా కార్యకలాపాలు లేవు", "Clinic & voice": "క్లినిక్ & వాయిస్", "Security & backup": "భద్రత & బ్యాకప్", "Save": "సేవ్ చేయండి", "Change PIN": "పిన్ మార్చండి", "Change password": "పాస్‌వర్డ్ మార్చండి", "Backup": "బ్యాకప్", "Restore": "రీస్టోర్", "Show Rx pad on reception": "రిసెప్షన్‌లో ప్రిస్క్రిప్షన్ చూపించు", "Return-visit window (days)": "మళ్ళీ రావడానికి గడువు (రోజులు)", "Enter PIN": "పిన్ నమోదు చేయండి", "Unlock": "అన్‌లాక్", "Offline mode": "ఆఫ్‌లైన్ మోడ్", "Register walk-in": "వాక్-ఇన్ నమోదు", "Register & print": "నమోదు & ప్రింట్", "Cancel": "రద్దు", "OK": "సరే", "Completed": "పూర్తయింది", "No-Show": "రాలేదు", "Search name or token": "పేరు లేదా టోకెన్ వెతకండి", "Patient full name": "రోగి పూర్తి పేరు", "Diagnosis": "రోగ నిర్ధారణ", "waiting": "వేచి ఉన్నారు", "Scanned": "స్కాన్ చేసినది", "Undo": "వెనక్కి"},T=s=>S.cfg.ui==='te'&&TE[s]||s;
+const TE={"Text size":"అక్షరాల పరిమాణం","Quick Actions": "త్వరిత చర్యలు", "Register Walk-in & Print QR Card": "వాక్-ఇన్ నమోదు & QR కార్డ్ ప్రింట్", "Scan QR Ticket": "QR టికెట్ స్కాన్", "Smart visit-type auto-detection": "సందర్శన రకం ఆటోమేటిక్‌గా గుర్తింపు", "Print A4 Batch Cards": "A4 బ్యాచ్ కార్డులు ప్రింట్", "Live Waiting Queue": "లైవ్ వెయిటింగ్ క్యూ", "Menu": "మెనూ", "Clinic Management": "క్లినిక్ నిర్వహణ", "Waiting": "వేచి ఉన్నారు", "Search patient name or token number...": "రోగి పేరు లేదా టోకెన్ వెతకండి...","Reception": "రిసెప్షన్", "Scan": "స్కాన్", "Finance": "ఫైనాన్స్", "Settings": "సెట్టింగ్స్", "NOW SERVING": "ఇప్పుడు పిలిచినది", "Auto-Pilot": "ఆటో-పైలట్", "Call Next": "తదుపరి వారిని పిలవండి", "No Show": "రాలేదు", "Late (+3–18)": "ఆలస్యం (+3–18)", "Complete": "పూర్తి", "Available": "ఖాళీగా ఉంది", "No patients waiting": "ఎవరూ వేచి లేరు", "Rx pad": "ప్రిస్క్రిప్షన్", "Print Rx": "ప్రిస్క్రిప్షన్ ప్రింట్", "Clear": "తొలగించు", "Snap / Upload": "ఫోటో తీయండి / అప్‌లోడ్", "Type token": "టోకెన్ టైప్ చేయండి", "Reset shift": "షిఫ్ట్ రీసెట్", "Lock": "లాక్", "Tokens": "టోకెన్లు", "Seen": "చూసినవారు", "No-shows": "రానివారు", "Avg time": "సగటు సమయం", "Revenue": "ఆదాయం", "Token": "టోకెన్", "Patient": "రోగి", "Visit": "సందర్శన", "Scanned / Seen": "స్కాన్ / చూసిన సమయం", "Fee": "ఫీజు", "1st visit ₹": "మొదటి సందర్శన ఫీజు ₹", "2nd visit ₹": "రెండో సందర్శన ఫీజు ₹", "Audit log": "కార్యకలాపాల లాగ్", "When": "ఎప్పుడు", "Action": "చర్య", "Token / Patient": "టోకెన్ / రోగి", "No completed visits yet": "ఇంకా పూర్తయిన సందర్శనలు లేవు", "No activity yet": "ఇంకా కార్యకలాపాలు లేవు", "Security & backup": "భద్రత & బ్యాకప్", "Save Settings": "సేవ్ చేయండి", "Change PIN": "పిన్ మార్చండి", "Change password": "పాస్‌వర్డ్ మార్చండి", "Backup": "బ్యాకప్", "Restore": "రీస్టోర్", "Show Rx pad on reception": "రిసెప్షన్‌లో ప్రిస్క్రిప్షన్ చూపించు", "Return-visit window (days)": "మళ్ళీ రావడానికి గడువు (రోజులు)", "Enter PIN": "పిన్ నమోదు చేయండి", "Unlock": "అన్‌లాక్", "Offline mode": "ఆఫ్‌లైన్ మోడ్", "Register walk-in": "వాక్-ఇన్ నమోదు", "Register & print": "నమోదు & ప్రింట్", "Cancel": "రద్దు", "OK": "సరే", "Completed": "పూర్తయింది", "No-Show": "రాలేదు", "Patient full name": "రోగి పూర్తి పేరు", "Diagnosis": "రోగ నిర్ధారణ", "waiting": "వేచి ఉన్నారు", "Scanned": "స్కాన్ చేసినది", "Undo": "వెనక్కి"},T=s=>S.cfg.ui==='te'&&TE[s]||s;
 function tr(root=document.body){const te=S.cfg.ui==='te',w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(n.parentElement&&n.parentElement.closest('script,style'))continue;if(n._o===undefined)n._o=n.nodeValue;const m=n._o.match(/^([^\p{L}\p{N}]*)(.*?)\s*$/su),k=m&&m[2];n.nodeValue=te&&TE[k]?m[1]+TE[k]:n._o}(root.querySelectorAll?root:document).querySelectorAll('[placeholder]').forEach(e=>{if(e._p===undefined)e._p=e.placeholder;e.placeholder=te&&TE[e._p]||e._p})}
 const H=s=>hash('clinic|'+s),toast=(t,i='success')=>Swal.fire({toast:true,position:'top-end',icon:i,title:t,showConfirmButton:false,timer:1800});
 const KEY='SkinCareClinic_v2_6',OLD='SkinCareClinic_Nizamabad_v2_5';
-let S={q:[],arch:[],ctr:1,act:null,auto:true,fees:[500,400],sec:null,cfg:{name:'Skin Care Clinic',doc:'Dr. D. Srinivas — M.D. (Derm)',addr:'Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad',lang:'en-IN',tpl:'Token number {token}, {name}, please proceed to doctor cabin.'}};
+
+const DEFAULT_OPTS={
+  showQR:true,
+  showValidity:true,
+  showTeHeader:false,
+  showPhone:false,
+  showVisitBadge:true,
+  showApptTime:true,
+  showWaitTime:true,
+  showLateRule:true,
+  showAddr:false
+};
+
+const DESIGN_META={
+  classic:{name:'1. Classic Physical Slip (8/A4)',short:'Classic Slip',perPage:8,pgClass:'',qrSize:70},
+  split:{name:'2. Split Boarding Pass (8/A4)',short:'Split Boarding Pass',perPage:8,pgClass:'',qrSize:68},
+  badge:{name:'3. Bold Elderly-Friendly Badge (8/A4)',short:'Bold Badge',perPage:8,pgClass:'',qrSize:68},
+  mini:{name:'4. Economy Mini Grid (20/A4)',short:'Economy Mini',perPage:20,pgClass:'pg-mini',qrSize:60},
+  thermal:{name:'5. 80mm Thermal POS Receipt (4/A4)',short:'80mm Thermal POS',perPage:4,pgClass:'pg-thermal',qrSize:88}
+};
+
+let S={q:[],arch:[],ctr:1,act:null,auto:true,fees:[500,400],sec:null,cfg:{
+  name:'SKIN CARE CLINIC',
+  doc:'Dr.D.SRINIVAS — MD (DERM) Osm',
+  teHeader:'డా. డి. శ్రీనివాస్ (చర్మవ్యాధుల నిపుణులు) — స్కిన్ కేర్ క్లినిక్',
+  phone:'',
+  addr:'Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad',
+  timings:'9:30 AM to 2:00 PM',
+  waitText:'Waiting Time : 2 to 12 Hrs Approximately',
+  lateText:'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.',
+  cardStyle:'classic',
+  enabledDesigns:{classic:true,split:true,badge:true,mini:true,thermal:true},
+  tkOpts:{...DEFAULT_OPTS},
+  walkinPrompt:true,
+  lang:'en-IN',
+  tpl:'Token number {token}, {name}, please proceed to doctor cabin.'
+}};
 try{const n=localStorage.getItem(KEY),o=localStorage.getItem(OLD);if(n)S={...S,...JSON.parse(n)};else if(o){const x=JSON.parse(o),c=x.settings||{};S.q=x.queue||[];S.ctr=x.tokenCounter||1;S.act=x.activeTokenId||null;S.fees=[x.fees?.first??500,x.fees?.second??400];S.cfg={...S.cfg,name:c.clinicName||S.cfg.name,doc:c.doctorName||S.cfg.doc,addr:c.clinicAddress||S.cfg.addr,lang:c.voiceLang||S.cfg.lang,tpl:c.voiceTemplate||S.cfg.tpl}}}catch(e){}
-S.cfg={rx:false,win:10,ui:'en',sz:100,...S.cfg};S.log=S.log||[];
+S.cfg={
+  rx:false,win:10,ui:'en',sz:100,
+  timings:'9:30 AM to 2:00 PM',
+  teHeader:'డా. డి. శ్రీనివాస్ (చర్మవ్యాధుల నిపుణులు) — స్కిన్ కేర్ క్లినిక్',
+  phone:'',
+  waitText:'Waiting Time : 2 to 12 Hrs Approximately',
+  lateText:'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.',
+  cardStyle:'classic',
+  walkinPrompt:true,
+  ...S.cfg,
+  enabledDesigns:{classic:true,split:true,badge:true,mini:true,thermal:true,...(S.cfg.enabledDesigns||{})},
+  tkOpts:{...DEFAULT_OPTS,...(S.cfg.tkOpts||{})}
+};
+S.log=S.log||[];
 const commit=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}render()};
 function out(id,html,fill){$(id).innerHTML=html;fill&&fill();document.body.className=id;setTimeout(()=>window.print(),600)}
 let ok=false,busy=false,scn=null,fails=0,until=0,UNDO=[];
 function L(a,p){S.log=[{t:Date.now(),a,k:p?p.tokenNo:'',n:p?p.name:''},...S.log].slice(0,500)}
+
+function activeDesignKeys(){
+  const en=S.cfg.enabledDesigns||{};
+  const keys=Object.keys(DESIGN_META).filter(k=>en[k]!==false);
+  return keys.length?keys:['classic'];
+}
+
+function designOptionsHTML(selected){
+  const cur=selected||S.cfg.cardStyle||'classic';
+  return activeDesignKeys().map(k=>`<option value="${k}" ${k===cur?'selected':''}>${DESIGN_META[k].name}</option>`).join('');
+}
+
+function slipHTML(num,dtStr,qrAttr,ptName,styleOverride,isSingle,visitType,optsOverride){
+  const st=styleOverride||S.cfg.cardStyle||'classic';
+  const o={...DEFAULT_OPTS,...(S.cfg.tkOpts||{}),...(optsOverride||{})};
+  const win=S.cfg.win||10;
+  const tm=esc(S.cfg.timings||'9:30 AM to 2:00 PM');
+  const cln=esc(S.cfg.name||'SKIN CARE CLINIC').toUpperCase();
+  const teHd=esc(S.cfg.teHeader||'డా. డి. శ్రీనివాస్ — స్కిన్ కేర్ క్లినిక్');
+  const ph=esc(S.cfg.phone||'');
+  const addr=esc(S.cfg.addr||'');
+  const wt=esc(S.cfg.waitText||'Waiting Time : 2 to 12 Hrs Approximately');
+  const lt=esc(S.cfg.lateText||'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.');
+  const sAttr=isSingle?'style="margin:10mm auto"':'';
+  const pTag=ptName?`<small style="font-size:0.5rem;font-weight:700;display:block;max-width:32mm;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ptName)}</small>`:'';
+  const vBadge=(o.showVisitBadge&&visitType)?`<span class="tk-vbadge ${visitType==='2nd'?'tk-v2':'tk-v1'}">${visitType} VISIT</span>`:'';
+  const vAcc=(o.showVisitBadge&&visitType)?(visitType==='2nd'?'v-acc-2':'v-acc-1'):'';
+  const qrBox=o.showQR?`<div class="q" ${qrAttr}></div>`:'';
+  const teHdRow=o.showTeHeader?`<div class="tk-te-hd">${teHd}</div>`:'';
+  const phRow=(o.showPhone&&ph)?`<div class="tk-ph">📞 ${ph}</div>`:'';
+  const addrRow=(o.showAddr&&addr)?`<div class="tk-addr">${addr}</div>`:'';
+
+  if(st==='split'){
+    return `<div class="tk tk-split ${vAcc}" ${sAttr}>
+      <div class="sp-l">
+        <div>
+          ${o.showValidity?`<span class="sp-pill">FEE VALID FOR ${win} DAYS</span>`:''}
+          <div class="sp-doc">Dr.D.SRINIVAS</div>
+          <div class="sp-deg">MD (DERM) Osm</div>
+          <div class="sp-cln">${cln}</div>
+          ${teHdRow}${phRow}
+        </div>
+        <div class="sp-info">
+          ${o.showApptTime?`Appointment Time<b>${tm}</b>`:''}
+          ${o.showWaitTime?`<span>${wt}</span>`:''}
+          ${pTag}
+        </div>
+        <div>
+          ${o.showLateRule?`<div class="sp-te">${lt}</div>`:''}
+          ${addrRow}
+        </div>
+      </div>
+      <div class="sp-r">
+        <div class="sp-th">TOKEN NO</div>
+        <div class="sp-no">#${num}</div>
+        ${vBadge}
+        ${qrBox}
+        <div class="sp-dt">${dtStr}</div>
+      </div>
+    </div>`;
+  }
+  if(st==='badge'){
+    return `<div class="tk tk-badge ${vAcc}" ${sAttr}>
+      <div class="bg-hd"><b>${cln}</b>${o.showValidity?`<span>VALID ${win} DAYS</span>`:''}</div>
+      <div class="bg-sub"><span>Dr.D.SRINIVAS <small>MD (DERM) Osm</small></span><span>${dtStr}</span></div>
+      ${teHdRow||phRow?`<div style="padding:1px 0.5rem;display:flex;justify-content:space-between;background:#f8fafc">${teHdRow}${phRow}</div>`:''}
+      <div class="bg-body">
+        <div class="bg-box"><small>TOKEN</small><b>${num}</b>${vBadge}${pTag}</div>
+        ${qrBox}
+        <div class="bg-meta">
+          ${o.showApptTime?`Appt Time<b>${tm}</b>`:''}
+          ${o.showWaitTime?`<span>Wait: 2–12 Hrs</span>`:''}
+        </div>
+      </div>
+      ${(o.showLateRule||o.showAddr)?`<div class="bg-ft">${o.showLateRule?lt:''}${addrRow}</div>`:''}
+    </div>`;
+  }
+  if(st==='mini'){
+    return `<div class="tk tk-mini ${vAcc}" ${sAttr}>
+      <div>
+        ${o.showValidity?`<div class="mn-top">VALID ${win}D • ${dtStr}</div>`:`<div class="mn-top">${dtStr}</div>`}
+        <div class="mn-doc">Dr.D.SRINIVAS</div>
+        <div class="mn-cln">${cln}</div>
+        ${o.showTeHeader?`<div style="font-size:0.40625rem;font-weight:800">డా. డి. శ్రీనివాస్</div>`:''}
+        ${(o.showPhone&&ph)?`<div style="font-size:0.40625rem;font-weight:700">📞 ${ph}</div>`:''}
+      </div>
+      <div><span class="mn-no">#${num}</span>${vBadge}</div>
+      ${qrBox}
+      <div class="mn-ft">
+        ${o.showApptTime?`<b>${tm}</b><br>`:''}
+        ${o.showLateRule?`ఆలస్యం: 3–18 నం. తర్వాత`:''}
+      </div>
+    </div>`;
+  }
+  if(st==='thermal'){
+    return `<div class="tk tk-thermal ${vAcc}" ${sAttr}>
+      <div>
+        <div class="th-cln">${cln}</div>
+        <div class="th-doc">Dr.D.SRINIVAS, MD (DERM) Osm</div>
+        ${teHdRow}${phRow}
+        ${o.showValidity?`<div style="font-size:0.5625rem;font-weight:700">FEE VALID FOR ${win} DAYS</div>`:''}
+      </div>
+      <div class="th-ban">TOKEN #${num}</div>
+      ${vBadge}
+      ${ptName?`<div style="font-size:0.65625rem;font-weight:800">${esc(ptName)}</div>`:''}
+      ${qrBox}
+      <div class="th-row"><span>DATE: ${dtStr}</span><span>OPD-${String(num).padStart(3,'0')}</span></div>
+      <div class="th-ft">
+        ${o.showApptTime?`<b>Appt: ${tm}</b><br>`:''}
+        ${o.showWaitTime?`${wt}<br>`:''}
+        ${o.showLateRule?`${lt}`:''}
+        ${addrRow}
+      </div>
+    </div>`;
+  }
+  return `<div class="tk tk-classic ${vAcc}" ${sAttr}>
+    <div>
+      ${o.showValidity?`<div class="tk-top">FEE VALID FOR ${win} DAYS</div>`:''}
+      <div class="tk-doc">Dr.D.SRINIVAS</div>
+      <div class="tk-deg">MD (DERM) Osm</div>
+      <div class="tk-cln">${cln}</div>
+      ${teHdRow}${phRow}
+    </div>
+    <div class="tk-mid">
+      <div>Token No:<span class="tk-no">${num}</span>${vBadge}${pTag}</div>
+      ${qrBox}
+      <div>Date: <span class="tk-dt">${dtStr}</span></div>
+    </div>
+    ${o.showApptTime?`<div class="tk-apt">Appointment Time<b>${tm}</b></div>`:''}
+    <div>
+      ${o.showWaitTime?`<div class="tk-wt">${wt}</div>`:''}
+      ${o.showLateRule?`<div class="tk-te">${lt}</div>`:''}
+      ${addrRow}
+    </div>
+  </div>`;
+}
+
 const A={
-go(t){if(t==='fin'&&!ok)return A.auth();if(t!=='scan')A.stop();document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
- if(t==='scan')A.start();if(t==='set'){$('sn').value=S.cfg.name;$('sd').value=S.cfg.doc;$('sa').value=S.cfg.addr;$('sl').value=S.cfg.lang;$('stp').value=S.cfg.tpl;$('srx').checked=!!S.cfg.rx;$('swin').value=S.cfg.win}if(t==='fin'){$('f1').value=S.fees[0];$('f2').value=S.fees[1]}},
-pin(){if(Date.now()<until)return toast('Too many tries, wait 30s','error');if(H($('pin').value)===S.sec.pin){$('lock').style.display='none';fails=0}else if(++fails>=5){until=Date.now()+30000;fails=0}$('pin').value='';},
-async setup(){const r=await Swal.fire({title:'First-time setup',html:'<input id="n1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New 4-digit PIN"><input id="n2" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',allowOutsideClick:false,allowEscapeKey:false,confirmButtonText:'Save',preConfirm:()=>{const a=$('n1').value,b=$('n2').value;if(!/^\d{4}$/.test(a))return Swal.showValidationMessage('PIN must be 4 digits');if(b.length<6)return Swal.showValidationMessage('Password needs 6+ characters');return[a,b]}});S.sec={pin:H(r.value[0]),pass:H(r.value[1])};commit();$('lock').style.display='none'},
-async auth(){const r=await Swal.fire({title:'Finance password',input:'password',showCancelButton:true});if(!r.isConfirmed)return;if(H(r.value)===S.sec.pass){ok=true;A.go('fin')}else toast('Incorrect password','error')},
+go(t){
+  if(t==='fin'&&!ok)return A.auth();
+  if(t!=='scan')A.stop();
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===t));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  if(t==='scan')A.start();
+  if(t==='set'){
+    $('sn').value=S.cfg.name;
+    $('sd').value=S.cfg.doc;
+    $('stec').value=S.cfg.teHeader||'డా. డి. శ్రీనివాస్ (చర్మవ్యాధుల నిపుణులు) — స్కిన్ కేర్ క్లినిక్';
+    $('sph').value=S.cfg.phone||'';
+    $('sa').value=S.cfg.addr;
+    $('stm').value=S.cfg.timings||'9:30 AM to 2:00 PM';
+    $('swt').value=S.cfg.waitText||'Waiting Time : 2 to 12 Hrs Approximately';
+    $('slt').value=S.cfg.lateText||'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.';
+    $('sl').value=S.cfg.lang;
+    $('stp').value=S.cfg.tpl;
+    $('srx').checked=!!S.cfg.rx;
+    $('swp').checked=S.cfg.walkinPrompt!==false;
+    $('swin').value=S.cfg.win;
+    A.syncStudioControls();
+    A.renderPreview();
+  }
+  if(t==='fin'){$('f1').value=S.fees[0];$('f2').value=S.fees[1]}
+},
+syncStudioControls(){
+  const o={...DEFAULT_OPTS,...(S.cfg.tkOpts||{})};
+  const map={opt_qr:'showQR',opt_val:'showValidity',opt_tehd:'showTeHeader',opt_ph:'showPhone',opt_vb:'showVisitBadge',opt_apt:'showApptTime',opt_wt:'showWaitTime',opt_late:'showLateRule',opt_addr:'showAddr'};
+  Object.entries(map).forEach(([id,k])=>{if($(id))$(id).checked=!!o[k]});
+  const en=S.cfg.enabledDesigns||{};
+  if($('dsn-en-grid')){
+    $('dsn-en-grid').innerHTML=Object.entries(DESIGN_META).map(([k,m])=>`<label class="opt-item"><input type="checkbox" ${en[k]!==false?'checked':''} onchange="A.togDesignType('${k}',this.checked)"> Enable ${m.short}</label>`).join('');
+  }
+},
+togOpt(k,val){
+  S.cfg.tkOpts={...DEFAULT_OPTS,...(S.cfg.tkOpts||{}),[k]:!!val};
+  if(k==='showPhone'&&val&&!S.cfg.phone){S.cfg.phone='+91 98480 00000';if($('sph'))$('sph').value=S.cfg.phone}
+  commit();
+  A.renderPreview();
+},
+togDesignType(k,val){
+  S.cfg.enabledDesigns={...(S.cfg.enabledDesigns||{}),[k]:!!val};
+  if(!activeDesignKeys().includes(S.cfg.cardStyle))S.cfg.cardStyle=activeDesignKeys()[0];
+  commit();
+  A.syncStudioControls();
+  A.renderPreview();
+},
+setDesign(d){S.cfg.cardStyle=d;commit();A.renderPreview()},
+renderPreview(){
+  const st=S.cfg.cardStyle||'classic',meta=DESIGN_META[st]||DESIGN_META.classic;
+  if($('dsn-chip'))$('dsn-chip').textContent=meta.short;
+  document.querySelectorAll('#dsn-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.d===st));
+  const box=$('tk-prev');if(!box)return;
+  box.innerHTML=slipHTML(83,fd(today()).toUpperCase(),'id="qprev"','Sample Patient',st,false,'1st');
+  if($('qprev')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('qprev'),{text:'OPD-083|'+today(),width:meta.qrSize,height:meta.qrSize});
+},
+testPrint(){
+  A.card({tokenNo:'OPD-083',name:'Sample Patient',visitType:'1st',cardDate:today()});
+},
+async resetPinPrompt(){
+  const r=await Swal.fire({
+    title:'Reset PIN / Security',
+    text:'Enter master reset code or click OK to clear security credentials so you can set a new PIN.',
+    input:'password',
+    inputPlaceholder:'Optional unlock code',
+    showCancelButton:true,
+    confirmButtonText:'Reset Security'
+  });
+  if(r.isConfirmed){
+    if(!S.sec) S.sec={};
+    S.sec.pin = H('1234');
+    S.sec.pass = H('password123');
+    commit();
+    $('lock').style.display='none';
+    toast('PIN reset to 1234. Please change in Settings.');
+  }
+},
+pin(){
+  if(Date.now()<until)return toast('Too many tries, wait 30s','error');
+  if(!S.sec){
+    $('lock').style.display='none';
+    return;
+  }
+  if(H($('pin').value)===S.sec.pin){
+    $('lock').style.display='none';
+    fails=0;
+  } else if(++fails>=5){
+    until=Date.now()+30000;
+    fails=0;
+    toast('Too many incorrect attempts. Locked for 30s','error');
+  } else {
+    toast('Incorrect PIN. Attempt '+fails+'/5','error');
+  }
+  $('pin').value='';
+},
+async setup(){
+  const r=await Swal.fire({
+    title:'First-time setup',
+    html:'<input id="n1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New 4-digit PIN"><input id="n2" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',
+    allowOutsideClick:false,
+    allowEscapeKey:false,
+    confirmButtonText:'Save',
+    preConfirm:()=>{
+      const a=$('n1').value,b=$('n2').value;
+      if(!/^\d{4}$/.test(a))return Swal.showValidationMessage('PIN must be 4 digits');
+      if(b.length<6)return Swal.showValidationMessage('Password needs 6+ characters');
+      return[a,b];
+    }
+  });
+  S.sec={pin:H(r.value[0]),pass:H(r.value[1])};
+  commit();
+  $('lock').style.display='none';
+},
+async auth(){
+  const r=await Swal.fire({title:'Finance password',input:'password',showCancelButton:true});
+  if(!r.isConfirmed)return;
+  if(H(r.value)===S.sec.pass){ok=true;A.go('fin')}else toast('Incorrect password','error');
+},
 lock(){ok=false;A.go('rec')},
-async start(){await A.stop();setTimeout(async()=>{try{scn=new Html5Qrcode('qr');await scn.start({facingMode:'environment'},{fps:10,qrbox:200},t=>A.scan(t,'qr'),()=>{})}catch(e){$('qr').innerHTML='<p style="color:#94a3b8;padding:1.25rem">Camera unavailable. Use Snap / Upload or Type token.</p>'}},250)},
-async stop(){if(scn){try{if(scn.isScanning)await scn.stop();scn.clear()}catch(e){}scn=null}},
-async file(e){const f=e.target.files[0];if(!f)return;try{await A.stop();const q=new Html5Qrcode('qr'),t=await q.scanFile(f,true);q.clear();A.scan(t,'qr')}catch(x){toast('Could not read QR','error');A.start()}e.target.value=''},
-async manual(){const r=await Swal.fire({title:'Token number',input:'text',inputPlaceholder:'e.g. 012 or OPD-012',showCancelButton:true});if(r.isConfirmed&&r.value)A.scan(r.value,'manual')},
-async scan(raw,src){if(busy||!raw)return;const[a,b]=String(raw).trim().split('|'),dg=a.replace(/\D/g,'');if(!dg)return toast('Invalid token','error');
- const tk=pad(+dg),td=today(),cd=/^\d{4}-\d{2}-\d{2}$/.test(b||'')?b:td,d=S.q.find(p=>p.tokenNo===tk&&p.scanDate===td);if(d)return toast(tk+' already registered ('+d.status+')','warning');
- busy=true;try{if(cd!==td){const w=await Swal.fire({icon:'warning',title:'Card date mismatch',text:`Card is dated ${fd(cd)}, today is ${fd(td)}. Register anyway?`,showCancelButton:true});if(!w.isConfirmed)return}
- const r=await Swal.fire({title:tk,html:`<input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)"><select id="sv" class="swal2-select"><option value="1st">1st Visit — ₹${S.fees[0]}</option><option value="2nd">2nd Visit — ₹${S.fees[1]}</option></select><p id="sh" class="m" style="display:none;color:#059669">Returning patient detected</p>`,showCancelButton:true,preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value})});
- if(r.isConfirmed){A.add({tokenNo:tk,name:r.value.name,visitType:r.value.vt,fee:S.fees[r.value.vt==='1st'?0:1],cardDate:cd,source:src});A.go('rec')}}finally{busy=false}},
-last(n){const s=n.trim().toLowerCase();if(s.length<3)return null;const d=[...S.arch,...S.q].filter(p=>p.status==='Completed'&&p.name.toLowerCase()===s).map(p=>p.scanDate||dk(new Date(p.timestamp||Date.now())));if(!d.length)return null;const l=d.sort().pop();return{l,days:Math.round((new Date(today()+'T00:00:00')-new Date(l+'T00:00:00'))/864e5)}},
-sv(n){const r=A.last(n),w=!!r&&r.days<=S.cfg.win,h=$('sh');$('sv').value=w?'2nd':'1st';h.style.display=r?'block':'none';if(r){h.style.color=w?'#059669':'#d97706';h.textContent=`Last visit ${fd(r.l)} (${r.days} days ago): ${w?'within '+S.cfg.win+' days, 2nd visit fee':'over '+S.cfg.win+' days, 1st visit fee'}`}},
-add(o){const n=Date.now(),t={id:crypto.randomUUID?crypto.randomUUID():n+''+Math.random(),status:'Waiting',timestamp:n,scannedAt:n,scanDate:today(),...o};A.snap('Register '+t.tokenNo);S.q.push(t);L('Registered ('+t.source+')',t);const k=+t.tokenNo.slice(4);if(k>=S.ctr)S.ctr=k+1;commit();toast('Registered '+t.tokenNo);if(S.auto&&!S.act)setTimeout(A.next,500);return t},
-async walkin(){const r=await Swal.fire({title:'Register walk-in',input:'text',inputPlaceholder:'Patient full name',confirmButtonText:'Register & print',showCancelButton:true});if(!r.isConfirmed)return;let n=S.ctr;while(S.q.some(p=>p.tokenNo===pad(n)&&p.scanDate===today()))n++;A.card(A.add({tokenNo:pad(n),name:(r.value||'').trim()||'Walk-in Patient',visitType:'1st',fee:S.fees[0],cardDate:today(),source:'walkin'}))},
-lang(){const te=S.cfg.ui!=='te',D='Token number {token}, {name}, please proceed to doctor cabin.',TT='టోకెన్ నంబర్ {num}, {name}, దయచేసి లోపలికి రండి.';S.cfg.ui=te?'te':'en';if(te&&S.cfg.tpl===D){S.cfg.tpl=TT;S.cfg.lang='te-IN'}if(!te&&S.cfg.tpl===TT){S.cfg.tpl=D;S.cfg.lang='en-IN'}commit()},
+async start(){
+  await A.stop();
+  if(location.protocol==='file:'){
+    $('qr').innerHTML='<div style="padding:1.75rem;text-align:center;color:#94a3b8"><p style="color:#f59e0b;font-weight:700;margin-bottom:0.375rem">⚠️ Camera requires HTTP server</p><p style="font-size:0.75rem;margin:0">Browsers restrict camera access on local file:// URLs. Please use <b>Snap / Upload</b> or <b>Type token</b> below, or serve via a local server.</p></div>';
+    return;
+  }
+  setTimeout(async()=>{
+    try{
+      scn=new Html5Qrcode('qr');
+      await scn.start({facingMode:'environment'},{fps:10,qrbox:200},t=>A.scan(t,'qr'),()=>{});
+    }catch(e){
+      $('qr').innerHTML='<p style="color:#94a3b8;padding:1.25rem;text-align:center">Camera unavailable or blocked. Use Snap / Upload or Type token.</p>';
+    }
+  },250);
+},
+async stop(){
+  if(scn){
+    try{if(scn.isScanning)await scn.stop();scn.clear()}catch(e){}
+    scn=null;
+  }
+},
+async file(e){
+  const f=e.target.files[0];
+  if(!f)return;
+  try{
+    await A.stop();
+    const q=new Html5Qrcode('qr'),t=await q.scanFile(f,true);
+    q.clear();
+    A.scan(t,'qr');
+  }catch(x){
+    toast('Could not read QR from image','error');
+    A.start();
+  }
+  e.target.value='';
+},
+async manual(){
+  const r=await Swal.fire({title:'Token number',input:'text',inputPlaceholder:'e.g. 012 or OPD-012',showCancelButton:true});
+  if(r.isConfirmed&&r.value)A.scan(r.value,'manual');
+},
+async scan(raw,src){
+  if(busy||!raw)return;
+  const[a,b]=String(raw).trim().split('|'),dg=a.replace(/\D/g,'');
+  if(!dg)return toast('Invalid token','error');
+  const tk=pad(+dg),td=today(),cd=/^\d{4}-\d{2}-\d{2}$/.test(b||'')?b:td;
+  const d=S.q.find(p=>p.tokenNo===tk&&p.scanDate===td);
+  if(d)return toast(tk+' already registered ('+d.status+')','warning');
+  busy=true;
+  try{
+    if(cd!==td){
+      const w=await Swal.fire({icon:'warning',title:'Card date mismatch',text:`Card is dated ${fd(cd)}, today is ${fd(td)}. Register anyway?`,showCancelButton:true});
+      if(!w.isConfirmed)return;
+    }
+    const r=await Swal.fire({
+      title:tk,
+      html:`<input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)">
+            <select id="sv" class="swal2-select"><option value="1st">1st Visit — ₹${S.fees[0]}</option><option value="2nd">2nd Visit — ₹${S.fees[1]}</option></select>
+            <p id="sh" class="m" style="display:none;color:#059669">Returning patient detected</p>`,
+      showCancelButton:true,
+      preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value})
+    });
+    if(r.isConfirmed){
+      A.add({tokenNo:tk,name:r.value.name,visitType:r.value.vt,fee:S.fees[r.value.vt==='1st'?0:1],cardDate:cd,source:src});
+      A.go('rec');
+    }
+  }finally{busy=false}
+},
+last(n){
+  const s=n.trim().toLowerCase();
+  if(s.length<3)return null;
+  const d=[...S.arch,...S.q].filter(p=>p.status==='Completed'&&p.name.toLowerCase()===s).map(p=>p.scanDate||dk(new Date(p.timestamp||Date.now())));
+  if(!d.length)return null;
+  const l=d.sort().pop();
+  return{l,days:Math.round((new Date(today()+'T00:00:00')-new Date(l+'T00:00:00'))/864e5)};
+},
+sv(n){
+  const r=A.last(n),w=!!r&&r.days<=S.cfg.win,h=$('sh');
+  if($('sv'))$('sv').value=w?'2nd':'1st';
+  if(!h)return;
+  h.style.display=r?'block':'none';
+  if(r){
+    h.style.color=w?'#059669':'#d97706';
+    h.textContent=`Last visit ${fd(r.l)} (${r.days} days ago): ${w?'within '+S.cfg.win+' days, 2nd visit fee':'over '+S.cfg.win+' days, 1st visit fee'}`;
+  }
+},
+add(o){
+  const n=Date.now(),t={id:crypto.randomUUID?crypto.randomUUID():n+''+Math.random(),status:'Waiting',timestamp:n,scannedAt:n,scanDate:today(),...o};
+  A.snap('Register '+t.tokenNo);
+  S.q.push(t);
+  L('Registered ('+t.source+')',t);
+  const k=+t.tokenNo.slice(4);
+  if(k>=S.ctr)S.ctr=k+1;
+  commit();
+  toast('Registered '+t.tokenNo);
+  if(S.auto&&!S.act)setTimeout(A.next,500);
+  return t;
+},
+async walkin(){
+  let n=S.ctr;while(S.q.some(p=>p.tokenNo===pad(n)&&p.scanDate===today()))n++;
+  if(S.cfg.walkinPrompt===false){
+    const r=await Swal.fire({title:`Register Walk-in (${pad(n)})`,input:'text',inputPlaceholder:'Patient full name',confirmButtonText:'Register & print',showCancelButton:true});
+    if(!r.isConfirmed)return;
+    const t=A.add({tokenNo:pad(n),name:(r.value||'').trim()||'Walk-in Patient',visitType:'1st',fee:S.fees[0],cardDate:today(),source:'walkin'});
+    return A.card(t);
+  }
+  const r=await Swal.fire({
+    title:`Walk-in Token ${pad(n)}`,
+    html:`<input id="sn1" class="swal2-input" placeholder="Patient full name (optional)" oninput="A.sv(this.value)">
+          <select id="sv" class="swal2-select" style="width:86%;margin:0.375rem auto">
+            <option value="1st">1st Visit — ₹${S.fees[0]}</option>
+            <option value="2nd">2nd Visit — ₹${S.fees[1]}</option>
+          </select>
+          <p id="sh" class="m" style="display:none;color:#059669"></p>
+          <label class="m" style="display:block;margin-top:0.5rem">Token Print Style (Optional)</label>
+          <select id="wd" class="swal2-select" style="width:86%;margin:0.25rem auto">
+            ${designOptionsHTML(S.cfg.cardStyle)}
+            <option value="none">🚫 Register Only (Skip Printing)</option>
+          </select>`,
+    confirmButtonText:'Register',
+    showCancelButton:true,
+    preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value,dsn:$('wd').value})
+  });
+  if(!r.isConfirmed)return;
+  const {name,vt,dsn}=r.value;
+  const t=A.add({tokenNo:pad(n),name,visitType:vt,fee:S.fees[vt==='1st'?0:1],cardDate:today(),source:'walkin'});
+  if(dsn!=='none'){S.cfg.cardStyle=dsn;commit();A.card(t,dsn)}
+},
+lang(){
+  const te=S.cfg.ui!=='te',D='Token number {token}, {name}, please proceed to doctor cabin.',TT='టోకెన్ నంబర్ {num}, {name}, దయచేసి లోపలికి రండి.';
+  S.cfg.ui=te?'te':'en';
+  if(te&&S.cfg.tpl===D){S.cfg.tpl=TT;S.cfg.lang='te-IN'}
+  if(!te&&S.cfg.tpl===TT){S.cfg.tpl=D;S.cfg.lang='en-IN'}
+  commit();
+},
 zoom(){document.documentElement.style.setProperty('--s',S.cfg.sz/100);$('szv').textContent=S.cfg.sz+'%';$('sz').value=S.cfg.sz},
 size(v){S.cfg.sz=+v;A.zoom();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},
 menu(o){$('ov').classList.toggle('on',!!o);$('dr').classList.toggle('on',!!o)},
 snap(l){UNDO.push({l,q:JSON.stringify(S.q),act:S.act,ctr:S.ctr});if(UNDO.length>15)UNDO.shift()},
-undo(){const u=UNDO.pop();if(!u)return;S.q=JSON.parse(u.q);S.act=u.act;S.ctr=u.ctr;L('Undid: '+u.l);commit();toast('Undone: '+u.l)},
-cardId(id){A.card(S.q.find(p=>p.id===id))},
-card(t){const c=S.cfg;out('ps',`<div class="tk" style="width:55mm;height:65mm;margin:auto;font-size:0.5625rem"><div><b style="font-size:0.625rem">${esc(c.name)}</b>${esc(c.doc)} | ${fd(t.cardDate)}</div><div class="q" id="q1"></div><div><b style="font-size:1.375rem">${t.tokenNo}</b>${esc(t.name)}</div><div style="font-size:0.375rem">${esc(c.addr)}</div></div>`,()=>new QRCode($('q1'),{text:t.tokenNo+'|'+t.cardDate,width:90,height:90}))},
-async batch(){const r=await Swal.fire({title:'Print A4 batch',html:`<label class="m">Tokens</label><input id="bc" type="number" class="swal2-input" value="200" min="20" max="500"><label class="m">Start from token no.</label><input id="bs" type="number" class="swal2-input" value="${S.ctr}" min="1"><label class="m">Card date</label><input id="bd" type="date" class="swal2-input" value="${today()}">`,showCancelButton:true,preConfirm:()=>({c:+$('bc').value||200,s:+$('bs').value||1,d:$('bd').value||today()})});
- if(!r.isConfirmed)return;const{c:n,s,d}=r.value,cc=S.cfg;let h='';for(let i=0;i<n;i+=20){h+='<div class="pg">';for(let j=i;j<Math.min(n,i+20);j++)h+=`<div class="tk"><div><b style="font-size:0.5rem">${esc(cc.name)}</b>${esc(cc.doc)} | ${fd(d)}</div><div class="q" data-t="${pad(s+j)}"></div><div><b>${pad(s+j)}</b>Scan token</div><div style="font-size:0.3125rem">${esc(cc.addr)}</div></div>`;h+='</div>'}
- out('pb',h,()=>document.querySelectorAll('#pb .q').forEach(e=>new QRCode(e,{text:e.dataset.t+'|'+d,width:80,height:80})));toast(`${n} cards for ${fd(d)}`)},
-async resolve(){const a=S.q.find(p=>p.id===S.act);if(!a)return true;const r=await Swal.fire({title:a.tokenNo+' is still inside',text:'Mark this patient first.',showDenyButton:true,showCancelButton:true,confirmButtonText:'Completed',denyButtonText:'No-Show'});if(r.isDismissed)return false;A.done(r.isConfirmed?'Completed':'No-Show',false,false);return true},
-async next(){const w=S.q.filter(p=>p.status==='Waiting');if(!w.length)return toast('Queue empty','info');if(!await A.resolve())return;A.call(w[0])},
-async callId(id){if(S.act===id)return;if(!await A.resolve())return;A.call(S.q.find(p=>p.id===id))},
-call(p){A.snap('Call '+p.tokenNo);L('Called',p);p.status='Serving';p.calledAtTimestamp=Date.now();S.act=p.id;commit();A.say(p);toast('Calling '+p.tokenNo)},
-done(st,notify=true,chain=true){const p=S.q.find(x=>x.id===S.act);if(!p)return;A.snap(st+' '+p.tokenNo);L(st,p);p.status=st;if(st==='Completed')p.completedAtTimestamp=Date.now();S.act=null;commit();if(notify)toast('Marked '+st);if(chain&&S.auto&&st==='Completed')setTimeout(()=>S.q.some(x=>x.status==='Waiting')&&A.next(),1200)},
-del(id){const p=S.q.find(x=>x.id===id);if(!p)return;A.snap('Cancel '+p.tokenNo);L('Cancelled',p);S.q=S.q.filter(x=>x.id!==id);commit()},
-say(p){if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(S.cfg.tpl.split('{token}').join(p.tokenNo).split('{num}').join(+p.tokenNo.slice(4)).split('{name}').join(p.name));u.lang=S.cfg.lang;u.rate=.95;speechSynthesis.speak(u);const v=speechSynthesis.getVoices();if(v.length&&!v.some(x=>x.lang.replace('_','-').startsWith(S.cfg.lang.slice(0,2))))toast('No '+S.cfg.lang+' voice on this device','warning')},
+undo(){
+  const u=UNDO.pop();
+  if(!u)return;
+  S.q=JSON.parse(u.q);
+  S.act=u.act;
+  S.ctr=u.ctr;
+  L('Undid: '+u.l);
+  commit();
+  toast('Undone: '+u.l);
+},
+async cardId(id){
+  const p=S.q.find(x=>x.id===id);if(!p)return;
+  const keys=activeDesignKeys();
+  if(keys.length===1)return A.card(p,keys[0]);
+  const r=await Swal.fire({
+    title:`Print ${p.tokenNo}`,
+    html:`<label class="m">Select Token Design</label><select id="pds" class="swal2-select" style="width:90%">${designOptionsHTML(S.cfg.cardStyle)}</select>`,
+    confirmButtonText:'🖨 Print',
+    showCancelButton:true,
+    preConfirm:()=>$('pds').value
+  });
+  if(r.isConfirmed)A.card(p,r.value);
+},
+card(t,styleOverride){
+  const st=styleOverride||S.cfg.cardStyle||'classic',meta=DESIGN_META[st]||DESIGN_META.classic;
+  const num=+t.tokenNo.slice(4),dtStr=fd(t.cardDate).toUpperCase();
+  out('ps',slipHTML(num,dtStr,'id="q1"',t.name,st,true,t.visitType),()=>{
+    if($('q1')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('q1'),{text:t.tokenNo+'|'+t.cardDate,width:meta.qrSize,height:meta.qrSize});
+  });
+},
+async batch(){
+  const o={...DEFAULT_OPTS,...(S.cfg.tkOpts||{})};
+  const r=await Swal.fire({
+    title:'Print A4 Batch Cards',
+    html:`<label class="m">Token Design Style</label>
+          <select id="bstyle" class="swal2-select" style="width:100%;margin:0.25rem 0 0.5rem">
+            ${Object.entries(DESIGN_META).map(([k,m])=>`<option value="${k}" ${k===(S.cfg.cardStyle||'classic')?'selected':''}>${m.name}</option>`).join('')}
+          </select>
+          <div class="grid" style="text-align:left;margin:0.375rem 0">
+            <label class="m">Total Tokens<input id="bc" type="number" value="64" min="4" max="500"></label>
+            <label class="m">Start Token #<input id="bs" type="number" value="${S.ctr}" min="1"></label>
+          </div>
+          <div class="grid" style="text-align:left;margin:0.375rem 0">
+            <label class="m">Card Date<input id="bd" type="date" value="${today()}"></label>
+            <label class="m">Visit Badge (Optional)<select id="bvb"><option value="">None (Generic)</option><option value="1st">1st Visit Badge</option><option value="2nd">2nd Visit Badge</option></select></label>
+          </div>
+          <div class="opt-grid" style="text-align:left;margin-top:0.5rem">
+            <label class="opt-item"><input type="checkbox" id="b_qr" ${o.showQR?'checked':''}> QR Code</label>
+            <label class="opt-item"><input type="checkbox" id="b_val" ${o.showValidity?'checked':''}> 10-Day Validity</label>
+            <label class="opt-item"><input type="checkbox" id="b_tehd" ${o.showTeHeader?'checked':''}> Telugu Header</label>
+            <label class="opt-item"><input type="checkbox" id="b_ph" ${o.showPhone?'checked':''}> Phone No.</label>
+            <label class="opt-item"><input type="checkbox" id="b_apt" ${o.showApptTime?'checked':''}> Appt Time</label>
+            <label class="opt-item"><input type="checkbox" id="b_late" ${o.showLateRule?'checked':''}> Late Rule</label>
+          </div>`,
+    showCancelButton:true,
+    confirmButtonText:'🖨 Print Batch',
+    preConfirm:()=>({
+      st:$('bstyle').value,
+      c:+$('bc').value||64,
+      s:+$('bs').value||1,
+      d:$('bd').value||today(),
+      vb:$('bvb').value||undefined,
+      bOpts:{
+        showQR:$('b_qr').checked,
+        showValidity:$('b_val').checked,
+        showTeHeader:$('b_tehd').checked,
+        showPhone:$('b_ph').checked,
+        showApptTime:$('b_apt').checked,
+        showLateRule:$('b_late').checked,
+        showVisitBadge:!!$('bvb').value
+      }
+    })
+  });
+  if(!r.isConfirmed)return;
+  const{st,c:n,s,d,vb,bOpts}=r.value,meta=DESIGN_META[st]||DESIGN_META.classic,per=meta.perPage,dtStr=fd(d).toUpperCase();
+  S.cfg.cardStyle=st;
+  S.cfg.tkOpts={...S.cfg.tkOpts,...bOpts};
+  commit();
+  let h='';
+  for(let i=0;i<n;i+=per){
+    h+=`<div class="pg ${meta.pgClass}">`;
+    for(let j=i;j<Math.min(n,i+per);j++){
+      const tkCode=pad(s+j),num=s+j;
+      h+=slipHTML(num,dtStr,`data-t="${tkCode}"`,undefined,st,false,vb,bOpts);
+    }
+    h+='</div>';
+  }
+  out('pb',h,()=>{
+    if(bOpts.showQR!==false){
+      document.querySelectorAll('#pb .q').forEach(e=>new QRCode(e,{text:e.dataset.t+'|'+d,width:meta.qrSize,height:meta.qrSize}));
+    }
+  });
+  toast(`${n} cards (${meta.short}) for ${fd(d)}`);
+},
+async resolve(){
+  const a=S.q.find(p=>p.id===S.act);
+  if(!a)return true;
+  const r=await Swal.fire({title:a.tokenNo+' is still inside',text:'Mark this patient first.',showDenyButton:true,showCancelButton:true,confirmButtonText:'Completed',denyButtonText:'No-Show'});
+  if(r.isDismissed)return false;
+  A.done(r.isConfirmed?'Completed':'No-Show',false,false);
+  return true;
+},
+async next(){
+  const w=S.q.filter(p=>p.status==='Waiting');
+  if(!w.length)return toast('Queue empty','info');
+  if(!await A.resolve())return;
+  A.call(w[0]);
+},
+async callId(id){
+  if(S.act===id)return;
+  if(!await A.resolve())return;
+  A.call(S.q.find(p=>p.id===id));
+},
+call(p){
+  A.snap('Call '+p.tokenNo);
+  L('Called',p);
+  p.status='Serving';
+  p.calledAtTimestamp=Date.now();
+  S.act=p.id;
+  commit();
+  A.say(p);
+  toast('Calling '+p.tokenNo);
+},
+done(st,notify=true,chain=true){
+  const p=S.q.find(x=>x.id===S.act);
+  if(!p)return;
+  A.snap(st+' '+p.tokenNo);
+  L(st,p);
+  p.status=st;
+  if(st==='Completed')p.completedAtTimestamp=Date.now();
+  S.act=null;
+  commit();
+  if(notify)toast('Marked '+st);
+  if(chain&&S.auto&&st==='Completed')setTimeout(()=>S.q.some(x=>x.status==='Waiting')&&A.next(),1200);
+},
+async late(id){
+  const p=id?S.q.find(x=>x.id===id):S.q.find(x=>x.id===S.act);
+  if(!p)return toast('No active patient selected','info');
+  const r=await Swal.fire({
+    title:`Late Arrival: ${p.tokenNo}`,
+    html:`<p class="m" style="margin:0 0 0.5rem">ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.<br>Push <b>${esc(p.name)}</b> back by how many waiting tokens?</p>
+          <div class="lchips" id="lch">
+            <button type="button" onclick="A.setLp(3,this)">+3</button>
+            <button type="button" class="on" onclick="A.setLp(5,this)">+5</button>
+            <button type="button" onclick="A.setLp(10,this)">+10</button>
+            <button type="button" onclick="A.setLp(15,this)">+15</button>
+            <button type="button" onclick="A.setLp(18,this)">+18</button>
+          </div>
+          <input id="lpin" type="number" class="swal2-input" min="3" max="18" value="5" style="width:7.5rem;text-align:center;font-weight:800">`,
+    showCancelButton:true,
+    confirmButtonText:'Push Back',
+    preConfirm:()=>{const v=+$('lpin').value;if(v<3||v>18)return Swal.showValidationMessage('Enter between 3 and 18 tokens');return v}
+  });
+  if(!r.isConfirmed)return;
+  const k=r.value,wasAct=S.act===p.id,oldIdx=S.q.findIndex(x=>x.id===p.id);
+  A.snap(`Late +${k} ${p.tokenNo}`);
+  if(wasAct)S.act=null;
+  p.status='Waiting';
+  p.lateShift=(p.lateShift||0)+k;
+  S.q.splice(oldIdx,1);
+  let startIdx=wasAct?0:oldIdx,wCount=0,insIdx=S.q.length;
+  for(let i=startIdx;i<S.q.length;i++){
+    if(S.q[i].status==='Waiting'){
+      wCount++;
+      if(wCount===k){insIdx=i+1;break}
+    }
+  }
+  S.q.splice(insIdx,0,p);
+  L(`Late pushback (+${k} tokens)`,p);
+  commit();
+  toast(`${p.tokenNo} pushed back +${k} tokens`);
+  if(wasAct&&S.auto&&S.q.some(x=>x.status==='Waiting'&&x.id!==p.id))setTimeout(()=>A.next(),600);
+},
+setLp(v,btn){
+  $('lpin').value=v;
+  document.querySelectorAll('#lch button').forEach(b=>b.classList.toggle('on',b===btn));
+},
+del(id){
+  const p=S.q.find(x=>x.id===id);
+  if(!p)return;
+  A.snap('Cancel '+p.tokenNo);
+  L('Cancelled',p);
+  S.q=S.q.filter(x=>x.id!==id);
+  commit();
+},
+say(p){
+  if(!window.speechSynthesis)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(S.cfg.tpl.split('{token}').join(p.tokenNo).split('{num}').join(+p.tokenNo.slice(4)).split('{name}').join(p.name));
+  u.lang=S.cfg.lang;
+  u.rate=.95;
+  speechSynthesis.speak(u);
+},
 med(s){if(s.value){$('rb').value+=($('rb').value?'\n':'')+s.value;s.value=''}},
-rx(){const a=S.q.find(p=>p.id===S.act);if(!a)return toast('No active patient','error');const c=S.cfg;out('pr',`<h2>${esc(c.name)}</h2><p><b>${esc(c.doc)}</b><br>${esc(c.addr)}</p><p>Date: ${fd(today())} &nbsp; Token: ${a.tokenNo}<br>Patient: <b>${esc(a.name)}</b><br>Diagnosis: ${esc($('rd').value)}</p><hr><b>Rx</b><pre style="white-space:pre-wrap;min-height:15.625rem">${esc($('rb').value)||'—'}</pre><p class="m">Fee valid for ${S.cfg.win} days only.</p>`)},
-fees(){const a=+$('f1').value,b=+$('f2').value;if(a>=0&&b>=0){L('Fees changed to '+a+' / '+b);S.fees=[a,b];commit();toast('Fees updated')}},
-cfg(){S.cfg={...S.cfg,name:$('sn').value.trim()||S.cfg.name,doc:$('sd').value.trim(),addr:$('sa').value.trim(),lang:$('sl').value,tpl:$('stp').value.trim()||S.cfg.tpl,rx:$('srx').checked,win:Math.max(0,parseInt($('swin').value)||0)};commit();toast('Saved')},
-async reset(){const r=await Swal.fire({icon:'warning',title:'Reset daily shift?',text:'Today’s records move to the archive (kept in CSV export), the queue clears and numbering restarts at #001.',showCancelButton:true,confirmButtonColor:'#dc2626'});if(r.isConfirmed){L('Shift reset');UNDO=[];S.arch.push(...S.q);S.q=[];S.ctr=1;S.act=null;commit();A.go('rec')}},
-dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()},
-csv(){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',f=t=>t?new Date(t).toLocaleString('en-IN'):'';A.dl('clinic_'+today()+'.csv',['Scan date,Scan time,Token,Patient,Visit,Fee,Status,Card date,Source,Called,Completed',...[...S.arch,...S.q].map(p=>[fd(p.scanDate),ft(p.scannedAt),p.tokenNo,p.name,p.visitType,p.fee,p.status,fd(p.cardDate),p.source,f(p.calledAtTimestamp),f(p.completedAtTimestamp)].map(q).join(','))].join('\n'),'text/csv')},
-pdf(){const d=new jspdf.jsPDF(),c=S.q.filter(p=>p.status==='Completed');d.text(S.cfg.name+' - '+fd(today()),14,20);d.setFontSize(10);d.text(`Seen: ${c.length} | Revenue: Rs.${c.reduce((a,p)=>a+(p.fee||0),0)}`,14,28);let y=38;c.forEach(p=>{if(y>280){d.addPage();y=20}d.text(`${p.tokenNo} ${p.name} (${p.visitType}) Rs.${p.fee} scanned ${fd(p.scanDate)} ${ft(p.scannedAt)}`,14,y);y+=7});d.save('Finance_'+today()+'.pdf')},
-async secret(k){const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New 4-digit PIN':'New password (6+)'}">`,showCancelButton:true,preConfirm:()=>{const o=$('o').value,n=$('n').value;if(H(o)!==S.sec[k])return Swal.showValidationMessage('Current value is wrong');if(p?!/^\d{4}$/.test(n):n.length<6)return Swal.showValidationMessage(p?'PIN must be 4 digits':'Use 6+ characters');return n}});if(r.isConfirmed){S.sec[k]=H(r.value);commit();toast('Updated')}},
+rx(){
+  const a=S.q.find(p=>p.id===S.act);
+  if(!a)return toast('No active patient','error');
+  const c=S.cfg;
+  out('pr',`<h2>${esc(c.name)}</h2><p><b>${esc(c.doc)}</b><br>${esc(c.addr)}</p><p>Date: ${fd(today())} &nbsp; Token: ${a.tokenNo}<br>Patient: <b>${esc(a.name)}</b><br>Diagnosis: ${esc($('rd').value)}</p><hr><b>Rx</b><pre style="white-space:pre-wrap;min-height:15.625rem">${esc($('rb').value)||'—'}</pre><p class="m">Fee valid for ${S.cfg.win} days only.</p>`);
+},
+fees(){
+  const a=+$('f1').value,b=+$('f2').value;
+  if(a>=0&&b>=0){
+    L('Fees changed to '+a+' / '+b);
+    S.fees=[a,b];
+    commit();
+    toast('Fees updated');
+  }
+},
+cfg(){
+  S.cfg={
+    ...S.cfg,
+    name:$('sn').value.trim()||S.cfg.name,
+    doc:$('sd').value.trim(),
+    teHeader:$('stec').value.trim()||'డా. డి. శ్రీనివాస్ (చర్మవ్యాధుల నిపుణులు) — స్కిన్ కేర్ క్లినిక్',
+    phone:$('sph').value.trim(),
+    addr:$('sa').value.trim(),
+    timings:$('stm').value.trim()||'9:30 AM to 2:00 PM',
+    waitText:$('swt').value.trim()||'Waiting Time : 2 to 12 Hrs Approximately',
+    lateText:$('slt').value.trim()||'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.',
+    lang:$('sl').value,
+    tpl:$('stp').value.trim()||S.cfg.tpl,
+    rx:$('srx').checked,
+    walkinPrompt:$('swp').checked,
+    win:Math.max(0,parseInt($('swin').value)||0)
+  };
+  commit();
+  A.renderPreview();
+  toast('Saved');
+},
+async reset(){
+  const r=await Swal.fire({icon:'warning',title:'Reset daily shift?',text:'Today’s records move to the archive (kept in CSV export), the queue clears and numbering restarts at #001.',showCancelButton:true,confirmButtonColor:'#dc2626'});
+  if(r.isConfirmed){
+    L('Shift reset');
+    UNDO=[];
+    S.arch.push(...S.q);
+    S.q=[];
+    S.ctr=1;
+    S.act=null;
+    commit();
+    A.go('rec');
+  }
+},
+dl(n,t,m){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([t],{type:m}));
+  a.download=n;
+  a.click();
+},
+csv(){
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',f=t=>t?new Date(t).toLocaleString('en-IN'):'';
+  A.dl('clinic_'+today()+'.csv',['Scan date,Scan time,Token,Patient,Visit,Fee,Status,Card date,Source,Called,Completed',...[...S.arch,...S.q].map(p=>[fd(p.scanDate),ft(p.scannedAt),p.tokenNo,p.name,p.visitType,p.fee,p.status,fd(p.cardDate),p.source,f(p.calledAtTimestamp),f(p.completedAtTimestamp)].map(q).join(','))].join('\n'),'text/csv');
+},
+pdf(){
+  const d=new jspdf.jsPDF(),c=S.q.filter(p=>p.status==='Completed');
+  d.text(S.cfg.name+' - '+fd(today()),14,20);
+  d.setFontSize(10);
+  d.text(`Seen: ${c.length} | Revenue: Rs.${c.reduce((a,p)=>a+(p.fee||0),0)}`,14,28);
+  let y=38;
+  c.forEach(p=>{
+    if(y>280){d.addPage();y=20}
+    d.text(`${p.tokenNo} ${p.name} (${p.visitType}) Rs.${p.fee} scanned ${fd(p.scanDate)} ${ft(p.scannedAt)}`,14,y);
+    y+=7;
+  });
+  d.save('Finance_'+today()+'.pdf');
+},
+async secret(k){
+  const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New 4-digit PIN':'New password (6+)'}">`,showCancelButton:true,preConfirm:()=>{const o=$('o').value,n=$('n').value;if(H(o)!==S.sec[k])return Swal.showValidationMessage('Current value is wrong');if(p?!/^\d{4}$/.test(n):n.length<6)return Swal.showValidationMessage(p?'PIN must be 4 digits':'Use 6+ characters');return n}});
+  if(r.isConfirmed){S.sec[k]=H(r.value);commit();toast('Updated')}
+},
 backup(){A.dl('clinic_backup_'+today()+'.json',JSON.stringify(S),'application/json')},
-restore(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.q))throw 0;const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});if(c.isConfirmed){S={...S,...d};commit();toast('Restored')}}catch(x){toast('Invalid backup file','error')}};r.readAsText(f);e.target.value=''}
+restore(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!Array.isArray(d.q))throw 0;
+      const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});
+      if(c.isConfirmed){S={...S,...d};commit();toast('Restored')}
+    }catch(x){toast('Invalid backup file','error')}
+  };
+  r.readAsText(f);
+  e.target.value='';
+}
 };
+
 function render(){
  $('hn').textContent=S.cfg.name;$('hd').textContent=S.cfg.doc;document.title=S.cfg.name;$('lbt').textContent=S.cfg.ui==='te'?'EN':'తెలుగు';$('dt').textContent=fd(today());A.zoom();$('rxc').style.display=S.cfg.rx?'':'none';
  const u=UNDO[UNDO.length-1];$('ub').style.display=u?'':'none';if(u)$('ub').textContent='↩ '+T('Undo')+': '+u.l;
  $('lg').innerHTML=S.log.slice(0,100).map(e=>`<tr><td>${fd(dk(new Date(e.t)))} ${ft(e.t)}</td><td>${esc(e.a)}</td><td>${e.k} ${esc(e.n)}</td></tr>`).join('')||'<tr><td colspan="3">No activity yet</td></tr>';
  const f=($('srch').value||'').toLowerCase().trim(),w=S.q.filter(p=>p.status==='Waiting'),v=w.filter(p=>!f||p.name.toLowerCase().includes(f)||p.tokenNo.toLowerCase().includes(f));
  $('wc').textContent=w.length+' '+T('Waiting');
- $('ql').innerHTML=v.map(p=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">${p.tokenNo}</b> <span class="m">${p.visitType} • ₹${p.fee}</span><br><b>${esc(p.name)}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div><button class="ib s" onclick="A.cardId('${p.id}')"><i data-lucide="printer"></i></button><button class="ib e" onclick="A.callId('${p.id}')"><i data-lucide="megaphone"></i></button><button class="ib t" onclick="A.del('${p.id}')"><i data-lucide="trash-2"></i></button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
+ $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${p.tokenNo}</b> <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${esc(p.name)}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')"><i data-lucide="printer"></i></button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')"><i data-lucide="clock"></i></button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')"><i data-lucide="megaphone"></i></button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')"><i data-lucide="trash-2"></i></button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
  const a=S.q.find(p=>p.id===S.act);$('dtk').textContent=a?a.tokenNo:'#---';$('dnm').textContent=a?a.name:'Available';$('ap').checked=S.auto;
  const h=a?[...S.arch,...S.q].filter(p=>p.status==='Completed'&&p.name.toLowerCase()===a.name.toLowerCase()):[];$('dhi').textContent=h.length?`Returning patient, last seen ${fd(h[h.length-1].scanDate)}`:'';
  const c=S.q.filter(p=>p.status==='Completed'),tm=c.filter(p=>p.calledAtTimestamp&&p.completedAtTimestamp),av=tm.length?Math.round(tm.reduce((s,p)=>s+p.completedAtTimestamp-p.calledAtTimestamp,0)/tm.length/60000):0;
