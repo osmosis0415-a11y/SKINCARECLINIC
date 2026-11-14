@@ -1,4 +1,19 @@
-const C='clinic-v5',U=['./','./index.html','https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js','https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js','https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>Promise.all(U.map(u=>fetch(u,{mode:u.startsWith('http')?'no-cors':'same-origin'}).then(r=>c.put(u,r)).catch(()=>{})))));self.skipWaiting()});
+// Offline cache for Skin Care Clinic. Everything the app needs is stored on
+// the phone at install; later visits load from the cache and refresh it
+// quietly in the background when there is a connection.
+const C='clinic-v6';
+const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
+ './vendor/icons.js','./vendor/dialogs.js','./vendor/qrcode.min.js','./vendor/html5-qrcode.min.js',
+ './vendor/jspdf.umd.min.js','./vendor/PlusJakartaSans.woff2'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(C).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(m=>m||caches.match('./index.html'))))});
+self.addEventListener('fetch',e=>{
+  const r=e.request;
+  if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
+  e.respondWith(caches.open(C).then(async c=>{
+    const hit=await c.match(r,{ignoreSearch:true})||(r.mode==='navigate'?await c.match('./index.html'):null);
+    const net=fetch(r).then(res=>{if(res&&res.ok)c.put(r,res.clone());return res}).catch(()=>null);
+    if(hit){e.waitUntil(net);return hit}
+    return (await net)||new Response('Offline',{status:503});
+  }));
+});
