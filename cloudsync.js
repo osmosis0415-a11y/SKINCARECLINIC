@@ -41,13 +41,42 @@ function app(){return firebase.apps.length?firebase.app():firebase.initializeApp
 // patient that changed, not the whole day's list.
 function canon(v){if(Array.isArray(v))return '['+v.map(canon).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().filter(function(k){return v[k]!==undefined}).map(function(k){return JSON.stringify(k)+':'+canon(v[k])}).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
 function qKey(p){return String(p.id).replace(/[.#$\[\]\/]/g,'_')}
-var lastQ={},lastScal='',qFull=true;
-function scal(){return{wipeAt:S.wipeAt||0,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():'')}}
-function payload(){var x=scal();x.rev=++C.rev;x.updatedAt=Date.now();x.by=DEV;return x}
-function qDiff(){var upd={},cur={},n=0;(S.q||[]).forEach(function(p,i){var k=qKey(p),o=JSON.parse(JSON.stringify(p));o.o=i;var j=canon(o);cur[k]=j;if(lastQ[k]!==j){upd['q/'+k]=o;n++}});Object.keys(lastQ).forEach(function(k){if(!cur[k]){upd['q/'+k]=null;n++}});return{upd:upd,cur:cur,n:n}}
-function qIn(q){var arr=Array.isArray(q)?q:Object.keys(q||{}).map(function(k){return q[k]}).sort(function(a,b){return(a.o||0)-(b.o||0)});var m={},bytes=0;
-  if(!Array.isArray(q))Object.keys(q||{}).forEach(function(k){var j=canon(q[k]);if(lastQ[k]!==j)bytes+=j.length;m[k]=j});
-  return{arr:arr.map(function(p){var c=Object.assign({},p);delete c.o;return c}),map:m,legacy:Array.isArray(q)||!q,bytes:bytes}}
+// ---- Three-way merge (no lost patients). 'base' is the last state this phone knows is in the cloud. A change
+// made on this phone is anything that differs from base; a change from another phone is anything in the
+// cloud that differs from base. Both are kept, field by field, so two phones working at the same moment never
+// erase each other's patients. base is saved (encrypted, with the queue) so this also works after the app was
+// closed offline and reopened.
+var base={q:{},s:null},legacyQ=false,pend=0,ghosts=[];
+var SCAL=['wipeAt','ctr','act','auto','fees','day'];
+function scal(){return{wipeAt:S.wipeAt||0,ctr:S.ctr||1,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():'')}}
+function rscal(v){return{wipeAt:v.wipeAt||0,ctr:v.ctr||1,act:v.act||null,auto:!!v.auto,fees:v.fees||S.fees,day:v.day||''}}
+function payload(){return{rev:++C.rev,updatedAt:firebase.database.ServerValue.TIMESTAMP,by:DEV,day:(typeof today==='function'?today():'')}}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function locMap(){var m={};(S.q||[]).forEach(function(p,i){var o=clone(p);o.o=i;m[qKey(p)]=o});return m}
+function remMap(q){var m={};ghosts=[];if(Array.isArray(q))q.forEach(function(p,i){if(p&&p.id!=null){var o=clone(p);if(o.o==null)o.o=i;m[qKey(p)]=o}});
+  else Object.keys(q||{}).forEach(function(k){if(!q[k])return;if(q[k].id==null){ghosts.push(k);return}m[k]=clone(q[k])}); // a half record (an edit that reached the cloud after the patient was removed) is cleaned up
+  return m}
+function loadBase(){var b=S.qb;base=b&&b.cid===C.uid?{q:b.q||{},s:b.s||null}:{q:{},s:null}}
+// base is stored only when the cloud has confirmed every write, so a write lost by closing the app offline is resent, not treated as deleted
+function keepBase(){if(pend)return;S.qb={cid:C.uid,q:base.q,s:base.s}}
+function same(a,b){return canon(a)===canon(b)}
+function merge1(b,l,r){ // one patient: base, local, remote (undefined = absent)
+  if(b&&!l)return null;            // deleted on this phone (cancel / close day / undo): deletion wins
+  if(b&&!r)return null;            // deleted on another phone: deletion wins
+  if(!l)return r||null;            // new from another phone
+  if(!r)return l;                  // new on this phone, not sent yet
+  var bb=b||{},out=Object.assign({},r),ks={};Object.keys(l).concat(Object.keys(bb)).forEach(function(k){ks[k]=1});
+  Object.keys(ks).forEach(function(k){if(!same(l[k],bb[k])){if(l[k]===undefined)delete out[k];else out[k]=l[k]}});
+  return out}
+function mergeS(b,l,r){var out={},bb=b||{};SCAL.forEach(function(k){out[k]=!b?r[k]:(!same(l[k],bb[k])?l[k]:r[k])});
+  // counter: a reset (close day) on one side wins; if both phones moved it, the higher number wins so none repeats
+  if(!b||(!same(l.ctr,bb.ctr)&&!same(r.ctr,bb.ctr)))out.ctr=Math.max(+l.ctr||1,+r.ctr||1);
+  out.wipeAt=Math.max(l.wipeAt||0,r.wipeAt||0);return out}
+function dupWarn(){var seen={},d=[];(S.q||[]).forEach(function(p){if(p.status==='Cancelled')return;var k=p.tokenNo+'|'+p.scanDate;if(seen[k])d.push(p.tokenNo);seen[k]=1});
+  d=d.filter(function(t){return !dupWarn.shown[t]});if(!d.length)return;d.forEach(function(t){dupWarn.shown[t]=1});
+  try{Swal.fire({icon:'warning',title:'Same token on two phones',text:d.join(', ')+' was registered on two phones at the same moment. Both patients are kept in the queue (marked DUPLICATE). Please give one of them a new card.'})}catch(e){}}
+dupWarn.shown={};
+function bytesIn(q){var n=0,m=remMap(q);Object.keys(m).forEach(function(k){if(!same(m[k],base.q[k]))n+=canon(m[k]).length});return n}
 function pub(){
   // Public, name-free summary for the patient status page (token numbers only)
   var q=S.q||[],a=q.find(function(p){return p.id===S.act}),tk=function(p){var n=parseInt(String(p.tokenNo).replace(/\D/g,''),10);return isNaN(n)?p.tokenNo:n};
@@ -69,7 +98,7 @@ function push(){if(!C.ref||C.applying)return;clearTimeout(tmr);tmr=setTimeout(do
 var lastKeySig=null,keyState='unknown'; // unknown | empty | ok | foreign (cloud has another phone's logins: never overwrite automatically)
 function keySig(){return JSON.stringify([S.sec||null,S.vault&&S.vault.w||null,S.vault&&S.vault.kid||null])}
 function pushKeys(){if(!C.ref||!S.vault||!S.sec||!CR.key)return;keyState='ok';setTimeout(rxStart,0);if(!S.vault.kid){S.vault.kid=Math.random().toString(36).slice(2,12)}if(!S.keysAt)S.keysAt=Date.now();
-  var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();lastScal='';
+  var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();
   // sent together with the queue fields so the database rules (which require day/rev/updatedAt) accept it
   var j=JSON.stringify(pl);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){console.warn('keys',e);keyState='empty';lastKeySig=null})}
 function keysIn(k){
@@ -116,9 +145,21 @@ function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)
    .catch(function(e){rxOn=false;console.warn('rx sync',e)})}
 function doPush(){if(!C.ref||C.applying)return;
   if((keyState==='ok'||keyState==='empty')&&S.vault&&CR.key&&keySig()!==lastKeySig){S.keysAt=Date.now();pushKeys()}
-  var d=qDiff(),sc=canon(scal());
-  if(d.n||sc!==lastScal||qFull){var p=payload();if(qFull){var all={};(S.q||[]).forEach(function(x,i){var o=JSON.parse(JSON.stringify(x));o.o=i;all[qKey(x)]=o});p.q=all}else Object.assign(p,d.upd);
-    lastScal=sc;lastQ=d.cur;qFull=false;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');lastScal='';qFull=true;console.warn('cloud push',e)})}
+  var lm=locMap(),ls=scal(),upd={},n=0;
+  if(legacyQ){upd.q=lm;n=1}else{
+    // a new patient is sent whole; for an existing one only the fields that changed, so two phones editing
+    // different details of the same patient never overwrite each other
+    Object.keys(lm).forEach(function(k){var l=lm[k],b=base.q[k];if(!b){upd['q/'+k]=l;n++;return}if(same(l,b))return;
+      var fs={};Object.keys(l).concat(Object.keys(b)).forEach(function(f){fs[f]=1});
+      Object.keys(fs).forEach(function(f){if(!same(l[f],b[f])){upd['q/'+k+'/'+f]=l[f]===undefined?null:l[f];n++}})});
+    Object.keys(base.q).forEach(function(k){if(!lm[k]){upd['q/'+k]=null;n++}});
+    ghosts.forEach(function(k){if(!lm[k]){upd['q/'+k]=null;n++}});ghosts=[]}
+  // only scalars this phone changed are sent, so a stale value never overwrites another phone's newer one
+  SCAL.forEach(function(k){if(k!=='day'&&(!base.s||!same(ls[k],base.s[k]))){upd[k]=ls[k];n++}});
+  if(n){var p=payload();Object.assign(p,upd);var prev=base;base={q:lm,s:ls};legacyQ=false;pend++;
+    var j=JSON.stringify(p);count('up',j.length);
+    C.ref.update(p).then(function(){pend--;if(!pend){keepBase();origSave()}})
+     .catch(function(e){pend--;base=prev;set('err');console.warn('cloud push',e)})}
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
 function statusUrl(tok,cd){return new URL('status.html?c='+C.uid+(isDefault()?'':'&d='+encodeURIComponent(CONF.databaseURL.replace(/^https:\/\//,'')))+(tok?'&t='+encodeURIComponent(tok):'')+(cd?'&cd='+cd:''),location.href).href}
 function poster(){
@@ -129,23 +170,37 @@ function poster(){
   w.document.close();
 }
 function apply(v){
-  if((v.wipeAt||0)>(S.wipeAt||0)&&window.A&&A.wipeLocal){A.wipeLocal(v.wipeAt);origSave();try{Swal.fire({icon:'info',title:'Clinic data was cleared',text:'Admin started fresh on another phone. Old patient records on this phone were removed.',timer:3500,showConfirmButton:false})}catch(e){}setTimeout(function(){location.reload()},3600)}
-  var qi=qIn(v.q);lastQ=qi.map;qFull=qi.legacy;lastScal=canon({wipeAt:v.wipeAt||0,ctr:v.ctr||1,act:v.act||null,auto:!!v.auto,fees:v.fees||S.fees,day:v.day||''});C.applying=true;
-  try{S.q=qi.arr;S.ctr=v.ctr||1;S.act=v.act||null;S.auto=!!v.auto;if(v.fees)S.fees=v.fees;C.rev=Math.max(C.rev,v.rev||0);
-    origSave();typeof render==='function'&&render()}finally{C.applying=false}
+  if((v.wipeAt||0)>(S.wipeAt||0)&&window.A&&A.wipeLocal){A.wipeLocal(v.wipeAt);base={q:{},s:null};keepBase();origSave();try{Swal.fire({icon:'info',title:'Clinic data was cleared',text:'Admin started fresh on another phone. Old patient records on this phone were removed.',timer:3500,showConfirmButton:false})}catch(e){}setTimeout(function(){location.reload()},3600)}
+  var rm=remMap(v.q),lm=locMap(),b=base.q,ks={},out=[];
+  [rm,lm,b].forEach(function(m){Object.keys(m).forEach(function(k){ks[k]=1})});
+  var myWipe=(S.wipeAt||0)>(v.wipeAt||0); // this phone started fresh while offline: drop the older cloud queue
+  // first sync after this update (no saved base yet): the cloud is the reference; a patient only on this phone is kept
+  // if it was added after the cloud last changed (e.g. registered offline), so old, already-closed patients don't come back
+  var noBase=!base.s&&!!v.updatedAt;
+  Object.keys(ks).forEach(function(k){if(myWipe&&!lm[k]&&rm[k])return;if(noBase&&lm[k]&&!rm[k]&&(lm[k].timestamp||0)<=v.updatedAt)return;
+    var m=merge1(b[k],lm[k],rm[k]);if(m)out.push(m)});
+  out.sort(function(x,y){return((x.o||0)-(y.o||0))||((x.timestamp||0)-(y.timestamp||0))});
+  var rs=rscal(v),sc=mergeS(base.s,scal(),rs);
+  // the cloud's queue becomes the new base; anything kept only from this phone is pushed right after
+  base={q:rm,s:rs};legacyQ=Array.isArray(v.q);
+  C.applying=true;
+  try{S.q=out.map(function(p){var c=Object.assign({},p);delete c.o;return c});S.ctr=sc.ctr;S.act=sc.act;S.auto=!!sc.auto;if(sc.fees)S.fees=sc.fees;
+    if(S.act&&!S.q.some(function(p){return p.id===S.act}))S.act=null;
+    C.rev=Math.max(C.rev,v.rev||0);keepBase();origSave();typeof render==='function'&&render()}finally{C.applying=false}
+  dupWarn();push();
 }
 function listen(uid){
-  C.uid=uid;C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
+  C.uid=uid;loadBase();C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
   var first=true;
   C.ref.on('value',function(snap){
-    var v=snap.val();set('on');try{count('down',(v?qIn(v.q).bytes:0)+200)}catch(e){}if(!C.ref)return;
+    var v=snap.val();set('on');try{count('down',(v?bytesIn(v.q):0)+200)}catch(e){}if(!C.ref)return;
     try{keysIn(v&&v.keys)}catch(e){console.warn('keys in',e)}
     if(first){first=false;
-      if(!v){push();return}
-      // first connect: keep whichever side changed most recently
-      if((v.wipeAt||0)>(S.wipeAt||0)||(v.updatedAt||0)>=(S.savedAt||0))apply(v);else if((S.wipeAt||0)>=(v.wipeAt||0))push();return}
-    if(!v||v.by===DEV&&v.rev===C.rev)return;
-    if(v.by!==DEV)apply(v);
+      if(!v){base={q:{},s:null};push();return}
+      // first connect (also after working offline): merge both sides, nothing is overwritten
+      apply(v);return}
+    if(!v)return;
+    apply(v); // merging is safe for this phone's own echo too, and never skips another phone's change
   },function(e){set('err');console.warn(e);if(String(e&&e.code||e).indexOf('PERMISSION_DENIED')>=0)Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not on the clinic approved list. Ask the admin to approve it in Firebase.'})});
   firebase.database(app()).ref('.info/connected').on('value',function(s){if(C.ref)set(s.val()?'on':'offline')});
 }
@@ -196,7 +251,12 @@ async function join(email,pw){await libs();app();await firebase.auth().setPersis
   // connect properly once the clinic PIN has opened the data on this phone
   stop();keyState='unknown';lastKeySig=null;addEventListener('scc-unlocked',function(){start()},{once:true});return k}
 setInterval(devBeat,10*60000);
-window.CloudSync={conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
+// Walk-in numbers are handed out by the cloud (one number per tap, even if two phones tap together).
+// Offline or slow: falls back to this phone's own counter after 2.5 s.
+function reserve(n){if(!C.ref||C.status!=='on')return Promise.resolve(n);var got=null;
+  var t=C.ref.child('ctr').transaction(function(c){c=Math.max(+c||1,n);got=c;return c+1},null,false).then(function(r){return r.committed?got:n}).catch(function(){return n});
+  return Promise.race([t,new Promise(function(ok){setTimeout(function(){ok(n)},2500)})])}
+window.CloudSync={reserve:reserve,conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}

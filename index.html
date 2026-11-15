@@ -403,14 +403,14 @@ S.cfg={
 S.log=S.log||[];S.q=S.q||[];S.arch=S.arch||[];S.lock={f:0,until:0,lvl:0,...(S.lock||{})};
 }
 norm();
-function bootData(){if(S.vault){if(!CR.key){VK.forEach(k=>S[k]=k==='act'?null:[]);S.arch=[];RXREC=[]}}else{try{RXREC=JSON.parse(localStorage.getItem('scc_rx_rec')||'[]')}catch(e){RXREC=[]}loadHist()}window.SCC_READY=!S.vault||!!CR.key}
+function bootData(){if(S.vault){if(!CR.key){VK.forEach(k=>S[k]=k==='act'||k==='qb'?null:[]);S.arch=[];RXREC=[]}}else{try{RXREC=JSON.parse(localStorage.getItem('scc_rx_rec')||'[]')}catch(e){RXREC=[]}loadHist()}window.SCC_READY=!S.vault||!!CR.key}
 const IDB={db:null,open(){return this.db||(this.db=new Promise((ok,no)=>{try{const r=indexedDB.open('SkinCareClinic',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}))},
  async get(k='S'){const d=await this.open();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>no(q.error)})},
  async put(v,k='S'){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})},
  async del(k){const d=await this.open();return new Promise(ok=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=ok;t.onerror=ok})}};
 // ---- Encryption at rest: patient data is stored AES-256-GCM encrypted. One random data key, wrapped
 // separately by each login PIN, the finance password and the recovery code (PBKDF2-SHA256, 250k rounds).
-const VK=['q','log','act'];let RXREC=[];
+const VK=['q','log','act','qb'];let RXREC=[];
 const B64=u=>{u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)},UB=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const CR={key:null,
  async kdf(sec,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(sec),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey'])},
@@ -1040,7 +1040,7 @@ async fresh(){
   Swal.fire({icon:'success',title:'Done. The app is fresh.',text:'Token numbering starts again at OPD-001.',timer:2200,showConfirmButton:false});
   setTimeout(()=>location.reload(),2400);
 },
-wipeLocal(at){HIST.A=HIST.R=true;S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;RXREC=[];window.RxPad&&RxPad.setRecords&&RxPad.setRecords([]);try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
+wipeLocal(at){HIST.A=HIST.R=true;S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;S.qb=null;RXREC=[];window.RxPad&&RxPad.setRecords&&RxPad.setRecords([]);try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
 dev(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}},
 lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕️ Doctor screen (Doctor or Admin PIN)':d==='rec'?'🧾 Reception phone (Reception or Admin PIN)':'Doctor · Reception · Admin'},
 async users(){
@@ -1168,11 +1168,15 @@ add(o){
   if(S.auto&&!S.act)setTimeout(A.next,500);
   return t;
 },
+async wkNo(n){ // final walk-in number: reserved in the cloud so two phones never hand out the same one
+  if(window.CloudSync&&CloudSync.reserve){try{n=Math.max(n,await CloudSync.reserve(n))}catch(e){}}
+  while(S.q.some(p=>p.tokenNo===pad(n)&&p.scanDate===today()))n++;return n},
 async walkin(){
-  let n=S.ctr;while(S.q.some(p=>p.tokenNo===pad(n)&&p.scanDate===today()))n++;
+  let n=S.ctr;while(S.q.some(p=>p.tokenNo===pad(n)&&p.scanDate===today()))n++;const n0=n;
   if(S.cfg.walkinPrompt===false){
     const r=await Swal.fire({title:`Register Walk-in (${pad(n)})`,input:'text',inputPlaceholder:'Patient full name',confirmButtonText:'Register & print',showCancelButton:true});
     if(!r.isConfirmed)return;
+    n=await A.wkNo(n);if(n!==n0)toast('Another phone took '+pad(n0)+'. This patient is '+pad(n),'info');
     const t=A.add({tokenNo:pad(n),name:(r.value||'').trim(),visitType:'1st',fee:S.fees[0],cardDate:today(),source:'walkin'});
     return A.card(t);
   }
@@ -1195,6 +1199,7 @@ async walkin(){
   });
   if(!r.isConfirmed)return;
   const {name,vt,dsn,age,sex,phone,place}=r.value;
+  n=await A.wkNo(n);if(n!==n0)toast('Another phone took '+pad(n0)+'. This patient is '+pad(n),'info');
   const t=A.add({tokenNo:pad(n),name,visitType:vt,fee:S.fees[vt==='1st'?0:1],cardDate:today(),source:'walkin',age,sex,phone,place});
   if(dsn!=='none'){S.cfg.cardStyle=dsn;commit();A.card(t,dsn)}
 },
@@ -1587,7 +1592,7 @@ async secret(k){
   if(r.isConfirmed){S.sec[k]=H(r.value);await vWrap(p?'adm':'pass',r.value);commit();toast('Updated')}
 },
 lastBk(){try{return +localStorage.getItem(BKEY)||0}catch(e){return 0}},
-backupData(){const o={...S,rx:RXREC,backupAt:Date.now(),app:'SkinCareClinic'};['enc','vault','sec','lock','sec0'].forEach(k=>delete o[k]);return o},
+backupData(){const o={...S,rx:RXREC,backupAt:Date.now(),app:'SkinCareClinic'};['enc','vault','sec','lock','sec0','qb'].forEach(k=>delete o[k]);return o},
 backup(){if(!(HIST.A&&HIST.R))return toast('Loading past records… try again in a few seconds','info');if(DISK.ok)return DISK.save(true).then(()=>toast('Backup saved to hard-disk folder'));const n=new Date(),nm='clinic_backup_'+today()+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+'.json';A.dl(nm,JSON.stringify(A.backupData()),'application/json');try{localStorage.setItem(BKEY,String(Date.now()))}catch(e){}L('Backup saved ('+nm+')');commit();toast('Backup saved to Downloads')},
 diskUi(){const el=$('dsk');if(!el)return;
   if(!window.showDirectoryPicker){el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 0;font-size:.8rem">Phones cannot save straight to a folder. Tap <b>⬇ Backup</b> (it goes to Downloads), then copy the file to the clinic computer\'s hard disk. Or open this app on the clinic PC in Chrome or Edge and connect a folder there.</p>';return}
@@ -1621,7 +1626,7 @@ restore(e){
       const d=JSON.parse(r.result);
       if(!Array.isArray(d.q))throw 0;
       const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});
-      if(c.isConfirmed){HIST.A=HIST.R=true;if(Array.isArray(d.rx)){RXREC=d.rx;window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC)}const keep={sec:S.sec,vault:S.vault,lock:S.lock};['rx','enc','vault','sec','lock','sec0','app','backupAt'].forEach(k=>delete d[k]);S={...S,...d,...keep};norm();L('Backup restored');commit();toast('Restored')}
+      if(c.isConfirmed){HIST.A=HIST.R=true;if(Array.isArray(d.rx)){RXREC=d.rx;window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC)}const keep={sec:S.sec,vault:S.vault,lock:S.lock};['rx','enc','vault','sec','lock','sec0','app','backupAt','qb'].forEach(k=>delete d[k]);S={...S,...d,...keep};norm();L('Backup restored');commit();toast('Restored')}
     }catch(x){toast('Invalid backup file','error')}
   };
   r.readAsText(f);
@@ -1636,7 +1641,8 @@ function render(){
  $('lg').innerHTML=S.log.slice(0,100).map(e=>`<tr><td>${fd(dk(new Date(e.t)))} ${ft(e.t)}</td><td>${esc(e.a)}</td><td>${e.k} ${esc(e.n)}</td></tr>`).join('')||'<tr><td colspan="3">No activity yet</td></tr>';
  const f=($('srch').value||'').toLowerCase().trim(),w=S.q.filter(p=>p.status==='Waiting'),v=w.filter(p=>!f||p.name.toLowerCase().includes(f)||p.tokenNo.toLowerCase().includes(f));
  $('wc').textContent=w.length+' '+T('Waiting');
- $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${p.tokenNo}</b> <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${p.name?esc(p.name):'<span class="m">(name not entered)</span>'}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')">🖨</button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')">⏳</button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')">📢</button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')">🗑</button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
+ const DUP={};S.q.forEach(p=>{if(p.status!=='Cancelled'){const k=p.tokenNo+'|'+p.scanDate;DUP[k]=(DUP[k]||0)+1}});
+  $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${esc(p.tokenNo)}</b>${DUP[p.tokenNo+'|'+p.scanDate]>1?' <span class="chip" style="background:#fee2e2;color:#b91c1c">DUPLICATE</span>':''} <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${p.name?esc(p.name):'<span class="m">(name not entered)</span>'}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')">🖨</button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')">⏳</button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')">📢</button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')">🗑</button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
  {const t=today(),L2=RXREC.filter(x=>x.date===t).sort((a,b)=>(A.rxDone(a)-A.rxDone(b))||((b.ts||0)-(a.ts||0))),up=L2.filter(x=>!A.rxDone(x)).length;$('trx').style.display=PAD&&L2.length&&ROLE!=='rec'?'':'none';$('trxc').textContent=up?up+' to print':L2.length+' printed';$('trxc').style.background=up?'#fee2e2':'';$('trxc').style.color=up?'#b91c1c':'';
   $('trxl').innerHTML=L2.map(x=>`<div class="row c" style="margin:.3rem 0;${A.rxDone(x)?'opacity:.6':'border:2px solid #f59e0b'}"><div><b>${esc(x.p.name)}</b>${A.rxDone(x)?' <span class="chip">Printed ✓</span>':' <span class="chip" style="background:#fef3c7;color:#92400e">To print</span>'} <span class="m">${esc(x.p.token||'')} · ${esc(x.dx||'')}</span><br><span class="m">${ft(x.ts)} · ${(x.m||[]).length} medicine(s)</span></div><span style="display:flex;gap:.3rem"><button class="ib" title="Edit prescription" style="background:#ede9fe" onclick="A.rxEdit('${x.id}')">✏️</button><button class="ib s" title="Reprint" onclick="A.rxPrint('${x.id}')">🖨</button></span></div>`).join('')||'<p class="m" style="text-align:center">Today\'s prescriptions appear here to edit or reprint.</p>'}
  const a=S.q.find(p=>p.id===S.act);$('wrx').style.display=PAD&&a?'':'none';$('qrx').style.display=PAD&&a&&!a.rxId?'':'none';if(a)$('wrx').textContent=a.rxId?'📝 Open this patient\'s prescription':'📝 Write prescription for this patient';$('dtk').textContent=a?a.tokenNo:'#---';$('dnm').textContent=a?(a.name||'(name not entered)')+(a.age||a.sex?' · '+[a.age,a.sex].filter(Boolean).join(' / '):''):'Available';$('ap').checked=S.auto;
