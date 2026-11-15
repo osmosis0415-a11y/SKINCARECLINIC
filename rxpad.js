@@ -9,7 +9,7 @@
 var RxPad, P='rxpad', CFG, REC, opts={};
 var DEF={enabled:true,clinicEn:'',clinicTe:'',addrEn:'',addrTe:'',phone:'',noAppt:'No appointment by phone',hours:'',holiday:'SUNDAY HOLIDAY',
   docEn:'',docTe:'',qual:'',fellow:'',spec:'',council:'',regNo:'',paper:'A5',header:'full',topMM:70,bottomMM:40,
-  telugu:true,showQR:true,patientNote:'Not to buy medicines on old prescription.',pharmNote:'Not to supply medicines on old prescription.',
+  telugu:true,showQR:true,printAt:'doctor',patientNote:'Not to buy medicines on old prescription.',pharmNote:'Not to supply medicines on old prescription.',
   teNote:'పై మందులు డాక్టర్ గారికి చూపించిన తరువాత వాడవలెను',footerAd:'',myDrugs:[]};
 var FORMS=['TAB','CAP','SYP','SUSP','DROPS','CREAM','OINT','GEL','LOTION','SOLN','SOAP','SHAMPOO','POWDER','SERUM','INJ','KIT','OTHER'];
 var DOSES=['1-0-0','0-1-0','0-0-1','1-0-1','1-1-1','1-1-1-1','½-0-½','0-0-½','Apply once daily','Apply twice daily','Apply at night','Apply thrice daily','Twice weekly','Once weekly','SOS (if needed)','As directed'];
@@ -96,7 +96,7 @@ RxPad={
    '<div class="cd"><label>Investigations advised</label><input id="rxIn" value="'+esc(rx.inv)+'"><label>Advice / instructions</label><textarea id="rxAd">'+esc(rx.adv)+'</textarea>'+
    '<label>Review after</label><div class="row"><select id="rxRv" style="flex:1"><option value="">—</option>'+[[7,'1 week'],[14,'2 weeks'],[21,'3 weeks'],[30,'1 month'],[45,'6 weeks'],[60,'2 months'],[90,'3 months'],[180,'6 months']].map(function(x){return'<option value="'+x[0]+'"'+(String(rx.review)===String(x[0])?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><span class="muted" id="rxRvD"></span></div></div>'+
    '<p class="muted">'+(opts.storeNote||'Stored only on this device.')+' Sets and templates are starting points; the doctor must verify every medicine, dose and duration.</p></div>'+
-   '<div class="bar">'+(canSet()?'<button id="rxpSet">⚙ Rx settings</button>':'')+'<button id="rxpSet2">★ Save as set</button><button id="rxpSave">💾 Save</button><button class="p" id="rxpPrint">🖨 Print Rx</button></div>';
+   '<div class="bar">'+(canSet()?'<button id="rxpSet">⚙ Rx settings</button>':'')+'<button id="rxpSet2">★ Save as set</button><button id="rxpSave">💾 Save</button><button'+(opts.finish&&opts.finish.show(rx)?'':' class="p"')+' id="rxpPrint">🖨 Print Rx</button>'+(opts.finish&&opts.finish.show(rx)?'<button class="p" id="rxpFin" style="background:#15803d;border-color:#15803d">'+esc(opts.finish.label(rx))+'</button>':'')+'</div>';
    bind()}
   function read(){var g=function(id){var e=root.querySelector('#'+id);return e?e.value:''};
    rx.p.name=up(g('rxN')).trim();rx.p.age=g('rxA');rx.p.sex=g('rxS');rx.p.place=g('rxPl');rx.p.phone=g('rxPh').replace(/\D/g,'').slice(-10);rx.p.wt=g('rxW');rx.date=g('rxD')||dk();
@@ -113,11 +113,15 @@ RxPad={
    var rv=root.querySelector('#rxRv'),rvd=root.querySelector('#rxRvD');var sh=function(){rvd.textContent=rv.value?'on '+dshow(addDays(root.querySelector('#rxD').value||dk(),+rv.value)):''};rv.onchange=sh;sh();
    var sb=root.querySelector('#rxpSet');if(sb)sb.onclick=function(){read();RxPad.settings(function(){draw()})};
    root.querySelector('#rxpSave').onclick=function(){read();save();flash('Saved')};
+   function check(){var probs=[];if(!rx.p.name)probs.push('patient name');if(!rx.dx)probs.push('diagnosis (prescribing without a diagnosis/provisional diagnosis is professional misconduct)');
+     if(!CFG.regNo||!CFG.docEn)probs.push("doctor's name / registration number (Rx settings)");if(rx.m.some(function(m){return!m.g}))probs.push('a medicine with no name');
+     return !probs.length||window.confirm('Missing: '+probs.join('; ')+'.\n\nContinue anyway?')}
    root.querySelector('#rxpPrint').onclick=function(){read();
      var probs=[];if(!rx.p.name)probs.push('patient name');if(!rx.dx)probs.push('diagnosis (prescribing without a diagnosis/provisional diagnosis is professional misconduct)');
      if(!CFG.regNo||!CFG.docEn)probs.push("doctor's name / registration number (Rx settings)");if(rx.m.some(function(m){return!m.g}))probs.push('a medicine with no name');
      if(probs.length&&!window.confirm('Missing: '+probs.join('; ')+'.\n\nPrint anyway?'))return;
-     save();print(rx)}}
+     save();print(rx)};
+   var fb=root.querySelector('#rxpFin');if(fb)fb.onclick=function(){read();if(!check())return;save();root.remove();print(rx);opts.finish.run(rx)}}
   function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);var cap=opts.recStore?3000:800;if(REC.length>cap)REC=REC.slice(-cap);if(opts.recStore)opts.recStore.set(REC);else sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
   function flash(t){var b=root.querySelector('#rxpSave');var o=b.textContent;b.textContent='✓ '+t;setTimeout(function(){b.textContent=o},1200)}
   draw();return rx},
@@ -140,7 +144,7 @@ RxPad={
    '<div class="bar"><button class="p" id="rxsSave">Save settings</button><button id="rxsTest">🖨 Test print</button></div>';
   function rd(){root.querySelectorAll('[data-f]').forEach(function(i){s[i.dataset.f]=i.value});s.enabled=root.querySelector('#rxsEn').checked;s.paper=root.querySelector('#rxsPaper').value;s.header=root.querySelector('#rxsHead').value;
    s.topMM=+root.querySelector('#rxsTop').value||70;s.bottomMM=+root.querySelector('#rxsBot').value||40;s.telugu=root.querySelector('#rxsTe').checked;s.showQR=root.querySelector('#rxsQR').checked;
-   s.hideBuiltIn=root.querySelector('#rxsHide').checked;s.myDrugs=root.querySelector('#rxsMy').value.split('\n').map(up).map(function(x){return x.trim()}).filter(Boolean);['docEn','qual','regNo','clinicEn'].forEach(function(k){s[k]=up(s[k]).trim()})}
+   s.hideBuiltIn=root.querySelector('#rxsHide').checked;s.printAt='doctor';s.myDrugs=root.querySelector('#rxsMy').value.split('\n').map(up).map(function(x){return x.trim()}).filter(Boolean);['docEn','qual','regNo','clinicEn'].forEach(function(k){s[k]=up(s[k]).trim()})}
   root.querySelector('#rxsX').onclick=function(){root.remove()};
   root.querySelectorAll('[data-delset]').forEach(function(b){b.onclick=function(){if(!confirm('Delete set '+b.dataset.delset+'?'))return;saveSet(b.dataset.delset,null);b.parentNode.remove()}});
   root.querySelector('#rxsSave').onclick=function(){rd();CFG=s;sv(P+'_cfg',CFG);opts.cfgStore&&opts.cfgStore.set(CFG);root.remove();opts.onSettings&&opts.onSettings(CFG);done&&done()};

@@ -196,11 +196,11 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 <div id="ov" onclick="A.menu(0)"></div><aside id="dr"><div class="dh"><b>Clinic Management</b><button class="ib" onclick="A.menu(0)"><i data-lucide="x"></i></button></div>
 <button class="mi" onclick="A.go('rec');A.menu(0)"><span class="ic"><i data-lucide="monitor"></i></span>Reception</button><button class="mi" onclick="A.go('scan');A.menu(0)"><span class="ic"><i data-lucide="scan"></i></span>Scan</button><button class="mi adm" onclick="A.go('fin');A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Finance</button><button class="mi adm" onclick="A.go('set');A.menu(0)"><span class="ic"><i data-lucide="settings"></i></span>🛡 Admin portal</button><button class="mi norec" onclick="A.find();A.menu(0)"><span class="ic"><i data-lucide="search"></i></span>Patient records</button><button class="mi" onclick="A.logout();A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Switch user / Lock</button><button class="mi" onclick="A.lang();A.menu(0)"><span class="ic"><i data-lucide="languages"></i></span><span id="lbt">తెలుగు</span></button><div class="sz"><b><span>Text size</span><span id="szv">100%</span></b><input type="range" id="sz" min="85" max="160" step="5" value="100" oninput="A.size(this.value)"></div></aside>
 <main>
-<section id="rec" class="on"><div id="bkb" class="bk" style="display:none"><span><b id="bkt"></b><small>Phone data can be lost if the phone is reset or lost.</small></span><button onclick="A.backup()">Back up now</button></div><div class="c nodoc" id="qac"><div class="sh"><span class="t"><i data-lucide="user-plus"></i>Quick Actions</span><span class="chip" id="dt"></span></div><button class="qa b1" onclick="A.walkin()"><span class="ic"><i data-lucide="user-plus"></i></span><span class="tx"><b>Register Walk-in &amp; Print QR Card</b><small>Optional design picker, visit type &amp; instant print</small></span><i data-lucide="chevron-right"></i></button><button class="qa b2" onclick="A.go('scan')"><span class="ic"><i data-lucide="scan"></i></span><span class="tx"><b>Scan QR Ticket</b><small>Smart visit-type auto-detection</small></span><i data-lucide="chevron-right"></i></button><button class="qa b3" onclick="A.batch()"><span class="ic"><i data-lucide="printer"></i></span><span class="tx"><b>Print A4 Batch Cards</b><small>All 5 token designs &amp; optional fields</small></span><i data-lucide="chevron-right"></i></button><button class="am" id="ub" onclick="A.undo()" style="display:none;width:100%"></button></div>
+<section id="rec" class="on"><div id="bkb" class="bk" style="display:none"><span><b id="bkt"></b><small>Phone data can be lost if the phone is reset or lost.</small></span><button onclick="A.backup()">Back up now</button></div><div class="c" id="qac"><div class="sh"><span class="t"><i data-lucide="user-plus"></i>Quick Actions</span><span class="chip" id="dt"></span></div><button class="qa b1" onclick="A.walkin()"><span class="ic"><i data-lucide="user-plus"></i></span><span class="tx"><b>Register Walk-in &amp; Print QR Card</b><small>Optional design picker, visit type &amp; instant print</small></span><i data-lucide="chevron-right"></i></button><button class="qa b2" onclick="A.go('scan')"><span class="ic"><i data-lucide="scan"></i></span><span class="tx"><b>Scan QR Ticket</b><small>Smart visit-type auto-detection</small></span><i data-lucide="chevron-right"></i></button><button class="qa b3" onclick="A.batch()"><span class="ic"><i data-lucide="printer"></i></span><span class="tx"><b>Print A4 Batch Cards</b><small>All 5 token designs &amp; optional fields</small></span><i data-lucide="chevron-right"></i></button><button class="am" id="ub" onclick="A.undo()" style="display:none;width:100%"></button></div>
 <div class="c"><div class="row"><span class="m">NOW SERVING</span><label><input type="checkbox" id="ap" style="width:auto" onchange="S.auto=this.checked;commit()"> Auto-Pilot</label></div>
 <div class="big" id="dtk">#---</div><p id="dnm" style="text-align:center;font-weight:800;color:#0284c7"></p><p id="dhi" class="m" style="text-align:center"></p>
 <button class="ok" style="width:100%" onclick="A.next()">📢 Call Next</button><button class="norec" id="wrx" style="width:100%;margin-top:.5rem;background:#7c3aed" onclick="A.rx()">📝 Write prescription for this patient</button><div class="grid" style="margin-top:0.5rem"><button class="am" onclick="A.done('No-Show')">No Show</button><button class="lt" onclick="A.late()">⏳ Late (+3–18)</button><button onclick="A.done('Completed')">✔ Complete</button></div></div>
-<div class="c"><div class="sh"><span class="t d"><i data-lucide="users"></i>Live Waiting Queue</span><span class="chip bl" id="wc"></span></div><div class="sr"><i data-lucide="search"></i><input id="srch" placeholder="Search patient name or token number..." oninput="render()"></div><div id="ql"></div></div><div class="c nodoc" id="trx" style="display:none"><div class="sh"><span class="t d">📝 Today's prescriptions</span><span class="chip bl" id="trxc"></span></div><div id="trxl"></div></div><div class="c norec" id="rxc" style="display:none"><b>Rx pad</b><input id="rd" placeholder="Diagnosis"><select onchange="A.med(this)"><option value="">+ Common drug…</option><option>Tab. Cetirizine 10mg - 1 OD x 5 days</option><option>Cap. Doxycycline 100mg - 1 BD x 7 days</option><option>Clindamycin Gel - Apply night</option><option>Moisturizing Cream - Apply twice daily</option></select><textarea id="rb" rows="5" placeholder="Medications and dosage"></textarea>
+<div class="c"><div class="sh"><span class="t d"><i data-lucide="users"></i>Live Waiting Queue</span><span class="chip bl" id="wc"></span></div><div class="sr"><i data-lucide="search"></i><input id="srch" placeholder="Search patient name or token number..." oninput="render()"></div><div id="ql"></div></div><div class="c norec" id="trx" style="display:none"><div class="sh"><span class="t d">📝 Today's prescriptions</span><span class="chip bl" id="trxc"></span></div><div id="trxl"></div></div><div class="c norec" id="rxc" style="display:none"><b>Rx pad</b><input id="rd" placeholder="Diagnosis"><select onchange="A.med(this)"><option value="">+ Common drug…</option><option>Tab. Cetirizine 10mg - 1 OD x 5 days</option><option>Cap. Doxycycline 100mg - 1 BD x 7 days</option><option>Clindamycin Gel - Apply night</option><option>Moisturizing Cream - Apply twice daily</option></select><textarea id="rb" rows="5" placeholder="Medications and dosage"></textarea>
 <div class="grid"><button onclick="A.rx()">🖨 Print Rx</button><button class="g" onclick="window.RxPad&&RxPad.settings()">⚙ Rx format</button><button class="g" onclick="$('rd').value=$('rb').value=''">Clear</button></div></div></section>
 <section id="scan">
   <div class="c">
@@ -668,10 +668,22 @@ async adoptKeys(k){
   const role={adm:'adm',doc:'doc',rcp:'rec'}[r.value.sl];A.role(role);toast('This phone now uses the clinic PINs')}finally{A._adopting=false}},
 async stepUp(then){if(G.blocked())return;const r=await Swal.fire({title:'🛡 Admin portal',text:'Enter the Admin PIN to continue.',input:'password',inputAttributes:{inputmode:'numeric',maxlength:4},showCancelButton:true});
   if(!r.isConfirmed)return;if(H(r.value||'')!==S.sec.pin)return G.fail('PIN');G.good();A._admAt=Date.now();then&&then()},
-rxFor(id){const p=S.q.find(x=>x.id===id);if(!p)return;const ex=p.rxId&&RXREC.find(x=>x.id===p.rxId);RxPad.open({name:p.name,token:p.tokenNo},{},ex||undefined)},
+pt(p){const last=RXREC.filter(x=>x.p&&((p.phone&&x.p.phone===p.phone)||String(x.p.name).toUpperCase()===String(p.name).toUpperCase())).sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  return{name:p.name,token:p.tokenNo,age:p.age||(last&&last.p.age)||'',sex:p.sex||(last&&last.p.sex)||'',phone:p.phone||(last&&last.p.phone)||'',place:(last&&last.p.place)||''}},
+rxFor(id){const p=S.q.find(x=>x.id===id);if(!p)return;const ex=p.rxId&&RXREC.find(x=>x.id===p.rxId);RxPad.open(A.pt(p),{},ex||undefined)},
 rxSaved(c){window.CloudSync&&CloudSync.rxPut(c);const p=S.q.find(x=>x.tokenNo===c.p.token&&x.scanDate===c.date);if(p&&p.rxId!==c.id){p.rxId=c.id;commit()}else render()},
-rxPrint(id){const x=RXREC.find(r=>r.id===id);if(!x)return toast('Prescription not on this phone yet','warning');RxPad.print(x);L('Rx printed',{tokenNo:x.p.token||'',name:x.p.name})},
-rxIn(id,o){try{if(!CR.key)return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if(i<0)RXREC.push(x);else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
+rxPrint(id){if(ROLE==='rec')return toast('Prescriptions are printed at the doctor\'s side','warning');const x=RXREC.find(r=>r.id===id);if(!x)return toast('Prescription not on this phone yet','warning');RxPad.print(x);L('Rx printed',{tokenNo:x.p.token||'',name:x.p.name});
+  (A._pr=A._pr||new Set()).add(id);const p=S.q.find(q=>q.rxId===id);if(p&&!p.rxPrinted){p.rxPrinted=Date.now();commit()}else render()},
+rxDone(x){return !!((A._pr&&A._pr.has(x.id))||S.q.some(p=>p.rxId===x.id&&p.rxPrinted))},
+desk(){const m=A.dev();return m!=='doc'&&ROLE!=='doc'},
+chime(){try{const C=new (window.AudioContext||window.webkitAudioContext)();[880,1320,880].forEach((f,i)=>{const o=C.createOscillator(),g=C.createGain();o.frequency.value=f;o.connect(g);g.connect(C.destination);const t=C.currentTime+i*.22;g.gain.setValueAtTime(.35,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.21)})}catch(e){}},
+async rxAlert(x){return; // prescriptions are printed only at the doctor's side
+  if(!A.desk()||A.rxDone(x))return;A.chime();render();
+  if(localStorage.getItem('scc_autoprint')==='1'&&ROLE)return A.rxPrint(x.id);
+  if(!ROLE||document.querySelector('.sw-ov')||document.getElementById('rxpRoot'))return toast('📝 Prescription ready: '+x.p.name,'info');
+  const r=await Swal.fire({icon:'info',title:'📝 Prescription ready',html:'<b style="font-size:1.15rem">'+esc(x.p.name)+'</b><br><span class="m">'+esc(x.p.token||'')+' · '+esc(x.dx||'')+' · '+(x.m||[]).length+' medicine(s)</span>',confirmButtonText:'🖨 Print now',showCancelButton:true,cancelButtonText:'Later',timer:60000});
+  if(r.isConfirmed)A.rxPrint(x.id)},
+rxIn(id,o){try{if(!CR.key)return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if(i<0){RXREC.push(x);if(x.date===today()&&Date.now()-(x.ts||0)<10*60e3)setTimeout(()=>A.rxAlert(x),800)}else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
   RXREC.sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords(RXREC);clearTimeout(A._rxT);A._rxT=setTimeout(()=>{save();render()},700)}).catch(()=>{})}catch(e){}},
 metaIn(m){if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
 async qrEnc(rx){if(!CR.key)return 'SCC0.'+rx.id;const i=crypto.getRandomValues(new Uint8Array(12)),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(rx.id))),b=new Uint8Array(12+c.length);b.set(i);b.set(c,12);
@@ -679,7 +691,7 @@ async qrEnc(rx){if(!CR.key)return 'SCC0.'+rx.id;const i=crypto.getRandomValues(n
 async rxScan(raw){let id='';try{if(raw.startsWith('SCC0.'))id=raw.slice(5);else{if(!CR.key)throw 0;let t=raw.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const b=UB(t);id=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},CR.key,b.slice(12)))}}catch(e){return Swal.fire({icon:'error',title:'Not this clinic\'s prescription',text:'This QR could not be opened with this clinic\'s key.'})}
   const x=RXREC.find(r=>r.id===id);if(!x)return Swal.fire({icon:'info',title:'Prescription '+id,text:'It is not on this phone yet. It appears here once synced (last 45 days), or restore an older backup.'});
   const md=m=>[m.f,m.g,m.s,m.d].filter(Boolean).join(' ');
-  const r=await Swal.fire({title:'📝 '+x.p.name,html:'<div style="text-align:left;font-size:.88rem"><b>'+fd(x.date)+'</b> · Rx '+esc(x.id)+(x.p.token?' · '+esc(x.p.token):'')+'<br>Diagnosis: <b>'+esc(x.dx||'—')+'</b><br>'+(x.m||[]).map(m=>'• '+esc(md(m))).join('<br>')+'</div>',showDenyButton:ROLE!=='rec',denyButtonText:'📝 Repeat as new Rx',confirmButtonText:'🖨 Reprint',showCancelButton:true});
+  const r=await Swal.fire({title:'📝 '+x.p.name,html:'<div style="text-align:left;font-size:.88rem"><b>'+fd(x.date)+'</b> · Rx '+esc(x.id)+(x.p.token?' · '+esc(x.p.token):'')+'<br>Diagnosis: <b>'+esc(x.dx||'—')+'</b><br>'+(x.m||[]).map(m=>'• '+esc(md(m))).join('<br>')+'</div>',showDenyButton:ROLE!=='rec',denyButtonText:'📝 Repeat as new Rx',showConfirmButton:ROLE!=='rec',confirmButtonText:'🖨 Reprint',showCancelButton:true,cancelButtonText:'Close'});
   if(r.isConfirmed)A.rxPrint(x.id);else if(r.isDenied)RxPad.open({name:x.p.name,phone:x.p.phone,age:x.p.age,sex:x.p.sex,place:x.p.place},{dx:x.dx,adv:x.adv})},
 async selfWipe(){if(A._wiping)return;A._wiping=true;
   try{for(const k of Object.keys(localStorage))if(/^(SkinCareClinic|scc_)/.test(k))localStorage.removeItem(k)}catch(e){}
@@ -871,14 +883,14 @@ async scan(raw,src){
     }
     const r=await Swal.fire({
       title:tk,
-      html:`<input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)">
+      html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.svp(this.value)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)">
             <select id="sv" class="swal2-select"><option value="1st">1st Visit — ₹${S.fees[0]}</option><option value="2nd">2nd Visit — ₹${S.fees[1]}</option></select>
             <p id="sh" class="m" style="display:none;color:#059669">Returning patient detected</p>`,
       showCancelButton:true,
-      preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value})
+      preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value,...A.pf()})
     });
     if(r.isConfirmed){
-      A.add({tokenNo:tk,name:r.value.name,visitType:r.value.vt,fee:S.fees[r.value.vt==='1st'?0:1],cardDate:cd,source:src});
+      A.add({tokenNo:tk,name:r.value.name,visitType:r.value.vt,fee:S.fees[r.value.vt==='1st'?0:1],cardDate:cd,source:src,age:r.value.age,sex:r.value.sex,phone:r.value.phone});
       A.go('rec');
     }
   }finally{busy=false}
@@ -891,6 +903,14 @@ last(n){
   const l=d.sort().pop();
   return{l,days:Math.round((new Date(today()+'T00:00:00')-new Date(l+'T00:00:00'))/864e5)};
 },
+pf(){const d=String(($('sph1')||{}).value||'').replace(/\D/g,'').slice(-10);return{age:String(($('sag')||{}).value||'').replace(/\D/g,'').slice(0,3),sex:($('ssx')||{}).value||'',phone:d.length===10?d:''}},
+svp(v){const d=String(v||'').replace(/\D/g,'').slice(-10);if(d.length!==10)return;
+  const vs=[...S.arch,...S.q].filter(p=>p.phone===d).sort((a,b)=>(b.scannedAt||0)-(a.scannedAt||0)),rx=RXREC.filter(x=>x.p&&x.p.phone===d).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const nm=(vs[0]&&vs[0].name)||(rx[0]&&rx[0].p.name);if(!nm)return;
+  if(!$('sn1').value.trim()){$('sn1').value=nm;A.sv(nm)}
+  const ag=(vs[0]&&vs[0].age)||(rx[0]&&rx[0].p.age),sx=(vs[0]&&vs[0].sex)||(rx[0]&&rx[0].p.sex);if(ag&&!$('sag').value)$('sag').value=ag;if(sx&&!$('ssx').value)$('ssx').value=sx;
+  const lastV=vs.find(p=>p.status==='Completed'),h=$('sh');if(h){h.style.display='block';h.style.color='#059669';h.textContent='Returning patient: '+nm+(lastV?' · last visit '+fd(lastV.scanDate):'')+(rx[0]?' · last diagnosis '+(rx[0].dx||'—'):'')}
+  if(lastV&&$('sv')){const days=Math.round((new Date(today()+'T00:00:00')-new Date(lastV.scanDate+'T00:00:00'))/864e5);$('sv').value=days<=S.cfg.win?'2nd':'1st'}},
 sv(n){
   const r=A.last(n),w=!!r&&r.days<=S.cfg.win,h=$('sh');
   if($('sv'))$('sv').value=w?'2nd':'1st';
@@ -923,7 +943,7 @@ async walkin(){
   }
   const r=await Swal.fire({
     title:`Walk-in Token ${pad(n)}`,
-    html:`<input id="sn1" class="swal2-input" placeholder="Patient full name (optional)" oninput="A.sv(this.value)">
+    html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.svp(this.value)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="sn1" class="swal2-input" placeholder="Patient full name (optional)" oninput="A.sv(this.value)">
           <select id="sv" class="swal2-select" style="width:86%;margin:0.375rem auto">
             <option value="1st">1st Visit — ₹${S.fees[0]}</option>
             <option value="2nd">2nd Visit — ₹${S.fees[1]}</option>
@@ -936,11 +956,11 @@ async walkin(){
           </select>`,
     confirmButtonText:'Register',
     showCancelButton:true,
-    preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value,dsn:$('wd').value})
+    preConfirm:()=>({name:$('sn1').value.trim()||'Walk-in Patient',vt:$('sv').value,dsn:$('wd').value,...A.pf()})
   });
   if(!r.isConfirmed)return;
-  const {name,vt,dsn}=r.value;
-  const t=A.add({tokenNo:pad(n),name,visitType:vt,fee:S.fees[vt==='1st'?0:1],cardDate:today(),source:'walkin'});
+  const {name,vt,dsn,age,sex,phone}=r.value;
+  const t=A.add({tokenNo:pad(n),name,visitType:vt,fee:S.fees[vt==='1st'?0:1],cardDate:today(),source:'walkin',age,sex,phone});
   if(dsn!=='none'){S.cfg.cardStyle=dsn;commit();A.card(t,dsn)}
 },
 lang(){
@@ -1159,7 +1179,7 @@ med(s){if(s.value){$('rb').value+=($('rb').value?'\n':'')+s.value;s.value=''}},
 rx(){
   const a=S.q.find(p=>p.id===S.act);
   if(!a)return toast('No active patient','error');
-  if(window.RxPad&&RxPad.enabled()){const ex=a.rxId&&RXREC.find(x=>x.id===a.rxId);return RxPad.open({name:a.name,token:a.tokenNo},{dx:$('rd').value,meds:$('rb').value},ex||undefined)}
+  if(window.RxPad&&RxPad.enabled()){const ex=a.rxId&&RXREC.find(x=>x.id===a.rxId);return RxPad.open(A.pt(a),{dx:$('rd').value,meds:$('rb').value},ex||undefined)}
   const c=S.cfg;
   out('pr',`<h2>${esc(c.name)}</h2><p><b>${esc(c.doc)}</b><br>${esc(c.addr)}</p><p>Date: ${fd(today())} &nbsp; Token: ${a.tokenNo}<br>Patient: <b>${esc(a.name)}</b><br>Diagnosis: ${esc($('rd').value)}</p><hr><b>Rx</b><pre style="white-space:pre-wrap;min-height:15.625rem">${esc($('rb').value)||'—'}</pre><p class="m">Fee valid for ${S.cfg.win} days only.</p>`);
 },
@@ -1368,9 +1388,9 @@ function render(){
  $('lg').innerHTML=S.log.slice(0,100).map(e=>`<tr><td>${fd(dk(new Date(e.t)))} ${ft(e.t)}</td><td>${esc(e.a)}</td><td>${e.k} ${esc(e.n)}</td></tr>`).join('')||'<tr><td colspan="3">No activity yet</td></tr>';
  const f=($('srch').value||'').toLowerCase().trim(),w=S.q.filter(p=>p.status==='Waiting'),v=w.filter(p=>!f||p.name.toLowerCase().includes(f)||p.tokenNo.toLowerCase().includes(f));
  $('wc').textContent=w.length+' '+T('Waiting');
- $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${p.tokenNo}</b> <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${esc(p.name)}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s nodoc" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')"><i data-lucide="printer"></i></button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')"><i data-lucide="clock"></i></button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')"><i data-lucide="megaphone"></i></button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')"><i data-lucide="trash-2"></i></button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
- {const t=today(),L2=RXREC.filter(x=>x.date===t).sort((a,b)=>(b.ts||0)-(a.ts||0));$('trx').style.display=PAD&&(L2.length||ROLE==='rec')?'':'none';$('trxc').textContent=L2.length+'';
-  $('trxl').innerHTML=L2.map(x=>`<div class="row c" style="margin:.3rem 0"><div><b>${esc(x.p.name)}</b> <span class="m">${esc(x.p.token||'')} · ${esc(x.dx||'')}</span><br><span class="m">${ft(x.ts)} · ${(x.m||[]).length} medicine(s)</span></div><button class="ib s" title="Print prescription" onclick="A.rxPrint('${x.id}')"><i data-lucide="printer"></i></button></div>`).join('')||'<p class="m" style="text-align:center">Prescriptions written by the doctor today appear here for printing.</p>'}
+ $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${p.tokenNo}</b> <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${esc(p.name)}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')"><i data-lucide="printer"></i></button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')"><i data-lucide="clock"></i></button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')"><i data-lucide="megaphone"></i></button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')"><i data-lucide="trash-2"></i></button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
+ {const t=today(),L2=RXREC.filter(x=>x.date===t).sort((a,b)=>(A.rxDone(a)-A.rxDone(b))||((b.ts||0)-(a.ts||0))),up=L2.filter(x=>!A.rxDone(x)).length;$('trx').style.display=PAD&&L2.length&&ROLE!=='rec'?'':'none';$('trxc').textContent=up?up+' to print':L2.length+' printed';$('trxc').style.background=up?'#fee2e2':'';$('trxc').style.color=up?'#b91c1c':'';
+  $('trxl').innerHTML=L2.map(x=>`<div class="row c" style="margin:.3rem 0;${A.rxDone(x)?'opacity:.6':'border:2px solid #f59e0b'}"><div><b>${esc(x.p.name)}</b>${A.rxDone(x)?' <span class="chip">Printed ✓</span>':' <span class="chip" style="background:#fef3c7;color:#92400e">To print</span>'} <span class="m">${esc(x.p.token||'')} · ${esc(x.dx||'')}</span><br><span class="m">${ft(x.ts)} · ${(x.m||[]).length} medicine(s)</span></div><button class="ib s" title="Print prescription" onclick="A.rxPrint('${x.id}')"><i data-lucide="printer"></i></button></div>`).join('')||'<p class="m" style="text-align:center">Prescriptions written by the doctor today appear here for printing.</p>'}
  const a=S.q.find(p=>p.id===S.act);$('wrx').style.display=PAD&&a?'':'none';if(a)$('wrx').textContent=a.rxId?'📝 Open this patient\'s prescription':'📝 Write prescription for this patient';$('dtk').textContent=a?a.tokenNo:'#---';$('dnm').textContent=a?a.name:'Available';$('ap').checked=S.auto;
  const h=a?[...S.arch,...S.q].filter(p=>p.status==='Completed'&&p.name.toLowerCase()===a.name.toLowerCase()):[];$('dhi').textContent=h.length?`Returning patient, last seen ${fd(h[h.length-1].scanDate)}`:'';
  const c=S.q.filter(p=>p.status==='Completed'),tm=c.filter(p=>p.calledAtTimestamp&&p.completedAtTimestamp),av=tm.length?Math.round(tm.reduce((s,p)=>s+p.completedAtTimestamp-p.calledAtTimestamp,0)/tm.length/60000):0;
@@ -1394,7 +1414,7 @@ window.A=A;
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
 </script><script src="cloudsync.js"></script><script src="rxpad.js"></script><script>
-try{RxPad.init({prefix:'scc_rx',storeNote:'Saved encrypted on this phone and synced (encrypted) to the other clinic phones.',canSettings:()=>ROLE==='adm',onSave:c=>A.rxSaved(c),qrEncode:rx=>A.qrEnc(rx),
+try{RxPad.init({prefix:'scc_rx',finish:{show:rx=>ROLE!=='rec'&&!!S.q.find(p=>p.id===S.act&&p.tokenNo===rx.p.token),label:()=>'✅ Save, print & '+(S.q.some(p=>p.status==='Waiting')?'next patient':'complete'),run:()=>{A.done('Completed',true,false);if(S.q.some(p=>p.status==='Waiting'))A.next()}},storeNote:'Saved encrypted on this phone and synced (encrypted) to the other clinic phones.',canSettings:()=>ROLE==='adm',onSave:c=>A.rxSaved(c),qrEncode:rx=>A.qrEnc(rx),
  tplStore:{get:()=>S.rxSets||{},set:o=>{S.rxSets=o;S.rxMetaAt=Date.now();save();window.CloudSync&&CloudSync.metaPut()}},
  cfgStore:{get:()=>S.rxCfg||null,set:c=>{S.rxCfg=c;S.rxMetaAt=Date.now();save();window.CloudSync&&CloudSync.metaPut()}},
  recStore:{get:()=>RXREC,set:a=>{RXREC=a;save()}},qrLib:'vendor/qrcode.min.js',defaults:{enabled:true,clinicEn:'SKIN CARE CLINIC',clinicTe:'స్కిన్ కేర్ క్లినిక్',
