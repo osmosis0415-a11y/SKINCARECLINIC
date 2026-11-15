@@ -1034,18 +1034,100 @@ csv(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',f=t=>t?new Date(t).toLocaleString('en-IN'):'';
   A.dl('clinic_'+today()+'.csv',['Scan date,Scan time,Token,Patient,Visit,Fee,Status,Card date,Source,Called,Completed',...[...S.arch,...S.q].map(p=>[fd(p.scanDate),ft(p.scannedAt),p.tokenNo,p.name,p.visitType,p.fee,p.status,fd(p.cardDate),p.source,f(p.calledAtTimestamp),f(p.completedAtTimestamp)].map(q).join(','))].join('\n'),'text/csv');
 },
-pdf(){
-  const d=new jspdf.jsPDF(),c=S.q.filter(p=>p.status==='Completed');
-  d.text(S.cfg.name+' - '+fd(today()),14,20);
-  d.setFontSize(10);
-  d.text(`Seen: ${c.length} | Revenue: Rs.${c.reduce((a,p)=>a+(p.fee||0),0)}`,14,28);
-  let y=38;
-  c.forEach(p=>{
-    if(y>280){d.addPage();y=20}
-    d.text(`${p.tokenNo} ${p.name} (${p.visitType}) Rs.${p.fee} scanned ${fd(p.scanDate)} ${ft(p.scannedAt)}`,14,y);
-    y+=7;
-  });
-  d.save('Finance_'+today()+'.pdf');
+async pdf(){
+  if(ROLE!=='adm')return toast('Only Admin can export finance','warning');
+  const all=[...S.arch,...S.q],days=[...new Set(all.map(p=>p.scanDate).filter(Boolean))].sort(),td=today(),mo=td.slice(0,7)+'-01';
+  const r=await Swal.fire({title:'Finance report (PDF)',html:`<div style="text-align:left">
+   <label class="m">Period<select id="fp" class="swal2-select" onchange="$('fr').style.display=this.value==='range'?'grid':'none'">
+    <option value="today">Today (${fd(td)})</option><option value="yday">Yesterday</option><option value="week">Last 7 days</option><option value="month">This month</option><option value="range">Choose dates…</option><option value="all">Everything on this device${days.length?' (from '+fd(days[0])+')':''}</option></select></label>
+   <div id="fr" class="grid" style="display:none"><label class="m">From<input id="ff" type="date" value="${td}"></label><label class="m">To<input id="ft" type="date" value="${td}"></label></div>
+   <label class="opt-item"><input type="checkbox" id="fo1" checked style="width:auto"> Patient-wise list</label>
+   <label class="opt-item"><input type="checkbox" id="fo2" checked style="width:auto"> Hour-wise breakdown</label>
+   <label class="opt-item"><input type="checkbox" id="fo3" style="width:auto"> Audit log for the period</label>
+   <label class="opt-item"><input type="checkbox" id="fo4" style="width:auto"> Hide patient names (initials only)</label>
+   <label class="m">Cash counted in hand (optional) Rs.<input id="fc" type="number" min="0" placeholder="leave empty to fill by hand"></label></div>`,
+   showCancelButton:true,confirmButtonText:'⬇ Download PDF',
+   preConfirm:()=>{const v=$('fp').value,dd=n=>{const x=new Date();x.setDate(x.getDate()-n);return x.toISOString().slice(0,10)};
+    const loc=n=>{const x=new Date();x.setDate(x.getDate()-n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+    let a=td,b=td;if(v==='yday')a=b=loc(1);if(v==='week'){a=loc(6)}if(v==='month')a=mo;if(v==='all'){a=days[0]||td;b=days[days.length-1]||td}
+    if(v==='range'){a=$('ff').value;b=$('ft').value;if(!a||!b)return Swal.showValidationMessage('Choose both dates');if(a>b)[a,b]=[b,a]}
+    return{a,b,pl:$('fo1').checked,hr:$('fo2').checked,lg:$('fo3').checked,hide:$('fo4').checked,cash:$('fc').value===''?null:+$('fc').value}}});
+  if(!r.isConfirmed)return;
+  A.finPdf(r.value);
+},
+finPdf(o){
+  const {a,b}=o,rows=[...S.arch,...S.q].filter(p=>p.scanDate>=a&&p.scanDate<=b).sort((x,y)=>(x.scanDate+String(x.scannedAt).padStart(15,'0')).localeCompare(y.scanDate+String(y.scannedAt).padStart(15,'0')));
+  const multi=a!==b,J=new jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,M=12,CW=W-2*M,BLUE=[2,132,199],DARK=[15,23,42],GREY=[100,116,139];
+  const rs=n=>'Rs. '+Math.round(n||0).toLocaleString('en-IN'),mins=ms=>ms==null?'--':Math.round(ms/60000)+' min',avg=v=>v.length?v.reduce((s,x)=>s+x,0)/v.length:null;
+  const asc=s=>String(s??'').replace(/[^\x20-\x7E]/g,'').trim();
+  const nm=p=>{const n=asc(p.name)||(p.name?'(name in regional script)':'-');return o.hide?(!asc(p.name)?'-':n.split(/\s+/).map(w=>w[0]?w[0].toUpperCase()+'.':'').join('')):n};
+  const src=s=>s==='walkin'?'Walk-in':s==='manual'?'Typed':s==='qr'?'QR scan':asc(s)||'-';
+  const C=rows.filter(p=>p.status==='Completed'),NS=rows.filter(p=>p.status==='No-Show'),PEND=rows.filter(p=>p.status==='Waiting'||p.status==='Serving');
+  const rev=C.reduce((s,p)=>s+(p.fee||0),0),waitT=C.concat(NS).filter(p=>p.calledAtTimestamp&&p.scannedAt).map(p=>p.calledAtTimestamp-p.scannedAt),consT=C.filter(p=>p.calledAtTimestamp&&p.completedAtTimestamp).map(p=>p.completedAtTimestamp-p.calledAtTimestamp);
+  let y=0;
+  const per=multi?fd(a)+'  to  '+fd(b):fd(a);
+  const head=()=>{J.setFillColor(...BLUE);J.rect(0,0,W,24,'F');J.setTextColor(255);J.setFont('helvetica','bold');J.setFontSize(15);J.text(asc(S.cfg.name)||'Clinic',M,10);
+    J.setFontSize(8.5);J.setFont('helvetica','normal');{let t=[asc(S.cfg.doc),asc(S.cfg.addr)].filter(Boolean).join('  |  ');while(t.length>4&&J.getTextWidth(t)>CW-62)t=t.slice(0,-2)+'…';J.text(t,M,15.5)}if(S.cfg.phone)J.text('Ph: '+asc(S.cfg.phone),M,20);
+    J.setFont('helvetica','bold');J.setFontSize(12);J.text('FINANCE REPORT',W-M,10,{align:'right'});J.setFont('helvetica','normal');J.setFontSize(8.5);J.text(per,W-M,15.5,{align:'right'});J.setTextColor(...DARK);y=31};
+  const need=h=>{if(y+h>282){J.addPage();head()}};
+  const sec=t=>{need(26);J.setFont('helvetica','bold');J.setFontSize(10.5);J.setTextColor(...BLUE);J.text(t.toUpperCase(),M,y);J.setDrawColor(...BLUE);J.setLineWidth(.4);J.line(M,y+1.5,W-M,y+1.5);J.setTextColor(...DARK);y+=7};
+  const table=(cols,data,opt={})=>{const tw=cols.reduce((s,c)=>s+c.w,0),k=CW/tw,fs=opt.fs||8,rh=fs*.5+2.4;
+    const hdr=()=>{J.setFillColor(226,232,240);J.rect(M,y-4,CW,rh,'F');J.setFont('helvetica','bold');J.setFontSize(fs);let x=M;cols.forEach(c=>{const w=c.w*k;J.text(c.h,c.a==='r'?x+w-1.5:x+1.5,y,{align:c.a==='r'?'right':'left'});x+=w});y+=rh};
+    need(rh*3);hdr();J.setFont('helvetica','normal');
+    data.forEach((row,i)=>{if(y+rh>282){J.addPage();head();hdr();J.setFont('helvetica','normal')}
+      const tot=row._t;if(tot){J.setFont('helvetica','bold');J.setFillColor(224,242,254);J.rect(M,y-4,CW,rh,'F')}else if(i%2){J.setFillColor(248,250,252);J.rect(M,y-4,CW,rh,'F')}
+      if(row._c)J.setTextColor(...row._c);J.setFontSize(fs);let x=M;
+      cols.forEach((c,j)=>{const w=c.w*k;let t=String(row[j]??'');while(t.length>1&&J.getTextWidth(t)>w-3)t=t.slice(0,-2)+'…';J.text(t,c.a==='r'?x+w-1.5:x+1.5,y,{align:c.a==='r'?'right':'left'});x+=w});
+      J.setTextColor(...DARK);if(tot)J.setFont('helvetica','normal');y+=rh});
+    y+=4};
+  head();
+  // meta line
+  J.setFontSize(8);J.setTextColor(...GREY);J.text('Generated '+new Date().toLocaleString('en-IN')+'  |  by '+(ROLES[ROLE]?ROLES[ROLE].n:'-')+'  |  '+(multi?([...new Set(rows.map(p=>p.scanDate))].length+' working day(s)'):'Single day'),M,y);J.setTextColor(...DARK);y+=6;
+  // KPI boxes
+  const kp=[['Revenue collected',rs(rev)],['Patients seen',String(C.length)],['Tokens issued',String(rows.length)],['No-shows',String(NS.length)],
+    ['Avg fee / patient',C.length?rs(rev/C.length):'--'],['Avg waiting time',mins(avg(waitT))],['Avg consultation',mins(avg(consT))],['Not yet seen',String(PEND.length)]];
+  const bw=(CW-9)/4;kp.forEach(([l,v],i)=>{const x=M+(i%4)*(bw+3),yy=y+Math.floor(i/4)*17;J.setFillColor(i===0?220:241,i===0?252:245,i===0?231:249);J.roundedRect(x,yy,bw,14,2,2,'F');
+    J.setFontSize(7.5);J.setTextColor(...GREY);J.text(l,x+3,yy+5);J.setFontSize(12.5);J.setFont('helvetica','bold');J.setTextColor(...(i===0?[21,128,61]:DARK));J.text(v,x+3,yy+11.5);J.setFont('helvetica','normal')});
+  J.setTextColor(...DARK);y+=38;
+  if(!rows.length){J.setFontSize(11);J.text('No tokens were recorded in this period on this device.',M,y);y+=10}
+  else{
+  // revenue breakdown
+  sec('1. Revenue breakdown');
+  const vt=['1st','2nd'].map(v=>{const c=C.filter(p=>p.visitType===v),fees=[...new Set(c.map(p=>p.fee))].sort((x,y)=>x-y);return[v+' visit',c.length,fees.length?fees.map(rs).join(', '):'--',rs(c.reduce((s,p)=>s+(p.fee||0),0)),rev?Math.round(c.reduce((s,p)=>s+(p.fee||0),0)*100/rev)+'%':'--']});
+  table([{h:'Visit type',w:30},{h:'Patients',w:18,a:'r'},{h:'Fee charged',w:34,a:'r'},{h:'Amount',w:28,a:'r'},{h:'Share',w:16,a:'r'}],[...vt,Object.assign(['TOTAL',C.length,'',rs(rev),rev?'100%':'--'],{_t:1})]);
+  const sources=[...new Set(rows.map(p=>src(p.source)))];
+  table([{h:'Registered by',w:30},{h:'Tokens',w:18,a:'r'},{h:'Seen',w:18,a:'r'},{h:'No-show',w:18,a:'r'},{h:'Revenue',w:28,a:'r'}],sources.map(s=>{const g=rows.filter(p=>src(p.source)===s);return[s,g.length,g.filter(p=>p.status==='Completed').length,g.filter(p=>p.status==='No-Show').length,rs(g.filter(p=>p.status==='Completed').reduce((t,p)=>t+(p.fee||0),0))]}));
+  const lost=NS.reduce((s,p)=>s+(p.fee||0),0);
+  need(8);J.setFontSize(8.5);J.text('Fees not collected from no-shows: '+rs(lost)+'.   Fees pending from patients not yet seen: '+rs(PEND.reduce((s,p)=>s+(p.fee||0),0))+'.',M,y);y+=8;
+  if(multi){sec('2. Day-wise summary');const ds=[...new Set(rows.map(p=>p.scanDate))];
+    table([{h:'Date',w:26},{h:'Day',w:14},{h:'Tokens',w:15,a:'r'},{h:'Seen',w:14,a:'r'},{h:'No-show',w:15,a:'r'},{h:'1st',w:12,a:'r'},{h:'2nd',w:12,a:'r'},{h:'Revenue',w:24,a:'r'}],
+     [...ds.map(d=>{const g=rows.filter(p=>p.scanDate===d),c=g.filter(p=>p.status==='Completed');const dt=new Date(d+'T00:00');return[fd(d),dt.toLocaleDateString('en-IN',{weekday:'short'}),g.length,c.length,g.filter(p=>p.status==='No-Show').length,c.filter(p=>p.visitType==='1st').length,c.filter(p=>p.visitType==='2nd').length,rs(c.reduce((s,p)=>s+(p.fee||0),0))]}),
+      Object.assign(['TOTAL','',rows.length,C.length,NS.length,C.filter(p=>p.visitType==='1st').length,C.filter(p=>p.visitType==='2nd').length,rs(rev)],{_t:1})]);
+    const best=ds.map(d=>[d,rows.filter(p=>p.scanDate===d&&p.status==='Completed').reduce((s,p)=>s+(p.fee||0),0)]).sort((x,y)=>y[1]-x[1])[0];
+    need(8);J.setFontSize(8.5);J.text('Average revenue per working day: '+rs(rev/ds.length)+'.   Highest day: '+fd(best[0])+' ('+rs(best[1])+').',M,y);y+=8}
+  if(o.hr){sec((multi?'3':'2')+'. Hour-wise activity');const hrs={};rows.forEach(p=>{const h=new Date(p.scannedAt).getHours();hrs[h]=hrs[h]||{t:0,c:0,r:0};hrs[h].t++;if(p.status==='Completed'){hrs[h].c++;hrs[h].r+=p.fee||0}});
+    const hk=Object.keys(hrs).map(Number).sort((x,y)=>x-y),mx=Math.max(...hk.map(h=>hrs[h].t)),lab=h=>{const f=x=>(x%12||12)+(x<12?' AM':' PM');return f(h)+' - '+f((h+1)%24)};
+    need(hk.length*5+12);J.setFont('helvetica','bold');J.setFontSize(8);J.text('Hour',M,y);J.text('Tokens registered',M+34,y);J.text('Seen',M+132,y,{align:'right'});J.text('Revenue',W-M,y,{align:'right'});J.setFont('helvetica','normal');y+=5;
+    hk.forEach(h=>{const v=hrs[h];J.text(lab(h),M,y);J.setFillColor(...BLUE);J.rect(M+34,y-3,Math.max(1,80*v.t/mx),3.4,'F');J.text(String(v.t),M+34+80*v.t/mx+2,y);J.text(String(v.c),M+132,y,{align:'right'});J.text(rs(v.r),W-M,y,{align:'right'});y+=5});
+    const pk=hk.sort((x,y)=>hrs[y].t-hrs[x].t)[0];y+=1;J.setFontSize(8.5);J.text('Busiest hour: '+lab(pk)+' ('+hrs[pk].t+' tokens).',M,y);y+=8}
+  if(NS.length||PEND.length){sec('Not collected / pending');
+    table([{h:'Date',w:24},{h:'Token',w:20},{h:'Patient',w:52},{h:'Visit',w:14},{h:'Status',w:24},{h:'Fee',w:22,a:'r'}],[...NS,...PEND].map(p=>[fd(p.scanDate),p.tokenNo,nm(p),p.visitType,p.status==='Serving'?'Inside now':p.status,rs(p.fee)]))}
+  const lt=rows.filter(p=>p.lateShift);if(lt.length){sec('Late arrivals (pushed back)');table([{h:'Date',w:24},{h:'Token',w:20},{h:'Patient',w:60},{h:'Pushed back by',w:30,a:'r'},{h:'Final status',w:26}],lt.map(p=>[fd(p.scanDate),p.tokenNo,nm(p),'+'+p.lateShift+' tokens',p.status]))}
+  if(o.pl){sec('Patient-wise list');
+    const cols=[{h:'#',w:7,a:'r'},...(multi?[{h:'Date',w:17}]:[]),{h:'Token',w:15},{h:'Patient',w:33},{h:'Visit',w:9},{h:'Via',w:16},{h:'In',w:13},{h:'Called',w:13},{h:'Out',w:13},{h:'Wait',w:11,a:'r'},{h:'Consult',w:12,a:'r'},{h:'Status',w:16},{h:'Fee',w:16,a:'r'}];
+    table(cols,[...rows.map((p,i)=>{const r=[i+1,...(multi?[fd(p.scanDate).replace(/ \d{4}$/,'')]:[]),p.tokenNo,nm(p),p.visitType,src(p.source),ft(p.scannedAt),ft(p.calledAtTimestamp),ft(p.completedAtTimestamp),p.calledAtTimestamp?Math.round((p.calledAtTimestamp-p.scannedAt)/60000)+'m':'-',p.completedAtTimestamp&&p.calledAtTimestamp?Math.round((p.completedAtTimestamp-p.calledAtTimestamp)/60000)+'m':'-',p.status==='Serving'?'Inside':p.status,p.status==='Completed'?rs(p.fee):'('+(p.fee||0)+')'];
+      if(p.status==='No-Show')r._c=[185,28,28];else if(p.status!=='Completed')r._c=GREY;return r}),Object.assign(['',...(multi?['']:[]),'','TOTAL COLLECTED','','','','','','','','',rs(rev)],{_t:1})],{fs:7.2});
+    need(6);J.setFontSize(7.5);J.setTextColor(...GREY);J.text('Fees in brackets were not collected (no-show or not yet seen). Wait = registration to call; Consult = call to complete.',M,y);J.setTextColor(...DARK);y+=7}
+  if(o.lg){const st=new Date(a+'T00:00').getTime(),en=new Date(b+'T23:59:59').getTime(),lg=(S.log||[]).filter(l=>l.t>=st&&l.t<=en).reverse();
+    sec('Audit log');table([{h:'Date & time',w:34},{h:'Action',w:62},{h:'Token',w:20},{h:'Patient',w:40}],lg.length?lg.map(l=>[new Date(l.t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),asc(l.a),l.k||'',l.n?nm({name:l.n}):'']):[['No activity recorded','','','']],{fs:7.2})}
+  }
+  // cash reconciliation + sign-off
+  need(48);sec('Cash reconciliation & sign-off');J.setFontSize(9);
+  const line=(l,v)=>{J.text(l,M,y);if(v!=null)J.text(v,M+95,y,{align:'right'});else{J.setDrawColor(148,163,184);J.setLineWidth(.2);J.line(M+60,y+.5,M+95,y+.5)}y+=7};
+  line('Expected cash (revenue collected)',rs(rev));line('Cash counted in hand',o.cash!=null?rs(o.cash):null);line('Difference',o.cash!=null?(o.cash-rev===0?'Rs. 0 (matches)':(o.cash-rev>0?'+':'-')+' '+rs(Math.abs(o.cash-rev))):null);
+  y+=6;J.setDrawColor(148,163,184);J.line(M,y,M+60,y);J.line(W-M-60,y,W-M,y);J.setFontSize(8);J.setTextColor(...GREY);J.text('Prepared by (Reception)',M,y+4);J.text('Verified by (Doctor / Admin)',W-M-60,y+4);J.setTextColor(...DARK);
+  const n=J.getNumberOfPages();for(let i=1;i<=n;i++){J.setPage(i);J.setFontSize(7.5);J.setTextColor(...GREY);J.text('Confidential: contains patient '+(o.hide?'initials':'names')+'. Keep securely.',M,291);J.text('Page '+i+' of '+n,W-M,291,{align:'right'})}
+  const fn='Finance_'+asc(S.cfg.name).replace(/\W+/g,'_')+'_'+(multi?a+'_to_'+b:a)+'.pdf';J.save(fn);L('Finance PDF exported ('+per+')');commit();toast('PDF saved: '+fn);
 },
 async secret(k){
   const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New 4-digit PIN':'New password (6+)'}">`,showCancelButton:true,preConfirm:()=>{const o=$('o').value,n=$('n').value;if(H(o)!==S.sec[k])return Swal.showValidationMessage('Current value is wrong');if(p?!/^\d{4}$/.test(n):n.length<6)return Swal.showValidationMessage(p?'PIN must be 4 digits':'Use 6+ characters');return n}});
