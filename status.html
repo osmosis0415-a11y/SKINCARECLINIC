@@ -28,6 +28,8 @@ button.al{background:#f59e0b;color:#1f1300;margin-top:4px}button.al.on{backgroun
 const P=new URLSearchParams(location.search), CID=(P.get('c')||'').replace(/[^A-Za-z0-9]/g,'');
 const DH=(P.get('d')||'').toLowerCase(), DB=/^[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)$/.test(DH)?'https://'+DH:'https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app';
 let tok=(P.get('t')||(()=>{try{return localStorage.getItem('scc_tok_'+CID)||''}catch(e){return''}})()).toUpperCase();
+const CD=/^\d{4}-\d{2}-\d{2}$/.test(P.get('cd')||'')?P.get('cd'):'';
+if(P.get('t')&&CID){try{localStorage.setItem('scc_tok_'+CID,tok)}catch(e){}}
 let D=null, live=false, alertOn=false, warned={soon:false,turn:false};
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -58,6 +60,7 @@ function draw(){D=fix(D);
       if(alertOn&&ahead<=3&&!warned.soon){warned.soon=true;beep(2)}}
     else if((D.done||[]).includes(tok))body=`<div class="msg">${L('Consultation completed. Get well soon!','మీ సంప్రదింపు పూర్తయింది. త్వరగా కోలుకోండి!')}</div>`;
     else if((D.noshow||[]).includes(tok))body=`<div class="msg">${L('You were called but not present. Please meet reception.','మిమ్మల్ని పిలిచాము, మీరు లేరు. దయచేసి రిసెప్షన్‌ను కలవండి.')}</div>`;
+    else if(CD&&CD!==today())body=`<div class="msg">${L('This card is dated '+CD.split('-').reverse().join('-')+'. Please show it at reception.','ఈ కార్డ్ తేదీ '+CD.split('-').reverse().join('-')+'. దయచేసి రిసెప్షన్‌లో చూపించండి.')}</div>`;
     else body=`<div class="msg">${L('This token is not registered yet today. Please show your card at reception.','ఈ టోకెన్ ఈరోజు నమోదు కాలేదు. రిసెప్షన్‌లో మీ కార్డ్ చూపించండి.')}</div>`;
     h+=`<div class="c ${cls}"><div class="lb">Your token · మీ టోకెన్</div><div class="big">${esc(tok)}</div>${body}<p style="margin:12px 0 0"><a href="#" id="chg">Change token · టోకెన్ మార్చండి</a></p></div>`;
   }

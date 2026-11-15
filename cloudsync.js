@@ -120,7 +120,7 @@ function doPush(){if(!C.ref||C.applying)return;
   if(d.n||sc!==lastScal||qFull){var p=payload();if(qFull){var all={};(S.q||[]).forEach(function(x,i){var o=JSON.parse(JSON.stringify(x));o.o=i;all[qKey(x)]=o});p.q=all}else Object.assign(p,d.upd);
     lastScal=sc;lastQ=d.cur;qFull=false;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');lastScal='';qFull=true;console.warn('cloud push',e)})}
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
-function statusUrl(){return new URL('status.html?c='+C.uid+(isDefault()?'':'&d='+encodeURIComponent(CONF.databaseURL.replace(/^https:\/\//,''))),location.href).href}
+function statusUrl(tok,cd){return new URL('status.html?c='+C.uid+(isDefault()?'':'&d='+encodeURIComponent(CONF.databaseURL.replace(/^https:\/\//,'')))+(tok?'&t='+encodeURIComponent(tok):'')+(cd?'&cd='+cd:''),location.href).href}
 function poster(){
   var u=statusUrl(),w=window.open('','_blank');if(!w){Swal.fire({icon:'info',title:'Patient status link',html:'<code style="word-break:break-all">'+u+'</code>'});return}
   w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Token status QR</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:30px}h1{font-size:34px;margin:0}p{font-size:22px;margin:10px 0}#q{display:inline-block;margin:24px 0}code{font-size:12px;word-break:break-all;color:#555}@media print{button{display:none}}</style></head><body>'
@@ -196,7 +196,7 @@ async function join(email,pw){await libs();app();await firebase.auth().setPersis
   // connect properly once the clinic PIN has opened the data on this phone
   stop();keyState='unknown';lastKeySig=null;addEventListener('scc-unlocked',function(){start()},{once:true});return k}
 setInterval(devBeat,10*60000);
-window.CloudSync={conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
+window.CloudSync={conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}

@@ -238,6 +238,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
   <p class="m" style="margin:0.75rem 0 0.375rem">2. Toggle optional elements printed on token cards (live preview updates instantly):</p>
   <div class="opt-grid" id="tk-opt-grid">
     <label class="opt-item"><input type="checkbox" id="opt_qr" onchange="A.togOpt('showQR',this.checked)"> QR Code (Scan Ticket)</label>
+    <label class="opt-item" title="Patients scan the card with their own phone to see the live queue. Needs cloud sync on this phone; otherwise the short QR is printed."><input type="checkbox" id="opt_qrl" onchange="A.togOpt('qrLink',this.checked)"> Token QR opens live queue page</label>
     <label class="opt-item"><input type="checkbox" id="opt_val" onchange="A.togOpt('showValidity',this.checked)"> "FEE VALID FOR 10 DAYS"</label>
     <label class="opt-item"><input type="checkbox" id="opt_tehd" onchange="A.togOpt('showTeHeader',this.checked)"> Telugu Doctor/Clinic Header</label>
     <label class="opt-item"><input type="checkbox" id="opt_ph" onchange="A.togOpt('showPhone',this.checked)"> Clinic Phone Number</label>
@@ -293,6 +294,7 @@ const BKEY='SkinCareClinic_lastBackup',KEY='SkinCareClinic_v2_6',OLD='SkinCareCl
 
 const DEFAULT_OPTS={
   showQR:true,
+  qrLink:true,
   showValidity:true,
   showTeHeader:false,
   showPhone:false,
@@ -303,6 +305,11 @@ const DEFAULT_OPTS={
   showAddr:false
 };
 
+// Token QR content: a live-queue link (patients scan with their phone) when cloud sync is on, else the short "OPD-083|date".
+function qrOpt(tok,d,size){const o={...DEFAULT_OPTS,...(S.cfg.tkOpts||{})},u=o.qrLink&&window.CloudSync&&CloudSync.trackUrl?CloudSync.trackUrl(tok,d):'';
+  return u?{text:u,width:size,height:size,correctLevel:QRCode.CorrectLevel.L}:{text:tok+'|'+d,width:size,height:size}}
+// Read a scanned token QR in either format: "OPD-083|2026-11-16" or a live-queue link with t= and cd=
+function qrRead(raw){raw=String(raw||'').trim();if(/^https?:\/\//i.test(raw)&&/[?&]t=/.test(raw)){try{const u=new URL(raw);return (u.searchParams.get('t')||'')+'|'+(u.searchParams.get('cd')||'')}catch(e){}}return raw}
 const DESIGN_META={
   classic:{name:'1. Classic Physical Slip (8/A4)',short:'Classic Slip',perPage:8,pgClass:'',qrSize:70},
   split:{name:'2. Split Boarding Pass (8/A4)',short:'Split Boarding Pass',perPage:8,pgClass:'',qrSize:68},
@@ -600,7 +607,7 @@ go(t){
 },
 syncStudioControls(){
   const o={...DEFAULT_OPTS,...(S.cfg.tkOpts||{})};
-  const map={opt_qr:'showQR',opt_val:'showValidity',opt_tehd:'showTeHeader',opt_ph:'showPhone',opt_vb:'showVisitBadge',opt_apt:'showApptTime',opt_wt:'showWaitTime',opt_late:'showLateRule',opt_addr:'showAddr'};
+  const map={opt_qr:'showQR',opt_qrl:'qrLink',opt_val:'showValidity',opt_tehd:'showTeHeader',opt_ph:'showPhone',opt_vb:'showVisitBadge',opt_apt:'showApptTime',opt_wt:'showWaitTime',opt_late:'showLateRule',opt_addr:'showAddr'};
   Object.entries(map).forEach(([id,k])=>{if($(id))$(id).checked=!!o[k]});
   const en=S.cfg.enabledDesigns||{};
   if($('dsn-en-grid')){
@@ -627,7 +634,7 @@ renderPreview(){
   document.querySelectorAll('#dsn-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.d===st));
   const box=$('tk-prev');if(!box)return;
   box.innerHTML=slipHTML(83,fd(today()).toUpperCase(),'id="qprev"','Sample Patient',st,false,'1st');
-  if($('qprev')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('qprev'),{text:'OPD-083|'+today(),width:meta.qrSize,height:meta.qrSize});
+  if($('qprev')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('qprev'),qrOpt('OPD-083',today(),meta.qrSize));
 },
 testPrint(){
   A.card({tokenNo:'OPD-083',name:'Sample Patient',visitType:'1st',cardDate:today()});
@@ -1038,6 +1045,7 @@ async manual(){
 async scan(raw,src){
   if(busy||!raw)return;
   if(/^SCC[01]\./.test(String(raw).trim()))return A.rxScan(String(raw).trim());
+  raw=qrRead(raw);
   const[a,b]=String(raw).trim().split('|'),dg=a.replace(/\D/g,'');
   if(!dg)return toast('Invalid token','error');
   const tk=pad(+dg),td=today(),cd=/^\d{4}-\d{2}-\d{2}$/.test(b||'')?b:td;
@@ -1170,7 +1178,7 @@ card(t,styleOverride){
   const st=styleOverride||S.cfg.cardStyle||'classic',meta=DESIGN_META[st]||DESIGN_META.classic;
   const num=+t.tokenNo.slice(4),dtStr=fd(t.cardDate).toUpperCase();
   out('ps',slipHTML(num,dtStr,'id="q1"',t.name,st,true,t.visitType),()=>{
-    if($('q1')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('q1'),{text:t.tokenNo+'|'+t.cardDate,width:meta.qrSize,height:meta.qrSize});
+    if($('q1')&&S.cfg.tkOpts?.showQR!==false)new QRCode($('q1'),qrOpt(t.tokenNo,t.cardDate,meta.qrSize));
   });
 },
 async batch(){
@@ -1232,7 +1240,7 @@ async batch(){
   }
   out('pb',h,()=>{
     if(bOpts.showQR!==false){
-      document.querySelectorAll('#pb .q').forEach(e=>new QRCode(e,{text:e.dataset.t+'|'+d,width:meta.qrSize,height:meta.qrSize}));
+      document.querySelectorAll('#pb .q').forEach(e=>new QRCode(e,qrOpt(e.dataset.t,d,meta.qrSize)));
     }
   });
   toast(`${n} cards (${meta.short}) for ${fd(d)}`);
