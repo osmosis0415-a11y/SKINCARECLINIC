@@ -1,0 +1,44 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "allowed": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "clinics": {
+      "$cid": {
+        ".read": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".validate": "newData.hasChildren(['day', 'rev', 'updatedAt'])"
+      }
+    },
+    "scc": {
+      "$cid": {
+        ".read": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".validate": "newData.hasChildren(['day', 'rev', 'updatedAt'])"
+      }
+    },
+    "pub": {
+      "$cid": {
+        ".read": true,
+        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".validate": "newData.hasChildren(['day', 'updatedAt'])"
+      }
+    },
+    "rxs": {
+      "$cid": {
+        ".read": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        "r": {
+          ".indexOn": [
+            "ts"
+          ]
+        }
+      }
+    }
+  }
+}

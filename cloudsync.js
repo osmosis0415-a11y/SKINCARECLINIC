@@ -5,7 +5,21 @@
 // login to read/write only scc/<its own uid>, and only if listed under /allowed.
 (function(){
 'use strict';
-var CONF={apiKey:"AIzaSyBQ5qIkEjQdDP3JazszlSJRMuw_adKuM6o",authDomain:"clinic-kiosk-a23db.firebaseapp.com",databaseURL:"https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"clinic-kiosk-a23db",storageBucket:"clinic-kiosk-a23db.firebasestorage.app",messagingSenderId:"457246964853",appId:"1:457246964853:web:46ec9c2ae702108e884c3c"};
+var DEF_CONF={apiKey:"AIzaSyBQ5qIkEjQdDP3JazszlSJRMuw_adKuM6o",authDomain:"clinic-kiosk-a23db.firebaseapp.com",databaseURL:"https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"clinic-kiosk-a23db",storageBucket:"clinic-kiosk-a23db.firebasestorage.app",messagingSenderId:"457246964853",appId:"1:457246964853:web:46ec9c2ae702108e884c3c"};
+// Each clinic can use its own free Firebase project. The connection is stored per phone ('scc_cloud_conf');
+// without it the phone uses the Skin Care Clinic project above.
+function confOk(c){return c&&c.apiKey&&/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)$/.test(String(c.databaseURL||'').replace(/\/$/,''))}
+var CONF=(function(){try{var c=JSON.parse(localStorage.getItem('scc_cloud_conf')||'null');if(confOk(c))return c}catch(e){}return DEF_CONF})();
+function b64u(t){return btoa(unescape(encodeURIComponent(t))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function ub64u(t){t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';return decodeURIComponent(escape(atob(t)))}
+function codeOf(c){return b64u(JSON.stringify({a:c.apiKey,d:c.authDomain,u:String(c.databaseURL).replace(/\/$/,''),p:c.projectId,i:c.appId,m:c.messagingSenderId||'',s:c.storageBucket||''}))}
+function parseConf(txt){txt=String(txt||'').trim();if(!txt)throw new Error('Empty');var m=txt.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(m)txt=m[1];
+  var c=null;if(/^[A-Za-z0-9_-]{40,}$/.test(txt)){var o=JSON.parse(ub64u(txt));c={apiKey:o.a,authDomain:o.d,databaseURL:o.u,projectId:o.p,appId:o.i,messagingSenderId:o.m,storageBucket:o.s}}
+  else{var g=function(k){var r=txt.match(new RegExp(k+'["\']?\\s*:\\s*["\']([^"\']+)["\']'));return r?r[1]:''};c={apiKey:g('apiKey'),authDomain:g('authDomain'),databaseURL:g('databaseURL'),projectId:g('projectId'),appId:g('appId'),messagingSenderId:g('messagingSenderId'),storageBucket:g('storageBucket')}}
+  c.databaseURL=String(c.databaseURL||'').replace(/\/$/,'');if(!confOk(c))throw new Error('This is not a valid clinic cloud code or Firebase config (it needs apiKey and databaseURL).');return c}
+function isDefault(){return CONF.projectId===DEF_CONF.projectId&&CONF.databaseURL===DEF_CONF.databaseURL}
+function setConf(c){try{if(c)localStorage.setItem('scc_cloud_conf',JSON.stringify(c));else localStorage.removeItem('scc_cloud_conf');localStorage.setItem(PREF,JSON.stringify({on:false,email:''}))}catch(e){}
+  try{if(window.firebase&&firebase.apps&&firebase.apps.length){location.reload();return true}}catch(e){}CONF=c||DEF_CONF;return false}
 var V='8.10.1',BASE='https://www.gstatic.com/firebasejs/'+V+'/',PREF='SkinCareClinic_cloud';
 var DEV=(function(){try{var d=localStorage.getItem(PREF+'_dev');if(!d){d=Math.random().toString(36).slice(2,10);localStorage.setItem(PREF+'_dev',d)}return d}catch(e){return Math.random().toString(36).slice(2,10)}})();
 var C={ref:null,on:false,applying:false,rev:0,status:'off',email:''};
@@ -74,7 +88,7 @@ var RXWIN=45*864e5,rxOn=false,rxQ=null;
 function rxRef(){return C.uid?firebase.database(app()).ref('rxs/'+C.uid):null}
 function rxPut(rec){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!rec||!rec.id)return;
   CR.enc(JSON.stringify(rec)).then(function(e){var o={ts:rec.ts||Date.now(),i:e.i,c:e.c};count('up',JSON.stringify(o).length);return r.child('r/'+rec.id).set(o)}).catch(function(e){console.warn('rx put',e)})}
-function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null,formulary:S.formulary||[],formOnly:!!S.formOnly};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
+function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null,formulary:S.formulary||[],formOnly:!!S.formOnly,clinic:(function(){var c=S.cfg||{},o={};['name','doc','addr','phone','teHeader','timings','waitText','lateText'].forEach(function(k){if(c[k]!==undefined)o[k]=c[k]});return o})()};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
 // ---- clinic devices (for 'lost phone') and the encrypted audit log, both under rxs/<clinic>
 function devName(){try{return localStorage.getItem('scc_device_name')||''}catch(e){return''}}
 function devBeat(){var r=rxRef();if(!r||keyState!=='ok')return;var u=navigator.userAgent,os=/Android/.test(u)?'Android':/iPhone|iPad/.test(u)?'iPhone/iPad':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'Device';
@@ -106,7 +120,7 @@ function doPush(){if(!C.ref||C.applying)return;
   if(d.n||sc!==lastScal||qFull){var p=payload();if(qFull){var all={};(S.q||[]).forEach(function(x,i){var o=JSON.parse(JSON.stringify(x));o.o=i;all[qKey(x)]=o});p.q=all}else Object.assign(p,d.upd);
     lastScal=sc;lastQ=d.cur;qFull=false;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');lastScal='';qFull=true;console.warn('cloud push',e)})}
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
-function statusUrl(){return new URL('status.html?c='+C.uid,location.href).href}
+function statusUrl(){return new URL('status.html?c='+C.uid+(isDefault()?'':'&d='+encodeURIComponent(CONF.databaseURL.replace(/^https:\/\//,''))),location.href).href}
 function poster(){
   var u=statusUrl(),w=window.open('','_blank');if(!w){Swal.fire({icon:'info',title:'Patient status link',html:'<code style="word-break:break-all">'+u+'</code>'});return}
   w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Token status QR</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:30px}h1{font-size:34px;margin:0}p{font-size:22px;margin:10px 0}#q{display:inline-block;margin:24px 0}code{font-size:12px;word-break:break-all;color:#555}@media print{button{display:none}}</style></head><body>'
@@ -178,9 +192,15 @@ addEventListener('offline',function(){if(C.ref)set('offline')});
 async function join(email,pw){await libs();app();await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);var u=(await firebase.auth().signInWithEmailAndPassword(email,pw)).user;
   var a=(await firebase.database(app()).ref('allowed/'+u.uid).once('value')).val(),cid=typeof a==='string'&&a?a:a===true?u.uid:null;
   if(!cid)throw new Error('This cloud login is not approved for a clinic yet.');
-  var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});return k}
+  var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});
+  // connect properly once the clinic PIN has opened the data on this phone
+  stop();keyState='unknown';lastKeySig=null;addEventListener('scc-unlocked',function(){start()},{once:true});return k}
 setInterval(devBeat,10*60000);
-window.CloudSync={logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
+window.CloudSync={conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
+(function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
+  history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
+  var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}
+  if(fresh||confirm('Connect this phone to the cloud of clinic project "'+c.projectId+'"?\nThis phone will use that clinic\'s logins and queue.')){if(!setConf(c))location.reload()}})();
 function go(){if(window.SCC_READY===false){set('off');addEventListener('scc-unlocked',function(){start()},{once:true})}else start()}
 chip();if(window.SCC_BOOTED)go();else addEventListener('scc-boot',go,{once:true});
 })();

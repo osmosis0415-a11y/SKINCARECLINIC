@@ -25,8 +25,8 @@ button.al{background:#f59e0b;color:#1f1300;margin-top:4px}button.al.on{backgroun
 </div>
 <script>
 'use strict';
-const DB='https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app';
 const P=new URLSearchParams(location.search), CID=(P.get('c')||'').replace(/[^A-Za-z0-9]/g,'');
+const DH=(P.get('d')||'').toLowerCase(), DB=/^[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)$/.test(DH)?'https://'+DH:'https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app';
 let tok=(P.get('t')||(()=>{try{return localStorage.getItem('scc_tok_'+CID)||''}catch(e){return''}})()).toUpperCase();
 let D=null, live=false, alertOn=false, warned={soon:false,turn:false};
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

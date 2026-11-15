@@ -220,7 +220,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 <section id="set">
 <div class="c" style="border:2px solid #0284c7"><div class="sh"><span class="t d">🛡 Admin portal</span><span class="chip bl">Admin only</span></div>
 <p class="m" style="margin:0 0 .5rem;font-size:.8rem">PINs and passwords can only be changed here. Changes reach every clinic phone signed in to the cloud.</p>
-<div class="grid"><button onclick="A.users()">👥 Logins: Doctor / Reception PINs &amp; this phone's role</button><button class="g" onclick="A.secret('pin')">🔑 Change Admin PIN</button><button class="g" onclick="A.secret('pass')">🔒 Change finance password</button><button class="g" onclick="A.newRec()">🧾 New recovery code</button>
+<div class="grid"><button onclick="A.clinicWizard()">🏥 Clinic details (name, doctor, Reg. No., fees)</button><button class="g" onclick="A.cloudSetup()">☁ Clinic cloud / add a phone (QR)</button><button onclick="A.users()">👥 Logins: Doctor / Reception PINs &amp; this phone's role</button><button class="g" onclick="A.secret('pin')">🔑 Change Admin PIN</button><button class="g" onclick="A.secret('pass')">🔒 Change finance password</button><button class="g" onclick="A.newRec()">🧾 New recovery code</button>
 <button class="g" onclick="window.RxPad&&RxPad.settings()">📝 Rx format &amp; saved prescription sets</button><button class="g" onclick="A.meds()">💊 Clinic medicine list</button><button class="g" onclick="A.find()">🔎 Patient records</button><button class="g" onclick="A.devices()">📱 Clinic devices / lost phone</button><button class="g" onclick="A.clinicLog()">📜 Full clinic log (all phones)</button><button class="g" onclick="A.testBackup()">🧪 Test a backup (monthly)</button><button class="g" onclick="A.go('ana')">📊 Live analytics</button><button class="g" onclick="A.printers()">🖨 Printer setup (A4 / A5)</button><button class="g" onclick="A.guides()">📄 Staff guides (A4 / A5)</button></div>
 <label style="margin-top:.6rem">Auto-lock when idle (minutes, 0 = never)<input id="sidle" type="number" min="0" max="240" onchange="S.cfg.idleMin=Math.max(0,+this.value||0);save();toast('Saved')"></label></div>
 <div class="c">
@@ -671,8 +671,9 @@ pin(){
     $('lock').style.display='none';G.good();if(r==='adm')A._admAt=Date.now();A.role(r);if(r==='adm'&&!S.vault)A.migrate(pv)})
 },
 async join(){
-  const f=await Swal.fire({title:'🔗 Join my clinic',html:'<p style="font-size:.85rem;text-align:left">Sign in with the clinic\'s cloud login. This phone will then use the same Admin, Doctor and Reception PINs as the other clinic phones.</p><input id="jn1" class="swal2-input" type="email" placeholder="Clinic cloud email"><input id="jn2" class="swal2-input" type="password" placeholder="Cloud password">',
-    showCancelButton:true,confirmButtonText:'Join',preConfirm:()=>{const e=$('jn1').value.trim(),w=$('jn2').value;if(!e||!w)return Swal.showValidationMessage('Enter email and password');return{e,w}}});
+  const f=await Swal.fire({title:'🔗 Join my clinic',html:'<p style="font-size:.85rem;text-align:left">Sign in with the clinic\'s cloud login. This phone will then use the same Admin, Doctor and Reception PINs as the other clinic phones.</p><input id="jn0" class="swal2-input" placeholder="Clinic cloud code (leave empty for Skin Care Clinic)"><input id="jn1" class="swal2-input" type="email" placeholder="Clinic cloud email"><input id="jn2" class="swal2-input" type="password" placeholder="Cloud password">',
+    showCancelButton:true,confirmButtonText:'Join',didOpen:()=>{if(!CloudSync.isDefault())$('jn0').value='(this phone is connected to '+CloudSync.conf().projectId+')',$('jn0').disabled=true},preConfirm:()=>{const e=$('jn1').value.trim(),w=$('jn2').value,c=$('jn0').value.trim();if(!e||!w)return Swal.showValidationMessage('Enter email and password');let conf=null;if(c&&!$('jn0').disabled){try{conf=CloudSync.parseConf(c)}catch(x){return Swal.showValidationMessage(x.message)}}return{e,w,conf}}});
+  if(f.isConfirmed&&f.value.conf&&CloudSync.setConf(f.value.conf))return false;
   if(!f.isConfirmed)return false;
   let k;try{k=await CloudSync.join(f.value.e,f.value.w)}catch(e){await Swal.fire({icon:'error',title:'Could not join',text:(e&&(e.message||e.code))||String(e)});return false}
   if(!k||!k.sec||!k.w){await Swal.fire({icon:'info',title:'No clinic logins in the cloud yet',text:'Open the app on the main (Admin) phone first and make sure cloud sync is on there. It shares the logins automatically. Then try again.'});return false}
@@ -714,7 +715,7 @@ async rxAlert(x){return; // prescriptions are printed only at the doctor's side
   if(r.isConfirmed)A.rxPrint(x.id)},
 rxIn(id,o){try{if(!CR.key)return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if(i<0){RXREC.push(x);if(x.date===today()&&Date.now()-(x.ts||0)<10*60e3)setTimeout(()=>A.rxAlert(x),800)}else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
   RXREC.sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords(RXREC);clearTimeout(A._rxT);A._rxT=setTimeout(()=>{save();render()},700)}).catch(()=>{})}catch(e){}},
-metaIn(m){if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(Array.isArray(m.formulary))S.formulary=m.formulary;if(m.formOnly!==undefined)S.formOnly=!!m.formOnly;if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
+metaIn(m){if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(m.clinic){Object.assign(S.cfg,m.clinic);S.clinicSet=true}if(Array.isArray(m.formulary))S.formulary=m.formulary;if(m.formOnly!==undefined)S.formOnly=!!m.formOnly;if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
 async qrEnc(rx){if(!CR.key)return 'SCC0.'+rx.id;const i=crypto.getRandomValues(new Uint8Array(12)),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(rx.id))),b=new Uint8Array(12+c.length);b.set(i);b.set(c,12);
   return 'SCC1.'+B64(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
 async rxScan(raw){let id='';try{if(raw.startsWith('SCC0.'))id=raw.slice(5);else{if(!CR.key)throw 0;let t=raw.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const b=UB(t);id=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},CR.key,b.slice(12)))}}catch(e){return Swal.fire({icon:'error',title:'Not this clinic\'s prescription',text:'This QR could not be opened with this clinic\'s key.'})}
@@ -883,6 +884,38 @@ fmlImport(){const have=new Set(A.fml().map(m=>m.f+'|'+m.g+'|'+(m.s||''))),add=[]
   RXREC.slice(-500).forEach(r=>(r.m||[]).forEach(m=>put(m.f,m.g,m.s,m.d,m.t,m.u)));((RxPad.cfg().myDrugs)||[]).forEach(g=>put('',g,'','','',''));
   if(!add.length)return toast('Nothing new to add','info');A.fmlSave(A.fml().concat(add));L('Medicine list: '+add.length+' added from templates/prescriptions');toast(add.length+' medicines added. Check strengths and add pharmacy brands.')},
 fmlPrint(){const L2=A.fml().slice().sort((a,b)=>a.g.localeCompare(b.g)),go=paper=>PrintView.open(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Medicine list</title><style>@page{size:${paper};margin:10mm}body{font:${paper==='A4'?'10.5pt':'8.5pt'} Arial,sans-serif;color:#0f172a}h1{font-size:1.4em;margin:0}table{width:100%;border-collapse:collapse;margin-top:3mm}td,th{border:1px solid #cbd5e1;padding:1.2mm 1.6mm;text-align:left;vertical-align:top}th{background:#e2e8f0}</style></head><body><h1>${esc(S.cfg.name)}: clinic medicine list</h1><div>${L2.length} medicines · printed ${new Date().toLocaleDateString('en-IN')} · prescriptions use generic names</div><table><tr><th>#</th><th>Form</th><th>Generic name</th><th>Strength</th><th>Usual dose</th><th>Duration</th><th>Pharmacy brand</th><th>Sch.</th><th>₹</th></tr>${L2.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.f)}</td><td><b>${esc(x.g)}</b></td><td>${esc(x.s)}</td><td>${esc([x.d,x.t&&x.t!=='—'?x.t:''].filter(Boolean).join(', '))}</td><td>${esc(x.u)}</td><td>${esc(x.brand)}</td><td>${esc(x.sched)}</td><td>${esc(x.price)}</td></tr>`).join('')}</table><p style="margin-top:6mm">Doctor's signature: ____________________</p></body></html>`,{title:'Medicine list',onPaper:p=>go(p)});go('A4')},
+async clinicWizard(first){
+  const c=window.RxPad?RxPad.cfg():{},f=S.fees||[500,400],v=(x)=>esc(x||'');
+  const r=await Swal.fire({title:first?'🏥 Your clinic':'🏥 Clinic details',html:`<div style="text-align:left;font-size:.85rem">${first?'<p class="m" style="margin:0 0 .4rem">These print on token slips and prescriptions. Fields with * are required by the prescription rules.</p>':''}
+   <label class="m">Clinic name *</label><input id="wz1" class="swal2-input" value="${v(S.cfg.name)}">
+   <label class="m">Doctor's full name *</label><input id="wz2" class="swal2-input" placeholder="DR. ..." value="${v(c.docEn)}">
+   <div class="grid"><div><label class="m">Qualification *</label><input id="wz3" class="swal2-input" placeholder="MBBS, MD (DERM)" value="${v(c.qual)}"></div><div><label class="m">Registration No. *</label><input id="wz4" class="swal2-input" value="${v(c.regNo)}"></div></div>
+   <label class="m">State Medical Council *</label><input id="wz5" class="swal2-input" placeholder="e.g. TELANGANA STATE MEDICAL COUNCIL" value="${v(c.council)}">
+   <label class="m">Speciality</label><input id="wz6" class="swal2-input" value="${v(c.spec)}">
+   <label class="m">Clinic address *</label><input id="wz7" class="swal2-input" value="${v(S.cfg.addr)}">
+   <div class="grid"><div><label class="m">Clinic phone</label><input id="wz8" class="swal2-input" inputmode="tel" value="${v(c.phone||S.cfg.phone)}"></div><div><label class="m">Consulting hours</label><input id="wz9" class="swal2-input" value="${v(S.cfg.timings)}"></div></div>
+   <div class="grid"><div><label class="m">1st visit fee ₹ *</label><input id="wz10" class="swal2-input" inputmode="numeric" value="${f[0]}"></div><div><label class="m">Review fee ₹ *</label><input id="wz11" class="swal2-input" inputmode="numeric" value="${f[1]}"></div></div>
+   <label class="m">Clinic name in Telugu (optional)</label><input id="wz12" class="swal2-input" value="${v(c.clinicTe)}"></div>`,
+   showCancelButton:!first,confirmButtonText:'Save',allowOutsideClick:!first,allowEscapeKey:!first,
+   preConfirm:()=>{const g=i=>$('wz'+i).value.trim(),need=[[1,'Clinic name'],[2,"Doctor's name"],[3,'Qualification'],[4,'Registration No.'],[5,'Medical Council'],[7,'Address'],[10,'1st visit fee'],[11,'Review fee']].filter(x=>!g(x[0])).map(x=>x[1]);
+    if(need.length)return Swal.showValidationMessage('Please fill: '+need.join(', '));return Array.from({length:12},(_,i)=>g(i+1))}});
+  if(!r.isConfirmed)return;const x=r.value,U=s=>String(s).toUpperCase(),same=U(x[1])===U(S.cfg.name);
+  S.cfg.name=x[0];S.cfg.doc=U(x[1])+(x[2]?' — '+U(x[2]):'');S.cfg.addr=x[6];S.cfg.phone=x[7];if(x[8])S.cfg.timings=x[8];if(!same&&!x[11])S.cfg.teHeader='';
+  S.fees=[+x[9]||0,+x[10]||0];S.clinicSet=true;
+  const rc={...(window.RxPad?RxPad.cfg():{}),clinicEn:U(x[0]),docEn:U(x[1]),qual:U(x[2]),regNo:U(x[3]),council:U(x[4]),spec:U(x[5]),addrEn:x[6],phone:x[7],hours:x[8]||'',clinicTe:x[11]};
+  if(rc.docEn!==U(c.docEn||'')){rc.fellow='';rc.docTe='';rc.addrTe=''}
+  if(window.RxPad){RxPad.setCfg(rc);S.rxCfg=rc}S.rxMetaAt=Date.now();L('Clinic details saved');commit();window.CloudSync&&CloudSync.metaPut();toast('Clinic details saved')},
+async cloudSetup(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');const cs=window.CloudSync,cf=cs.conf(),def=cs.isDefault(),link=location.origin+location.pathname+'?cloud='+cs.code();
+  const r=await Swal.fire({title:'☁ Clinic cloud',html:`<div style="text-align:left;font-size:.85rem">This phone uses the cloud project <b>${esc(cf.projectId)}</b>${def?' (Skin Care Clinic)':''}.<br><br>
+   <b>Add another phone to this clinic:</b> scan this QR with the new phone's camera, open the link, then tap <b>🔗 Join my clinic</b>.<div id="cqr" style="display:flex;justify-content:center;margin:.6rem 0"></div>
+   <details><summary class="m">Show code</summary><code style="font-size:.6rem;word-break:break-all">${esc(link)}</code></details><br>
+   <b>Connect this phone to a different clinic's cloud</b> (a new clinic's own free Firebase project): paste its clinic code or the Firebase web config.<textarea id="cpaste" class="swal2-input" style="height:5rem" placeholder="const firebaseConfig = { apiKey: ... }  or a clinic code"></textarea></div>`,
+   showCancelButton:true,cancelButtonText:'Close',confirmButtonText:'Connect this phone',showDenyButton:!def,denyButtonText:'Use Skin Care Clinic cloud',
+   didOpen:()=>{try{new QRCode($('cqr'),{text:link,width:200,height:200})}catch(e){}},
+   preConfirm:()=>{const t=$('cpaste').value;if(!t.trim())return Swal.showValidationMessage('Paste a clinic code or Firebase config first');try{return cs.parseConf(t)}catch(e){return Swal.showValidationMessage(e.message)}}});
+  if(r.isConfirmed){const k=await Swal.fire({icon:'warning',title:'Switch clinic cloud?',text:'This phone will sign out of the current cloud and connect to project "'+r.value.projectId+'". Its own data stays on it. Then sign in with that clinic\'s cloud login (☁ badge).',showCancelButton:true,confirmButtonText:'Switch'});if(!k.isConfirmed)return;L('Cloud switched to '+r.value.projectId);commit();if(!cs.setConf(r.value))location.reload()}
+  else if(r.isDenied){L('Cloud switched back to default');commit();if(!cs.setConf(null))location.reload()}},
 async migrate(pin){
   const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
     showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
@@ -1346,7 +1379,7 @@ cfg(q){
   };
   commit();
   A.renderPreview();
-  if(!q)toast('Saved');
+  S.rxMetaAt=Date.now();window.CloudSync&&CloudSync.metaPut();if(!q)toast('Saved');
 },
 async reset(){
   const r=await Swal.fire({icon:'warning',title:'Reset daily shift?',text:'Today’s records move to the archive (kept in CSV export), the queue clears and numbering restarts at #001. Save a backup first so today’s data is safe off this phone.',showCancelButton:true,showDenyButton:true,confirmButtonText:'Back up & reset',denyButtonText:'Reset without backup',confirmButtonColor:'#059669'});
@@ -1545,7 +1578,7 @@ window.A=A;
   let idbOK=true;try{const raw=await IDB.get();const d=raw?JSON.parse(raw):null;if(d&&(d.q||d.enc)&&(d.savedAt||0)>(S.savedAt||0)){S={...S,...d};norm()}}catch(e){idbOK=false}
   if(!lsOK&&!idbOK)$('stw').style.display='block';
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  try{A.minimal(localStorage.getItem('scc_min')==='1')}catch(e){}bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(j=>{if(j!=='joined')A.users()})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
+  try{A.minimal(localStorage.getItem('scc_min')==='1')}catch(e){}bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(async j=>{if(j!=='joined'){await A.clinicWizard(true);A.users()}})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
 </script><script src="cloudsync.js"></script><script src="printview.js"></script><script src="rxpad.js"></script><script>
