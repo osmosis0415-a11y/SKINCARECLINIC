@@ -692,6 +692,11 @@ async stepUp(then){if(G.blocked())return;const r=await Swal.fire({title:'🛡 Ad
 pt(p){p={...p,name:/^walk-?in patient$/i.test(String(p.name||'').trim())?'':p.name};const last=p.name||p.phone?RXREC.filter(x=>x.p&&((p.phone&&x.p.phone===p.phone)||(p.name&&String(x.p.name).toUpperCase()===String(p.name).toUpperCase()))).sort((a,b)=>(b.ts||0)-(a.ts||0))[0]:null;
   return{name:p.name,token:p.tokenNo,age:p.age||(last&&last.p.age)||'',sex:p.sex||(last&&last.p.sex)||'',phone:p.phone||(last&&last.p.phone)||'',place:p.place||(last&&last.p.place)||''}},
 rxEdit(id){const x=RXREC.find(r=>r.id===id);if(!x)return;RxPad.open({name:x.p.name,token:x.p.token},{},x);L('Rx opened for edit',{tokenNo:x.p.token||'',name:x.p.name})},
+async docScan(d){ // doctor scans a registered token card: open that patient's prescription with their details
+  A.go('rec');
+  if(d.status!=='Completed'&&S.act!==d.id){if(!await A.resolve())return;A.snap('Scan '+d.tokenNo);d.status='Serving';d.calledAtTimestamp=Date.now();S.act=d.id;L('Called by scan',d);commit()}
+  if(!window.RxPad||!RxPad.enabled())return toast(d.tokenNo+' is now serving');
+  const ex=d.rxId&&RXREC.find(x=>x.id===d.rxId);RxPad.open(A.pt(d),{},ex||undefined)},
 quickRx(free){if(!window.RxPad)return;const a=!free&&S.q.find(p=>p.id===S.act);RxPad.quick(a?A.pt(a):{})},
 minimal(on){const v=on===undefined?localStorage.getItem('scc_min')!=='1':!!on;try{localStorage.setItem('scc_min',v?'1':'0')}catch(e){}document.documentElement.classList.toggle('min',v);const l=$('minl');if(l)l.textContent='Minimal mode: '+(v?'On':'Off');if(on===undefined)toast(v?'Minimal mode on: only the essentials':'Minimal mode off')},
 rxFor(id){const p=S.q.find(x=>x.id===id);if(!p)return;const ex=p.rxId&&RXREC.find(x=>x.id===p.rxId);RxPad.open(A.pt(p),{},ex||undefined)},
@@ -1004,6 +1009,7 @@ async scan(raw,src){
   if(!dg)return toast('Invalid token','error');
   const tk=pad(+dg),td=today(),cd=/^\d{4}-\d{2}-\d{2}$/.test(b||'')?b:td;
   const d=S.q.find(p=>p.tokenNo===tk&&p.scanDate===td);
+  if(d&&(ROLE==='doc'||(ROLE==='adm'&&A.dev()==='doc')))return A.docScan(d);
   if(d)return toast(tk+' already registered ('+d.status+')','warning');
   busy=true;
   try{
