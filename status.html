@@ -34,7 +34,9 @@ const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth
 function normTok(v){v=String(v||'').toUpperCase().replace(/\s/g,'');const n=v.replace(/[^0-9]/g,'');return n?'OPD-'+String(+n).padStart(3,'0'):''}
 function beep(n){try{const A=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=A.createOscillator(),g=A.createGain();o.frequency.value=880;o.connect(g);g.connect(A.destination);const t=A.currentTime+i*.5;g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.start(t);o.stop(t+.45)}}catch(e){}try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}}
 const L=(en,te)=>`${en}<span class="te">${te}</span>`;
-function draw(){
+function nt(x){return typeof x==='number'?'OPD-'+String(x).padStart(3,'0'):x}
+function fix(d){if(!d)return d;['waiting','done','noshow'].forEach(k=>{if(Array.isArray(d[k]))d[k]=d[k].map(nt)});if(d.serving!=null)d.serving=nt(d.serving);return d}
+function draw(){D=fix(D);
   $('dot').className='dot'+(live?' on':'');
   $('live').textContent=live?'Live · లైవ్':(D?'Reconnecting… / మళ్ళీ కనెక్ట్ అవుతోంది…':'Connecting… / కనెక్ట్ అవుతోంది…');
   if(D&&D.clinic)$('cn').textContent=D.clinic;

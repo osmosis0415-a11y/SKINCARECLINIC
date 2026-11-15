@@ -23,13 +23,23 @@ function set(s){C.status=s;chip()}
 function load(src){return new Promise(function(ok,no){var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function libs(){if(window.firebase&&firebase.database&&firebase.auth)return Promise.resolve();return load(BASE+'firebase-app.js').then(function(){return Promise.all([load(BASE+'firebase-auth.js'),load(BASE+'firebase-database.js')])})}
 function app(){return firebase.apps.length?firebase.app():firebase.initializeApp(CONF)}
-function payload(){return{wipeAt:S.wipeAt||0,q:S.q,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():''),rev:++C.rev,updatedAt:Date.now(),by:DEV}}
+// The queue is stored as one child per patient (scc/<clinic>/q/<id>) so each tap sends and receives only the
+// patient that changed, not the whole day's list.
+function canon(v){if(Array.isArray(v))return '['+v.map(canon).join(',')+']';if(v&&typeof v==='object')return '{'+Object.keys(v).sort().filter(function(k){return v[k]!==undefined}).map(function(k){return JSON.stringify(k)+':'+canon(v[k])}).join(',')+'}';return JSON.stringify(v===undefined?null:v)}
+function qKey(p){return String(p.id).replace(/[.#$\[\]\/]/g,'_')}
+var lastQ={},lastScal='',qFull=true;
+function scal(){return{wipeAt:S.wipeAt||0,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():'')}}
+function payload(){var x=scal();x.rev=++C.rev;x.updatedAt=Date.now();x.by=DEV;return x}
+function qDiff(){var upd={},cur={},n=0;(S.q||[]).forEach(function(p,i){var k=qKey(p),o=JSON.parse(JSON.stringify(p));o.o=i;var j=canon(o);cur[k]=j;if(lastQ[k]!==j){upd['q/'+k]=o;n++}});Object.keys(lastQ).forEach(function(k){if(!cur[k]){upd['q/'+k]=null;n++}});return{upd:upd,cur:cur,n:n}}
+function qIn(q){var arr=Array.isArray(q)?q:Object.keys(q||{}).map(function(k){return q[k]}).sort(function(a,b){return(a.o||0)-(b.o||0)});var m={},bytes=0;
+  if(!Array.isArray(q))Object.keys(q||{}).forEach(function(k){var j=canon(q[k]);if(lastQ[k]!==j)bytes+=j.length;m[k]=j});
+  return{arr:arr.map(function(p){var c=Object.assign({},p);delete c.o;return c}),map:m,legacy:Array.isArray(q)||!q,bytes:bytes}}
 function pub(){
   // Public, name-free summary for the patient status page (token numbers only)
-  var q=S.q||[],a=q.find(function(p){return p.id===S.act}),tk=function(p){return p.tokenNo};
+  var q=S.q||[],a=q.find(function(p){return p.id===S.act}),tk=function(p){var n=parseInt(String(p.tokenNo).replace(/\D/g,''),10);return isNaN(n)?p.tokenNo:n};
   var c=q.filter(function(p){return p.status==='Completed'&&p.calledAtTimestamp&&p.completedAtTimestamp}).slice(-10)
          .map(function(p){return (p.completedAtTimestamp-p.calledAtTimestamp)/60000}).filter(function(m){return m>0.3&&m<60});
-  return{clinic:S.cfg&&S.cfg.name||'Clinic',day:(typeof today==='function'?today():''),serving:a?a.tokenNo:null,
+  return{clinic:S.cfg&&S.cfg.name||'Clinic',day:(typeof today==='function'?today():''),serving:a?tk(a):null,
     waiting:q.filter(function(p){return p.status==='Waiting'}).map(tk),done:q.filter(function(p){return p.status==='Completed'}).map(tk),
     noshow:q.filter(function(p){return p.status==='No-Show'}).map(tk),avgMin:c.length>=3?Math.round(c.reduce(function(x,y){return x+y},0)/c.length*10)/10:7,updatedAt:Date.now()}}
 // ---- usage meter: counts what THIS phone sends/receives each month (free plan: 10 GB/month download for the whole project)
@@ -39,15 +49,15 @@ function saveU(u){try{localStorage.setItem(PREF+'_use',JSON.stringify(u))}catch(
 function count(k,bytes){var u=U();u[k]+=bytes;if(k==='up')u.w++;if(!u.paused&&u.down>=CAP){u.paused=true;saveU(u);stop();set('paused');Swal.fire({icon:'warning',title:'Cloud sync paused',text:'This phone has used a lot of cloud data this month. Sync is paused so the clinic stays inside the free plan. The app keeps working offline on this phone. It resumes automatically next month, or Admin can resume it from the ☁ menu.'});return}saveU(u)}
 function fmt(b){return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':b<1073741824?(b/1048576).toFixed(1)+' MB':(b/1073741824).toFixed(2)+' GB'}
 // ---- only send when something actually changed, and at most once every 0.8 s
-var lastBody='',lastPub='',tmr=null;
+var lastPub='',tmr=null;
 function push(){if(!C.ref||C.applying)return;clearTimeout(tmr);tmr=setTimeout(doPush,800)}
 // ---- shared clinic logins: PIN/password hashes + wrapped data key live at scc/<clinic>/keys (signed-in clinic logins only)
 var lastKeySig=null,keyState='unknown'; // unknown | empty | ok | foreign (cloud has another phone's logins: never overwrite automatically)
 function keySig(){return JSON.stringify([S.sec||null,S.vault&&S.vault.w||null,S.vault&&S.vault.kid||null])}
 function pushKeys(){if(!C.ref||!S.vault||!S.sec||!CR.key)return;keyState='ok';setTimeout(rxStart,0);if(!S.vault.kid){S.vault.kid=Math.random().toString(36).slice(2,12)}if(!S.keysAt)S.keysAt=Date.now();
-  var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();
+  var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();lastScal='';
   // sent together with the queue fields so the database rules (which require day/rev/updatedAt) accept it
-  var j=JSON.stringify(pl);count('up',j.length);lastBody=JSON.stringify([pl.q,pl.ctr,pl.act,pl.auto,pl.fees,pl.day]);C.ref.update(JSON.parse(j)).catch(function(e){console.warn('keys',e);keyState='empty';lastKeySig=null})}
+  var j=JSON.stringify(pl);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){console.warn('keys',e);keyState='empty';lastKeySig=null})}
 function keysIn(k){
   if(!k){keyState='empty';if(S.vault&&CR.key)pushKeys();return}
   if(S.vault&&S.vault.kid&&k.kid===S.vault.kid){keyState='ok';setTimeout(rxStart,0);
@@ -92,8 +102,9 @@ function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)
    .catch(function(e){rxOn=false;console.warn('rx sync',e)})}
 function doPush(){if(!C.ref||C.applying)return;
   if((keyState==='ok'||keyState==='empty')&&S.vault&&CR.key&&keySig()!==lastKeySig){S.keysAt=Date.now();pushKeys()}
-  var p=payload(),body=JSON.stringify([p.q,p.ctr,p.act,p.auto,p.fees,p.day]);
-  if(body!==lastBody){lastBody=body;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');console.warn('cloud push',e)})}else C.rev--;
+  var d=qDiff(),sc=canon(scal());
+  if(d.n||sc!==lastScal||qFull){var p=payload();if(qFull){var all={};(S.q||[]).forEach(function(x,i){var o=JSON.parse(JSON.stringify(x));o.o=i;all[qKey(x)]=o});p.q=all}else Object.assign(p,d.upd);
+    lastScal=sc;lastQ=d.cur;qFull=false;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');lastScal='';qFull=true;console.warn('cloud push',e)})}
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
 function statusUrl(){return new URL('status.html?c='+C.uid,location.href).href}
 function poster(){
@@ -105,15 +116,15 @@ function poster(){
 }
 function apply(v){
   if((v.wipeAt||0)>(S.wipeAt||0)&&window.A&&A.wipeLocal){A.wipeLocal(v.wipeAt);origSave();try{Swal.fire({icon:'info',title:'Clinic data was cleared',text:'Admin started fresh on another phone. Old patient records on this phone were removed.',timer:3500,showConfirmButton:false})}catch(e){}setTimeout(function(){location.reload()},3600)}
-  lastBody=JSON.stringify([v.q||[],v.ctr||1,v.act||null,!!v.auto,v.fees||S.fees,v.day||'']);C.applying=true;
-  try{S.q=v.q||[];S.ctr=v.ctr||1;S.act=v.act||null;S.auto=!!v.auto;if(v.fees)S.fees=v.fees;C.rev=Math.max(C.rev,v.rev||0);
+  var qi=qIn(v.q);lastQ=qi.map;qFull=qi.legacy;lastScal=canon({wipeAt:v.wipeAt||0,ctr:v.ctr||1,act:v.act||null,auto:!!v.auto,fees:v.fees||S.fees,day:v.day||''});C.applying=true;
+  try{S.q=qi.arr;S.ctr=v.ctr||1;S.act=v.act||null;S.auto=!!v.auto;if(v.fees)S.fees=v.fees;C.rev=Math.max(C.rev,v.rev||0);
     origSave();typeof render==='function'&&render()}finally{C.applying=false}
 }
 function listen(uid){
   C.uid=uid;C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
   var first=true;
   C.ref.on('value',function(snap){
-    var v=snap.val();set('on');try{count('down',JSON.stringify(v||'').length+120)}catch(e){}if(!C.ref)return;
+    var v=snap.val();set('on');try{count('down',(v?qIn(v.q).bytes:0)+200)}catch(e){}if(!C.ref)return;
     try{keysIn(v&&v.keys)}catch(e){console.warn('keys in',e)}
     if(first){first=false;
       if(!v){push();return}

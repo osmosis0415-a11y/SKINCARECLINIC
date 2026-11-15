@@ -151,7 +151,7 @@ RxPad={
      if(!miss.length&&!offList())return false;if(miss.length){alert('Cannot print yet. Required on every prescription:\n\n• '+miss.join('\n• '));var f=root.querySelector('[style*="dc2626"]');if(f){f.scrollIntoView({block:'center'});try{f.focus()}catch(e){}}return false}return true}
    root.querySelector('#rxpPrint').onclick=function(){read();if(!check())return;save();print(rx)};
    var fb=root.querySelector('#rxpFin');if(fb)fb.onclick=function(){read();if(!check())return;save();root.remove();print(rx);opts.finish.run(rx)}}
-  function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);var cap=opts.recStore?3000:800;if(REC.length>cap)REC=REC.slice(-cap);if(opts.recStore)opts.recStore.set(REC);else sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
+  function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);var cap=opts.recStore?200000:800;if(REC.length>cap)REC=REC.slice(-cap);if(opts.recStore)opts.recStore.set(REC);else sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
   function flash(t){var b=root.querySelector('#rxpSave');var o=b.textContent;b.textContent='✓ '+t;setTimeout(function(){b.textContent=o},1200)}
   draw();return rx},
  settings:function(done){if(!canSet()){alert('Only Admin can change the prescription format.');return}css();var s=Object.assign({},CFG);var root=el('<div class="rxp" id="rxpSetRoot"></div>');document.body.appendChild(root);
