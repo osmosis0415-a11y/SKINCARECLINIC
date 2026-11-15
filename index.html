@@ -400,7 +400,8 @@ setInterval(()=>DISK.save(),10*60000);
 addEventListener('keydown',e=>A.key(e));
 let LAST_ACT=Date.now();['pointerdown','keydown','touchstart','wheel'].forEach(e=>addEventListener(e,()=>{LAST_ACT=Date.now()},{passive:true,capture:true}));
 setInterval(()=>{const m=S.cfg.idleMin??20;if(!ROLE||!m||document.getElementById('rxpRoot')||document.querySelector('.sw-ov'))return;if(Date.now()-LAST_ACT>m*60000){L('Auto-locked after '+m+' min idle');A.logout(true)}},30000);addEventListener('pagehide',()=>DISK.save());document.addEventListener('visibilitychange',()=>{if(document.hidden)DISK.save()});
-function out(id,html,fill){$(id).innerHTML=html;fill&&fill();document.body.className=id;setTimeout(()=>window.print(),600)}
+function out(id,html,fill){$(id).innerHTML=html;fill&&fill();const go=()=>{document.body.className=id;setTimeout(()=>window.print(),150)};
+ if(!window.PrintView)return setTimeout(go,600);setTimeout(()=>PrintView.node($(id).innerHTML,{title:id==='ps'?'Token slip':id==='pb'?'Token cards (A4 batch)':'Print',paper:id==='pb'?'A4':'A4',print:go}),450)}
 let ROLE=null;const ROLES={adm:{n:'Admin',i:'🛡 Admin',t:['rec','scan','fin','set']},doc:{n:'Doctor',i:'👨‍⚕️ Doctor',t:['rec','scan']},rec:{n:'Reception',i:'🧾 Reception',t:['rec','scan']}};
 let ok=false,busy=false,scn=null,UNDO=[];
 const LOCK_STEPS=[30,120,300,900,3600];
@@ -722,9 +723,7 @@ async clinicLog(){
   let L2;try{L2=await CloudSync.logFetch(31)}catch(e){return Swal.fire({icon:'info',title:'Cloud log not available',text:(e&&e.message)||'Turn on cloud sync on this phone.'})}
   const h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Clinic audit log</title><style>body{font:12px system-ui;margin:12mm}h1{font-size:17px;margin:0}table{width:100%;border-collapse:collapse;margin-top:8px}td,th{border:1px solid #cbd5e1;padding:3px 5px;text-align:left}th{background:#e2e8f0}</style></head><body><h1>'+esc(S.cfg.name)+': audit log, all phones, last 31 days</h1><div>'+L2.length+' entries · printed '+new Date().toLocaleString('en-IN')+'</div><table><tr><th>When</th><th>Phone</th><th>Login</th><th>Action</th><th>Token / patient</th></tr>'+
     L2.map(e=>'<tr><td>'+new Date(e.t).toLocaleString('en-IN')+'</td><td>'+esc(e.d||'')+'</td><td>'+esc(e.r?ROLES[e.r]?ROLES[e.r].n:e.r:'')+'</td><td>'+esc(e.a)+'</td><td>'+esc(e.k||'')+' '+esc(e.n||'')+'</td></tr>').join('')+'</table></body></html>';
-  const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(h);f.contentDocument.close();
-  const r=await Swal.fire({title:'📜 Clinic audit log',html:'<p style="font-size:.85rem">'+L2.length+' entries from all clinic phones in the last 31 days (kept encrypted in the cloud for a year, even if a phone is reset).</p>',confirmButtonText:'🖨 Print / save PDF',showCancelButton:true});
-  if(r.isConfirmed){f.contentWindow.focus();f.contentWindow.print()}setTimeout(()=>f.remove(),60000)},
+  PrintView.open(h,{title:'Clinic audit log · '+L2.length+' entries (31 days)'})},
 async closeDay(){
   if(ROLE!=='adm')return toast('Only Admin','warning');
   const c=S.q.filter(p=>p.status==='Completed'),exp=c.reduce((s,p)=>s+(p.fee||0),0),ns=S.q.filter(p=>p.status==='No-Show').length,wt=S.q.filter(p=>p.status==='Waiting'||p.status==='Serving').length;
@@ -797,8 +796,7 @@ guidePrint(which,paper){
    ol{margin:${a4?'4mm':'2.5mm'} 0 0;padding-left:${a4?'7mm':'5mm'}}li{margin:0 0 ${a4?'3mm':'1.6mm'};padding-bottom:${a4?'2mm':'1.2mm'};border-bottom:1px solid #e2e8f0}li::marker{font-weight:800;color:#0369a1}.te{color:#334155}li .te{margin-top:.6mm;font-size:.97em}
    .keys{background:#f1f5f9;border-radius:1.5mm;padding:${a4?'2.5mm':'1.6mm'};font-size:.9em}kbd{display:inline-block;border:1px solid #64748b;border-radius:1mm;padding:0 1.2mm;font-weight:800;background:#fff}footer{margin-top:${a4?'3mm':'2mm'};font-size:.85em;color:#64748b;text-align:center}</style></head><body>
    ${which!=='doc'?sheet('Reception guide','రిసెప్షన్ గైడ్',REC,true):''}${which!=='rec'?sheet('Doctor guide','డాక్టర్ గైడ్',DOC,true):''}</body></html>`;
-  const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(html);f.contentDocument.close();
-  setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)},500);L('Staff guide printed ('+which+', '+paper+')')},
+  PrintView.open(html,{title:'Staff guides · '+paper,onPaper:z=>A.guidePrint(which,z)});L('Staff guide printed ('+which+', '+paper+')')},
 async migrate(pin){
   const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
     showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
@@ -1414,8 +1412,7 @@ async find(){
    +'<h2>Visits ('+vis.length+')</h2><table><tr><th>Date</th><th>Token</th><th>Name</th><th>Visit</th><th>Status</th><th>Fee</th></tr>'+(vis.map(p=>'<tr><td>'+fd(p.scanDate)+' '+ft(p.scannedAt)+'</td><td>'+esc(p.tokenNo)+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.visitType)+'</td><td>'+esc(p.status)+'</td><td>Rs. '+(p.fee||0)+'</td></tr>').join('')||'<tr><td colspan="6">None</td></tr>')+'</table>'
    +'<h2>Prescriptions ('+rxs.length+')</h2>'+(rxs.map(x=>'<table style="margin-bottom:8px"><tr><th style="width:28%">'+esc(x.date||'')+'</th><th>'+esc(x.p.name)+(x.p.age?', '+esc(x.p.age):'')+(x.p.sex?' / '+esc(x.p.sex):'')+(x.p.phone?' · '+esc(x.p.phone):'')+'</th></tr><tr><td>Diagnosis</td><td><b>'+esc(x.dx)+'</b></td></tr>'+(x.cc?'<tr><td>Complaints</td><td>'+esc(x.cc)+'</td></tr>':'')+'<tr><td>Medicines</td><td>'+(x.m||[]).map(m=>esc(md(m))).join('<br>')+'</td></tr>'+(x.adv?'<tr><td>Advice</td><td>'+esc(x.adv)+'</td></tr>':'')+(x.review?'<tr><td>Review</td><td>'+esc(x.review)+'</td></tr>':'')+'</table>').join('')||'<p>None</p>')
    +'<p class="m" style="margin-top:24px">Signature of the doctor: ____________________ &nbsp; Reg. No.: ________</p></body></html>';
-  const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(h);f.contentDocument.close();
-  setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)},400);L('Patient record printed ('+r.value+')');commit();
+  PrintView.open(h,{title:'Patient record · '+r.value});L('Patient record printed ('+r.value+')');commit();
 },
 restore(e){
   const f=e.target.files[0];if(!f)return;
@@ -1464,7 +1461,7 @@ window.A=A;
   bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(j=>{if(j!=='joined')A.users()})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
-</script><script src="cloudsync.js"></script><script src="rxpad.js"></script><script>
+</script><script src="cloudsync.js"></script><script src="printview.js"></script><script src="rxpad.js"></script><script>
 try{RxPad.init({prefix:'scc_rx',finish:{show:rx=>ROLE!=='rec'&&!!S.q.find(p=>p.id===S.act&&p.tokenNo===rx.p.token),label:()=>'✅ Save, print & '+(S.q.some(p=>p.status==='Waiting')?'next patient':'complete'),run:()=>{A.done('Completed',true,false);if(S.q.some(p=>p.status==='Waiting'))A.next()}},storeNote:'Saved encrypted on this phone and synced (encrypted) to the other clinic phones.',canSettings:()=>ROLE==='adm',onSave:c=>A.rxSaved(c),qrEncode:rx=>A.qrEnc(rx),
  tplStore:{get:()=>S.rxSets||{},set:o=>{S.rxSets=o;S.rxMetaAt=Date.now();save();window.CloudSync&&CloudSync.metaPut()}},
  cfgStore:{get:()=>S.rxCfg||null,set:c=>{S.rxCfg=c;S.rxMetaAt=Date.now();save();window.CloudSync&&CloudSync.metaPut()}},

@@ -77,7 +77,7 @@ RxPad={
     '<select data-k="d"><option value="">Dose / frequency</option>'+DOSES.map(function(x){return'<option'+(m.d===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
     '<select data-k="t">'+TIMES.map(function(x){return'<option'+(m.t===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
     '<input data-k="u" placeholder="Duration e.g. 14 days" value="'+esc(m.u)+'"><input class="full" data-k="n" placeholder="Note (optional)" value="'+esc(m.n||'')+'">'+
-    '<button class="d full" data-del="'+i+'">✕ Remove medicine</button></div>'}
+    (m._t?'<div class="muted full">from: '+esc(m._t)+'</div>':'')+'<button class="d full" data-del="'+i+'">✕ Remove medicine</button></div>'}
   function draw(){
    var T=allTpl(),drugs={};Object.keys(T).forEach(function(k){(T[k].m||[]).forEach(function(x){drugs[x[1]]=1})});(CFG.myDrugs||[]).forEach(function(x){drugs[up(x)]=1});REC.slice(-200).forEach(function(r){r.m.forEach(function(x){drugs[x.g]=1})});
    root.innerHTML='<div class="w"><div class="row" style="justify-content:space-between"><h2>📝 Prescription</h2><button id="rxpX">✕ Close</button></div>'+
@@ -90,7 +90,7 @@ RxPad={
    '<div class="cd"><label>Chief complaints / findings</label><textarea id="rxCC">'+esc(rx.cc)+'</textarea>'+
    '<label>Diagnosis / provisional diagnosis *</label><input id="rxDx" style="text-transform:uppercase;font-weight:700" value="'+esc(rx.dx)+'">'+
    '<label>Known drug allergies</label><input id="rxAl" placeholder="NIL / e.g. SULFA" value="'+esc(rx.allergy)+'">'+
-   '<label>Saved prescription sets ★ and templates (edit before printing)</label><div>'+Object.keys(T).map(function(k){return'<button class="chip" data-tpl="'+esc(k)+'"'+(k.charAt(0)==='★'?' style="background:#dcfce7;color:#166534"':'')+'>'+esc(k)+'</button>'}).join('')+'</div></div>'+
+   '<label>Saved prescription sets ★ and templates (edit before printing)</label><div>'+Object.keys(T).map(function(k){var on=(rx.tpls||[]).indexOf(k)>=0;return'<button class="chip" data-tpl="'+esc(k)+'" style="'+(on?'background:#0369a1;color:#fff':k.charAt(0)==='★'?'background:#dcfce7;color:#166534':'')+'">'+(on?'✓ ':'')+esc(k)+'</button>'}).join('')+'</div><p class="muted" style="margin:6px 0 0">Tap more than one for several diagnoses: each adds its diagnosis and medicines. Tap a ✓ one again to remove it.</p></div>'+
    '<div class="cd"><div class="row" style="justify-content:space-between"><b>℞ Medicines (generic names, CAPITALS)</b><button id="rxpAdd">＋ Add medicine</button></div><div id="rxM" style="margin-top:8px">'+(rx.m.length?rx.m.map(medRow).join(''):'<p class="muted">No medicines yet. Use a template or ＋ Add medicine.</p>')+'</div>'+
    '<datalist id="rxpDrugs">'+Object.keys(drugs).sort().map(function(d){return'<option value="'+esc(d)+'">'}).join('')+'</datalist></div>'+
    '<div class="cd"><label>Investigations advised</label><input id="rxIn" value="'+esc(rx.inv)+'"><label>Advice / instructions</label><textarea id="rxAd">'+esc(rx.adv)+'</textarea>'+
@@ -106,7 +106,18 @@ RxPad={
    root.querySelector('#rxpX').onclick=function(){root.remove()};
    root.querySelector('#rxpAdd').onclick=function(){read();rx.m.push({f:'TAB',g:'',s:'',d:'',t:'After food',u:''});draw()};
    root.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){read();rx.m.splice(+b.dataset.del,1);draw()}});
-   root.querySelectorAll('[data-tpl]').forEach(function(b){b.onclick=function(){read();var t=allTpl()[b.dataset.tpl];if(!t)return;if(!rx.dx)rx.dx=t.dx||'';(t.m||[]).forEach(function(x){rx.m.push({f:x[0],g:x[1],s:x[2],d:x[3],t:x[4],u:x[5],n:x[6]||''})});if(t.adv)rx.adv=(rx.adv?rx.adv+'\n':'')+t.adv;if(t.inv&&!rx.inv)rx.inv=t.inv;draw()}});
+   root.querySelectorAll('[data-tpl]').forEach(function(b){b.onclick=function(){read();var k=b.dataset.tpl,t=allTpl()[k];if(!t)return;rx.tpls=rx.tpls||[];
+     var dxs=String(rx.dx||'').split(/\s*[+,;]\s*/).map(function(x){return up(x).trim()}).filter(Boolean),tdx=up(t.dx||'').trim();
+     if(rx.tpls.indexOf(k)>=0){ // tap again = remove this diagnosis and its medicines
+       rx.tpls.splice(rx.tpls.indexOf(k),1);rx.m=rx.m.filter(function(m){return m._t!==k});
+       if(tdx&&!rx.tpls.some(function(o){var x=allTpl()[o];return x&&up(x.dx||'').trim()===tdx}))dxs=dxs.filter(function(x){return x!==tdx});
+       if(t.adv)rx.adv=String(rx.adv||'').split('\n').filter(function(l){return l!==t.adv}).join('\n');
+     }else{
+       rx.tpls.push(k);if(tdx&&dxs.indexOf(tdx)<0)dxs.push(tdx);
+       var have={};rx.m.forEach(function(m){have[up(m.g)+'|'+up(m.s)]=1});
+       (t.m||[]).forEach(function(x){var key=up(x[1])+'|'+up(x[2]);if(have[key])return;have[key]=1;rx.m.push({f:x[0],g:x[1],s:x[2],d:x[3],t:x[4],u:x[5],n:x[6]||'',_t:k})});
+       if(t.adv&&String(rx.adv||'').indexOf(t.adv)<0)rx.adv=(rx.adv?rx.adv+'\n':'')+t.adv;if(t.inv&&!rx.inv)rx.inv=t.inv}
+     rx.dx=dxs.join(' + ');draw()}});
    root.querySelector('#rxpSet2').onclick=function(){read();if(!rx.m.filter(function(m){return m.g}).length)return alert('Add medicines first, then save them as a set.');var nm=prompt('Name for this prescription set (e.g. ACNE - MILD):',rx.dx||'');if(!nm)return;nm=up(nm).trim();if(sets()[nm]&&!confirm('A set called '+nm+' exists. Replace it?'))return;saveSet(nm,{dx:rx.dx,adv:rx.adv,inv:rx.inv,m:rx.m.filter(function(m){return m.g}).map(function(m){return[m.f,m.g,m.s,m.d,m.t,m.u,m.n||'']})});flash('Set saved');draw()};
    var rep=root.querySelector('#rxpRep');if(rep)rep.onclick=function(){read();var h=hist[0];rx.dx=rx.dx||h.dx;rx.m=JSON.parse(JSON.stringify(h.m));rx.adv=rx.adv||h.adv;draw()};
    root.querySelectorAll('.gn').forEach(function(i){i.oninput=function(){var p=i.selectionStart;i.value=up(i.value);try{i.setSelectionRange(p,p)}catch(e){}}});
@@ -162,7 +173,7 @@ function qrData(text){return new Promise(function(ok){
     new window.QRCode(d,{text:text,width:220,height:220,correctLevel:window.QRCode.CorrectLevel?window.QRCode.CorrectLevel.M:0});
     setTimeout(function(){var c=d.querySelector('canvas'),i=d.querySelector('img');var u=c?c.toDataURL('image/png'):(i?i.src:'');d.remove();ok(u)},60)}catch(e){ok('')}}
   if(window.QRCode)return make();var s=document.createElement('script');s.src=opts.qrLib||'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';s.onload=make;s.onerror=function(){ok('')};document.head.appendChild(s)})}
-function frame(html){var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);var d=f.contentWindow.document;d.open();d.write(html);d.close();
+function frame(html,title){if(window.PrintView)return PrintView.open(html,{title:title});var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);var d=f.contentWindow.document;d.open();d.write(html);d.close();
   setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){alert('Printing is not available on this device.')}setTimeout(function(){f.remove()},60000)},400)}
 function calibrate(paper,c){var W=paper==='A4'?210:148,H=paper==='A4'?297:210,full=c.header!=='blank',e=c.edgeMM==null?7:c.edgeMM,t=full?e:c.topMM,b=full?e:c.bottomMM,l=full?e:(c.leftMM==null?9:c.leftMM),r=full?e:(c.rightMM==null?9:c.rightMM),tk='';
   for(var x=0;x<=W;x+=5)tk+='<div style="position:absolute;left:'+x+'mm;top:0;width:.25mm;height:'+(x%10?2.5:x%50?4:7)+'mm;background:#000"></div>'+(x%50===0&&x?'<div style="position:absolute;left:'+(x+.8)+'mm;top:4mm;font:7pt Arial">'+x+'</div>':'');
@@ -171,10 +182,10 @@ function calibrate(paper,c){var W=paper==='A4'?210:148,H=paper==='A4'?297:210,fu
    '<div style="position:absolute;left:'+l+'mm;top:'+t+'mm;width:'+(W-l-r)+'mm;height:'+(H-t-b)+'mm;border:.4mm dashed #1d4ed8;box-sizing:border-box"></div>'+
    '<div style="position:absolute;left:'+(l+4)+'mm;top:'+(t+4)+'mm;width:'+(W-l-r-8)+'mm;font-size:'+(paper==='A4'?10:8.5)+'pt;line-height:1.35"><b style="font-size:1.25em">Printer calibration · '+paper+' ('+W+' × '+H+' mm)</b><br>'+(full?'Plain paper, full header. Edge margin '+e+' mm.':'Pre-printed pad. Top '+t+' mm · bottom '+b+' mm · left '+l+' mm · right '+r+' mm.')+'<br><br>'+
    '1. Print with <b>Scale 100%</b> ("Actual size"), <b>Margins: None or Default</b>, <b>Headers and footers OFF</b>, paper '+paper+'.<br>2. The ruler marks must start at the paper edge, and the <b>100</b> mark must measure 100 mm from the edge.<br>3. The blue dashed box is where the prescription prints. On a pre-printed pad it must sit below your printed header and above the footer.<br>4. If it lands too high, low, left or right, change the margins in Rx settings and print this page again.</div></body></html>';
-  frame(html)}
+  frame(html,'Calibration page '+paper)}
 function lines(t){return String(t||'').split('\n').map(esc).join('<br>')}
-function print(rx){
-  var c=CFG,rv=rx.review?addDays(rx.date,+rx.review):'',full=c.header!=='blank';
+function print(rx,paperOverride){
+  var c=paperOverride?Object.assign({},CFG,{paper:paperOverride}):CFG,rv=rx.review?addDays(rx.date,+rx.review):'',full=c.header!=='blank';
   var qrText=[c.clinicEn,'Dr '+c.docEn+' '+c.qual,'Reg '+c.regNo+' '+c.council,'Pt '+rx.p.name+' '+(rx.p.age||'')+'/'+(rx.p.sex||''),'Date '+dshow(rx.date),'Rx#'+rx.id,rx.m.length+' item(s)'].join(' | ');
   (c.showQR?(opts.qrEncode?opts.qrEncode(rx).then(qrData):qrData(qrText)):Promise.resolve('')).then(function(qr){
   var meds=rx.m.filter(function(m){return m.g}).map(function(m,i){var te=c.telugu?[TE_D[m.d]||'',TE_T[m.t]||'',teDur(m.u)].filter(Boolean).join(' — '):'';
@@ -201,6 +212,7 @@ function print(rx){
    '<div class="sg"><div class="ln"><b>'+esc(c.docEn)+'</b><br>'+esc(c.qual)+'<br>Reg. No. '+esc(c.regNo)+(c.council?'<br><span class="small">'+esc(c.council)+'</span>':'')+'</div></div></div>'+
    (full?'<div class="notes">Instruction to Patient: '+esc(c.patientNote)+'<br>Instruction to Pharmacist: '+esc(c.pharmNote)+(c.teNote?'<br><span style="font-style:normal">'+esc(c.teNote)+'</span>':'')+'</div>'+(c.footerAd?'<div class="ad2">'+esc(c.footerAd)+'</div>':''):'')+
    '</body></html>';
+  if(window.PrintView)return PrintView.open(html,{title:'Prescription · '+rx.p.name,onPaper:function(z){print(rx,z)}});
   var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);
   var d=f.contentWindow.document;d.open();d.write(html);d.close();
   setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){alert('Printing is not available on this device.')}setTimeout(function(){f.remove()},60000)},400)})}
