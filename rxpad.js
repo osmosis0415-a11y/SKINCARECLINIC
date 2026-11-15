@@ -8,7 +8,7 @@
 'use strict';
 var RxPad, P='rxpad', CFG, REC, opts={};
 var DEF={enabled:true,clinicEn:'',clinicTe:'',addrEn:'',addrTe:'',phone:'',noAppt:'No appointment by phone',hours:'',holiday:'SUNDAY HOLIDAY',
-  docEn:'',docTe:'',qual:'',fellow:'',spec:'',council:'',regNo:'',paper:'A5',header:'full',topMM:70,bottomMM:40,
+  docEn:'',docTe:'',qual:'',fellow:'',spec:'',council:'',regNo:'',paper:'A5',header:'full',topMM:70,bottomMM:40,leftMM:9,rightMM:9,edgeMM:7,scale:100,
   telugu:true,showQR:true,printAt:'doctor',patientNote:'Not to buy medicines on old prescription.',pharmNote:'Not to supply medicines on old prescription.',
   teNote:'పై మందులు డాక్టర్ గారికి చూపించిన తరువాత వాడవలెను',footerAd:'',myDrugs:[]};
 var FORMS=['TAB','CAP','SYP','SUSP','DROPS','CREAM','OINT','GEL','LOTION','SOLN','SOAP','SHAMPOO','POWDER','SERUM','INJ','KIT','OTHER'];
@@ -134,7 +134,10 @@ RxPad={
    '<div class="cd"><label style="display:flex;gap:8px;align-items:center;font-size:15px;color:#0f172a"><input type="checkbox" id="rxsEn" style="width:auto;min-height:0"'+(s.enabled?' checked':'')+'> Use this prescription pad</label>'+
    '<div class="g"><div><label>Paper</label><select id="rxsPaper"><option'+(s.paper==='A5'?' selected':'')+'>A5</option><option'+(s.paper==='A4'?' selected':'')+'>A4</option></select></div>'+
    '<div><label>Header</label><select id="rxsHead"><option value="full"'+(s.header==='full'?' selected':'')+'>Print full header (plain paper)</option><option value="blank"'+(s.header==='blank'?' selected':'')+'>Body only (my pre-printed pad)</option></select></div>'+
-   '<div><label>Pre-printed pad: top space (mm)</label><input id="rxsTop" type="number" value="'+s.topMM+'"></div><div><label>Pre-printed pad: bottom space (mm)</label><input id="rxsBot" type="number" value="'+s.bottomMM+'"></div></div>'+
+   '<div><label>Pre-printed pad: top space (mm)</label><input id="rxsTop" type="number" value="'+s.topMM+'"></div><div><label>Pre-printed pad: bottom space (mm)</label><input id="rxsBot" type="number" value="'+s.bottomMM+'"></div>'+
+   '<div><label>Left margin (mm)</label><input id="rxsL" type="number" value="'+(s.leftMM==null?9:s.leftMM)+'"></div><div><label>Right margin (mm)</label><input id="rxsR" type="number" value="'+(s.rightMM==null?9:s.rightMM)+'"></div>'+
+   '<div><label>Plain paper edge (mm)</label><input id="rxsE" type="number" value="'+(s.edgeMM==null?7:s.edgeMM)+'"></div><div><label>Text size (%)</label><input id="rxsSc" type="number" min="70" max="140" value="'+(s.scale||100)+'"></div></div>'+
+   '<div class="row" style="margin-top:8px"><button id="rxsCalA5">📏 Calibration page A5</button><button id="rxsCalA4">📏 Calibration page A4</button></div>'+
    '<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#0f172a"><input type="checkbox" id="rxsTe" style="width:auto;min-height:0"'+(s.telugu?' checked':'')+'> Print Telugu dosage line under each medicine</label>'+
    '<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:#0f172a"><input type="checkbox" id="rxsQR" style="width:auto;min-height:0"'+(s.showQR?' checked':'')+'> Print Rx QR'+(opts.qrEncode?' (encrypted: only this clinic app can read it)':' (doctor, reg. no., patient, date, Rx no.)')+'</label></div>'+
    '<div class="cd">'+F.map(function(f){var v=s[f[0]]||'';return'<label>'+f[1]+'</label>'+(f[0]==='hours'||f[0]==='addrEn'||f[0]==='addrTe'?'<textarea data-f="'+f[0]+'" placeholder="'+esc(f[2])+'">'+esc(v)+'</textarea>':'<input data-f="'+f[0]+'" placeholder="'+esc(f[2])+'" value="'+esc(v)+'">')}).join('')+'</div>'+
@@ -143,20 +146,32 @@ RxPad={
    '<div class="cd"><label>My common medicines (one per line, generic names)</label><textarea id="rxsMy" rows="5" placeholder="CETIRIZINE 10 MG">'+esc((s.myDrugs||[]).join('\n'))+'</textarea></div></div>'+
    '<div class="bar"><button class="p" id="rxsSave">Save settings</button><button id="rxsTest">🖨 Test print</button></div>';
   function rd(){root.querySelectorAll('[data-f]').forEach(function(i){s[i.dataset.f]=i.value});s.enabled=root.querySelector('#rxsEn').checked;s.paper=root.querySelector('#rxsPaper').value;s.header=root.querySelector('#rxsHead').value;
-   s.topMM=+root.querySelector('#rxsTop').value||70;s.bottomMM=+root.querySelector('#rxsBot').value||40;s.telugu=root.querySelector('#rxsTe').checked;s.showQR=root.querySelector('#rxsQR').checked;
+   s.topMM=+root.querySelector('#rxsTop').value||70;s.leftMM=+root.querySelector('#rxsL').value||0;s.rightMM=+root.querySelector('#rxsR').value||0;s.edgeMM=+root.querySelector('#rxsE').value||0;s.scale=Math.min(140,Math.max(70,+root.querySelector('#rxsSc').value||100));s.bottomMM=+root.querySelector('#rxsBot').value||40;s.telugu=root.querySelector('#rxsTe').checked;s.showQR=root.querySelector('#rxsQR').checked;
    s.hideBuiltIn=root.querySelector('#rxsHide').checked;s.printAt='doctor';s.myDrugs=root.querySelector('#rxsMy').value.split('\n').map(up).map(function(x){return x.trim()}).filter(Boolean);['docEn','qual','regNo','clinicEn'].forEach(function(k){s[k]=up(s[k]).trim()})}
   root.querySelector('#rxsX').onclick=function(){root.remove()};
   root.querySelectorAll('[data-delset]').forEach(function(b){b.onclick=function(){if(!confirm('Delete set '+b.dataset.delset+'?'))return;saveSet(b.dataset.delset,null);b.parentNode.remove()}});
   root.querySelector('#rxsSave').onclick=function(){rd();CFG=s;sv(P+'_cfg',CFG);opts.cfgStore&&opts.cfgStore.set(CFG);root.remove();opts.onSettings&&opts.onSettings(CFG);done&&done()};
+  root.querySelector('#rxsCalA5').onclick=function(){rd();calibrate('A5',s)};root.querySelector('#rxsCalA4').onclick=function(){rd();calibrate('A4',s)};
   root.querySelector('#rxsTest').onclick=function(){rd();var old=CFG;CFG=s;print({id:'TEST',date:dk(),p:{name:'TEST PATIENT',age:'30',sex:'F',place:'NIZAMABAD',phone:'',wt:''},cc:'',dx:'TINEA CORPORIS',allergy:'NIL',inv:'',adv:'Keep area dry.',review:'14',
     m:[{f:'TAB',g:'TERBINAFINE',s:'250 MG',d:'1-0-0',t:'After food',u:'14 days'},{f:'CREAM',g:'LULICONAZOLE 1%',s:'',d:'Apply twice daily',t:'—',u:'4 weeks'}]});CFG=old}},
- print:function(rx){print(rx)}
+ print:function(rx){print(rx)},
+ calibrate:function(paper){calibrate(paper,CFG)}
 };
 function qrData(text){return new Promise(function(ok){
   function make(){try{var d=document.createElement('div');d.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(d);
     new window.QRCode(d,{text:text,width:220,height:220,correctLevel:window.QRCode.CorrectLevel?window.QRCode.CorrectLevel.M:0});
     setTimeout(function(){var c=d.querySelector('canvas'),i=d.querySelector('img');var u=c?c.toDataURL('image/png'):(i?i.src:'');d.remove();ok(u)},60)}catch(e){ok('')}}
   if(window.QRCode)return make();var s=document.createElement('script');s.src=opts.qrLib||'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';s.onload=make;s.onerror=function(){ok('')};document.head.appendChild(s)})}
+function frame(html){var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);var d=f.contentWindow.document;d.open();d.write(html);d.close();
+  setTimeout(function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(e){alert('Printing is not available on this device.')}setTimeout(function(){f.remove()},60000)},400)}
+function calibrate(paper,c){var W=paper==='A4'?210:148,H=paper==='A4'?297:210,full=c.header!=='blank',e=c.edgeMM==null?7:c.edgeMM,t=full?e:c.topMM,b=full?e:c.bottomMM,l=full?e:(c.leftMM==null?9:c.leftMM),r=full?e:(c.rightMM==null?9:c.rightMM),tk='';
+  for(var x=0;x<=W;x+=5)tk+='<div style="position:absolute;left:'+x+'mm;top:0;width:.25mm;height:'+(x%10?2.5:x%50?4:7)+'mm;background:#000"></div>'+(x%50===0&&x?'<div style="position:absolute;left:'+(x+.8)+'mm;top:4mm;font:7pt Arial">'+x+'</div>':'');
+  for(var y=0;y<=H;y+=5)tk+='<div style="position:absolute;top:'+y+'mm;left:0;height:.25mm;width:'+(y%10?2.5:y%50?4:7)+'mm;background:#000"></div>'+(y%50===0&&y?'<div style="position:absolute;top:'+(y+.5)+'mm;left:7.5mm;font:7pt Arial">'+y+'</div>':'');
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Calibration '+paper+'</title><style>@page{size:'+paper+';margin:0}html,body{margin:0;width:'+W+'mm;height:'+H+'mm;position:relative;overflow:hidden;font-family:Arial;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>'+tk+
+   '<div style="position:absolute;left:'+l+'mm;top:'+t+'mm;width:'+(W-l-r)+'mm;height:'+(H-t-b)+'mm;border:.4mm dashed #1d4ed8;box-sizing:border-box"></div>'+
+   '<div style="position:absolute;left:'+(l+4)+'mm;top:'+(t+4)+'mm;width:'+(W-l-r-8)+'mm;font-size:'+(paper==='A4'?10:8.5)+'pt;line-height:1.35"><b style="font-size:1.25em">Printer calibration · '+paper+' ('+W+' × '+H+' mm)</b><br>'+(full?'Plain paper, full header. Edge margin '+e+' mm.':'Pre-printed pad. Top '+t+' mm · bottom '+b+' mm · left '+l+' mm · right '+r+' mm.')+'<br><br>'+
+   '1. Print with <b>Scale 100%</b> ("Actual size"), <b>Margins: None or Default</b>, <b>Headers and footers OFF</b>, paper '+paper+'.<br>2. The ruler marks must start at the paper edge, and the <b>100</b> mark must measure 100 mm from the edge.<br>3. The blue dashed box is where the prescription prints. On a pre-printed pad it must sit below your printed header and above the footer.<br>4. If it lands too high, low, left or right, change the margins in Rx settings and print this page again.</div></body></html>';
+  frame(html)}
 function lines(t){return String(t||'').split('\n').map(esc).join('<br>')}
 function print(rx){
   var c=CFG,rv=rx.review?addDays(rx.date,+rx.review):'',full=c.header!=='blank';
@@ -170,7 +185,7 @@ function print(rx){
    '<div class="boxes"><div class="bx">'+(c.docTe?lines(c.docTe)+'<br>':'')+(c.regNo?'రి.నెం. '+esc(c.regNo):'')+'</div>'+(hours?'<div class="bx hr"><b>CONSULTING HOURS</b><br>'+hours+(c.holiday?'<br><b class="red">'+esc(c.holiday)+'</b>':'')+'</div>':'')+
    '<div class="bx dr"><b class="red">'+esc(c.docEn)+'</b><br>'+esc(c.qual)+(c.fellow?'<br><small>'+esc(c.fellow)+'</small>':'')+(c.spec?'<br><b class="red">'+esc(c.spec)+'</b>':'')+'<br>Reg. No. '+esc(c.regNo)+'</div></div>':'';
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rx '+esc(rx.p.name)+'</title><style>'+
-   '@page{size:'+c.paper+';margin:'+(full?'7mm':c.topMM+'mm 9mm '+c.bottomMM+'mm 9mm')+'}*{box-sizing:border-box}body{margin:0;font:'+(c.paper==='A4'?'13px':'11.5px')+'/1.35 Arial,"Noto Sans Telugu",sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+   '@page{size:'+c.paper+';margin:'+(full?(c.edgeMM==null?7:c.edgeMM)+'mm':c.topMM+'mm '+(c.rightMM==null?9:c.rightMM)+'mm '+c.bottomMM+'mm '+(c.leftMM==null?9:c.leftMM)+'mm')+'}*{box-sizing:border-box}body{margin:0;font:'+((c.paper==='A4'?13:11.5)*(c.scale||100)/100).toFixed(2)+'px/1.35 Arial,"Noto Sans Telugu",sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
    '.band{background:#1d4ed8;color:#fff;text-align:center;padding:4px 6px;border-radius:3px}.cn{font-size:1.9em;font-weight:900;letter-spacing:.08em}.ad{font-size:.85em}'+
    '.ten{display:flex;justify-content:space-between;align-items:center;margin-top:3px}.tc{font-size:1.6em;font-weight:900;color:#c2410c;flex:1;text-align:center}.na{color:#b91c1c;font-weight:700;font-size:.85em}.tea{text-align:center;font-size:.85em}'+
    '.boxes{display:flex;gap:6px;margin-top:5px}.bx{flex:1;border:1.5px solid #1d4ed8;border-radius:8px;padding:4px;text-align:center;font-size:.85em}.red{color:#b91c1c}'+
