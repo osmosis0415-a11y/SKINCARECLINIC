@@ -482,9 +482,13 @@ const DISK={h:null,ok:false,at:0,last:'',
  async load(){try{this.h=await this.get();if(this.h)this.ok=(await this.h.queryPermission({mode:'readwrite'}))==='granted'}catch(e){this.ok=false}A.diskUi();render()},
  async pick(){if(ROLE!=='adm')return toast('Only Admin','warning');if(!window.showDirectoryPicker)return A.diskUi();try{const h=await showDirectoryPicker({id:'scc-records',mode:'readwrite'});this.h=h;this.ok=true;await this.put(h);L('Hard-disk folder connected: '+h.name);await this.save(true);toast('Folder connected')}catch(e){if(e&&e.name!=='AbortError')toast('Could not use that folder','error')}A.diskUi();render()},
  async perm(){if(!this.h)return;try{this.ok=(await this.h.requestPermission({mode:'readwrite'}))==='granted'}catch(e){this.ok=false}if(this.ok)await this.save(true);A.diskUi();render()},
- async save(force){if(!this.h||!this.ok||!window.SCC_READY||!(HIST.A&&HIST.R))return;const j=JSON.stringify(A.backupData()),sig=j.length+':'+S.savedAt;if(!force&&sig===this.last)return;
-  try{const fh=await this.h.getFileHandle('SkinCareClinic_'+today()+'.json',{create:true}),w=await fh.createWritable();await w.write(j);await w.close();this.last=sig;this.at=Date.now();try{localStorage.setItem(BKEY,String(this.at))}catch(e){}this.prune()}
+ async save(force){if(!this.h||!this.ok||!window.SCC_READY||!(HIST.A&&HIST.R))return;const o=A.backupData(),j=JSON.stringify(o),sig=j.length+':'+S.savedAt;if(!force&&sig===this.last)return;
+  try{const t=await A.backupText(o),fh=await this.h.getFileHandle('SkinCareClinic_'+today()+'.json',{create:true}),w=await fh.createWritable();await w.write(t);this.encOld();await w.close();this.last=sig;this.at=Date.now();try{localStorage.setItem(BKEY,String(this.at))}catch(e){}this.prune()}
   catch(e){this.ok=false;toast('Hard-disk save failed: check the folder or drive','error')}A.diskUi();render()},
+ async encOld(){ // once: older unencrypted backup files in the folder are rewritten encrypted
+  if(!S.vault||!CR.key||this._enc)return;this._enc=true;try{for await(const [n,h] of this.h.entries()){if(h.kind!=='file'||!/^SkinCareClinic_.*\.json$/.test(n))continue;
+    const f=await h.getFile(),txt=await f.text();let d;try{d=JSON.parse(txt)}catch(e){continue}if(!d||d.enc===2||!Array.isArray(d.q))continue;
+    const w=await h.createWritable();await w.write(await A.backupText(d));await w.close()}}catch(e){console.warn('encrypt old backups',e)}},
  async prune(){try{const cut=new Date(Date.now()-31*864e5).toISOString().slice(0,10),old=[];for await(const [n] of this.h.entries()){const m=/^SkinCareClinic_(\d{4}-\d{2}-\d{2})\.json$/.exec(n);if(m&&m[1]<cut)old.push(m[1])}
   old.sort();const keep=new Set();old.forEach(d=>{const mo=d.slice(0,7);if(![...keep].some(k=>k.slice(0,7)===mo))keep.add(d)});for(const d of old)if(!keep.has(d))await this.h.removeEntry('SkinCareClinic_'+d+'.json')}catch(e){}}};
 setInterval(()=>DISK.save(),10*60000);setInterval(()=>{try{A.anaRender()}catch(e){}},30000);
@@ -854,7 +858,7 @@ async closeDay(){
 async testBackup(){
   if(ROLE!=='adm')return toast('Only Admin','warning');
   const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
-  i.onchange=()=>{const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=async()=>{let d;try{d=JSON.parse(rd.result);if(!Array.isArray(d.q))throw 0}catch(e){L('🧪 Backup test FAILED (unreadable file)');commit();return Swal.fire({icon:'error',title:'❌ This backup cannot be read',text:'The file is damaged or is not a clinic backup. Check the hard-disk folder and make a new backup now.'})}
+  i.onchange=()=>{const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=async()=>{let d;try{d=await A.readBackup(rd.result);if(!Array.isArray(d.q))throw 0}catch(e){if(e&&e.message==='cancel')return;L('🧪 Backup test FAILED (unreadable file)');commit();return Swal.fire({icon:'error',title:'❌ This backup cannot be read',text:'The file is damaged or is not a clinic backup. Check the hard-disk folder and make a new backup now.'})}
     const vis=[...(d.arch||[]),...d.q],rx=d.rx||[],ds=vis.map(p=>p.scanDate).filter(Boolean).sort(),mine=new Set(vis.map(p=>p.id)),cur=[...S.arch,...S.q],have=cur.filter(p=>mine.has(p.id)).length,pc=cur.length?Math.round(have*100/cur.length):100,age=d.backupAt?Math.round((Date.now()-d.backupAt)/864e5):null;
     S.lastBkTest=Date.now();L('🧪 Backup test passed ('+vis.length+' visits, '+rx.length+' prescriptions)');commit();
     Swal.fire({icon:pc>=90&&(age===null||age<=7)?'success':'warning',title:'✅ Backup can be restored',html:'<div style="text-align:left;font-size:.88rem">File: <b>'+esc(f.name)+'</b><br>Visits: <b>'+vis.length+'</b>'+(ds.length?' ('+fd(ds[0])+' to '+fd(ds[ds.length-1])+')':'')+'<br>Prescriptions: <b>'+rx.length+'</b><br>'+(age!==null?'Saved: <b>'+(age===0?'today':age+' day(s) ago')+'</b><br>':'')+'It contains <b>'+pc+'%</b> of the visits on this phone.'+(pc<90?'<br><b style="color:#b45309">Older than this phone\'s data: make a fresh backup.</b>':'')+'<br><br><span class="m">Nothing on this phone was changed. Next check due in 30 days.</span></div>'})};rd.readAsText(f)};
@@ -1611,10 +1615,22 @@ async secret(k){
 },
 lastBk(){try{return +localStorage.getItem(BKEY)||0}catch(e){return 0}},
 backupData(){const o={...S,rx:RXREC,backupAt:Date.now(),app:'SkinCareClinic'};['enc','vault','sec','lock','sec0','qb'].forEach(k=>delete o[k]);return o},
-backup(){if(!(HIST.A&&HIST.R))return toast('Loading past records… try again in a few seconds','info');if(DISK.ok)return DISK.save(true).then(()=>toast('Backup saved to hard-disk folder'));const n=new Date(),nm='clinic_backup_'+today()+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+'.json';A.dl(nm,JSON.stringify(A.backupData()),'application/json');try{localStorage.setItem(BKEY,String(Date.now()))}catch(e){}L('Backup saved ('+nm+')');commit();toast('Backup saved to Downloads')},
+// Backup files are encrypted with the clinic data key (AES-256-GCM). The file carries the key locked by the finance
+// password and by the recovery code, so it opens on any phone with either of them; this clinic's phones open it directly.
+async backupText(o){o=o||A.backupData();if(!S.vault||!CR.key)return JSON.stringify(o);const e=await CR.enc(JSON.stringify(o));
+  return JSON.stringify({app:'SkinCareClinic',enc:2,backupAt:o.backupAt,kid:S.vault.kid,w:{pass:S.vault.w.pass||null,rec:S.vault.w.rec||null},i:e.i,c:e.c})},
+async readBackup(txt){const d=JSON.parse(txt);if(!d||d.enc!==2)return d;
+  const dec=async k=>JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:UB(d.i)},k,UB(d.c))));
+  if(CR.key){try{return await dec(CR.key)}catch(e){}}
+  for(let t=0;t<3;t++){const r=await Swal.fire({icon:'info',title:'🔐 Encrypted backup',text:'Enter the finance password or the recovery code that the clinic used when this backup was made.',input:'password',showCancelButton:true,confirmButtonText:'Open'});
+    if(!r.isConfirmed)throw new Error('cancel');const v=(r.value||'').trim();
+    for(const sl of ['pass','rec']){const w=d.w&&d.w[sl];if(!w)continue;try{return await dec(await CR.unwrap(SECRET[sl](v),w))}catch(e){}}
+    toast('That does not open this backup','error')}
+  throw new Error('locked')},
+backup(){if(!(HIST.A&&HIST.R))return toast('Loading past records… try again in a few seconds','info');if(DISK.ok)return DISK.save(true).then(()=>toast('Backup saved to hard-disk folder'));const n=new Date(),nm='clinic_backup_'+today()+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+'.json',o=A.backupData();A.backupText(o).then(t=>A.dl(nm,t,'application/json'));try{localStorage.setItem(BKEY,String(Date.now()))}catch(e){}L('Backup saved ('+nm+')');commit();toast('Backup saved to Downloads')},
 diskUi(){const el=$('dsk');if(!el)return;
   if(!window.showDirectoryPicker){el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 0;font-size:.8rem">Phones cannot save straight to a folder. Tap <b>⬇ Backup</b> (it goes to Downloads), then copy the file to the clinic computer\'s hard disk. Or open this app on the clinic PC in Chrome or Edge and connect a folder there.</p>';return}
-  el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 .4rem;font-size:.8rem">'+(!DISK.h?'Choose a folder on this computer\'s hard disk (for example D:\\Clinic Records). The app then saves a full backup there by itself, including prescriptions: every 10 minutes when something changes, and when the app is closed. Daily files are kept for 31 days, then one file per month is kept.'
+  el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 .4rem;font-size:.8rem">'+(S.vault?'🔐 Backup files are encrypted. They open with the finance password or recovery code. ':'⚠ Encryption is off on this device, so backup files are NOT encrypted. Log in as Admin to switch it on. ')+(!DISK.h?'Choose a folder on this computer\'s hard disk (for example D:\\Clinic Records). The app then saves a full backup there by itself, including prescriptions: every 10 minutes when something changes, and when the app is closed. Daily files are kept for 31 days, then one file per month is kept.'
    :DISK.ok?'✅ Saving to folder <b>'+esc(DISK.h.name)+'</b>'+(DISK.at?'. Last saved '+ft(DISK.at):'')+'.':'⚠ Saving to <b>'+esc(DISK.h.name)+'</b> is paused. The browser needs your permission again after a restart.')+'</p>'
    +'<div class="grid">'+(DISK.h&&!DISK.ok?'<button onclick="DISK.perm()">Allow saving</button>':'')+(DISK.ok?'<button class="ok" onclick="DISK.save(true).then(()=>toast(\'Saved\'))">Save now</button>':'')+'<button class="g" onclick="DISK.pick()">'+(DISK.h?'Change folder':'Choose folder')+'</button></div>'},
 async find(){
@@ -1641,7 +1657,7 @@ restore(e){
   const r=new FileReader();
   r.onload=async()=>{
     try{
-      const d=JSON.parse(r.result);
+      let d;try{d=await A.readBackup(r.result)}catch(x){if(x&&x.message==='cancel')return;if(x&&x.message==='locked')return toast('Backup not opened','error');throw x}
       if(!Array.isArray(d.q))throw 0;
       const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});
       if(c.isConfirmed){HIST.A=HIST.R=true;if(Array.isArray(d.rx)){RXREC=d.rx;window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC)}const keep={sec:S.sec,vault:S.vault,lock:S.lock};['rx','enc','vault','sec','lock','sec0','app','backupAt','qb'].forEach(k=>delete d[k]);S={...S,...d,...keep};norm();L('Backup restored');commit();toast('Restored')}
