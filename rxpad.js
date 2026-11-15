@@ -46,13 +46,23 @@ function css(){if(document.getElementById('rxp-css'))return;var s=document.creat
 '.rxp *{box-sizing:border-box}.rxp .w{max-width:900px;margin:0 auto;padding:12px 12px 90px}.rxp h2{margin:4px 0 10px;font-size:20px}'+
 '.rxp .cd{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:10px}.rxp label{display:block;font-size:12px;font-weight:700;color:#64748b;margin:6px 0 3px}'+
 '.rxp input,.rxp select,.rxp textarea{width:100%;font:inherit;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;background:#fff;min-height:42px}.rxp textarea{min-height:60px}'+
-'.rxp .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.rxp .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}'+
-'.rxp button{font:inherit;font-weight:700;border:1px solid #cbd5e1;background:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;min-height:42px}.rxp button.p{background:#0369a1;border-color:#0369a1;color:#fff}.rxp button.d{color:#b91c1c}'+
+'.rxp .g{background:transparent;padding:0;border:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.rxp .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}'+
+'.rxp button{font:inherit;font-weight:700;border:1px solid #cbd5e1;background:#fff;color:#0f172a;text-transform:none;letter-spacing:normal;border-radius:10px;padding:9px 12px;cursor:pointer;min-height:42px}.rxp button.p{background:#0369a1;border-color:#0369a1;color:#fff}.rxp button.d{color:#b91c1c}'+
 '.rxp .m{border:1px solid #e2e8f0;border-radius:12px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:90px 1fr 100px;gap:6px}.rxp .m .full{grid-column:1/-1}'+
 '.rxp .m .gn{text-transform:uppercase;font-weight:800}.rxp .warn{background:#fef3c7;color:#92400e;border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:8px}'+
 '.rxp .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e2e8f0;padding:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:2}'+
 '.rxp .muted{color:#64748b;font-size:12px}.rxp .chip{display:inline-block;background:#e0f2fe;color:#075985;border-radius:99px;padding:3px 9px;font-size:12px;font-weight:700;margin:2px;cursor:pointer;border:0}'+
 '@media(max-width:560px){.rxp .m{grid-template-columns:1fr 1fr}.rxp .m .gn{grid-column:1/-1}}';document.head.appendChild(s)}
+var NEEDS_STRENGTH=['TAB','CAP','SYP','SUSP','DROPS','INJ'];
+function missing(rx,c){c=c||CFG;var m=[],p=rx.p||{};
+  if(!String(p.name||'').trim())m.push('Patient name');if(!String(p.age||'').trim())m.push('Patient age');if(!p.sex)m.push('Patient sex');
+  if(!String(p.place||'').trim())m.push('Patient address / place');
+  var ag=parseFloat(p.age);if(!isNaN(ag)&&ag<12&&!String(p.wt||'').trim())m.push('Weight (child under 12)');
+  if(!rx.date)m.push('Date');if(!String(rx.dx||'').trim())m.push('Diagnosis / provisional diagnosis');
+  var ms=(rx.m||[]);if(!ms.length)m.push('At least one medicine');
+  ms.forEach(function(x,i){var b=[];if(!x.f)b.push('form');if(!x.g)b.push('generic name');if(NEEDS_STRENGTH.indexOf(x.f)>=0&&!String(x.s||'').trim()&&!/\d/.test(x.g||''))b.push('strength');if(!x.d)b.push('dose');if(!String(x.u||'').trim())b.push('duration');if(b.length)m.push('Medicine '+(i+1)+': '+b.join(', '))});
+  if(!c.docEn)m.push("Doctor's name (Rx settings)");if(!c.qual)m.push("Doctor's qualification (Rx settings)");if(!c.regNo)m.push('Registration No. (Rx settings)');if(!c.council)m.push('Medical Council name (Rx settings)');
+  return m}
 function canSet(){return !opts.canSettings||opts.canSettings()}
 function el(h){var d=document.createElement('div');d.innerHTML=h;return d.firstElementChild}
 
@@ -63,28 +73,29 @@ RxPad={
  cfg:function(){return CFG},
  setCfg:function(c){CFG=Object.assign({},DEF,opts.defaults||{},c||{});sv(P+'_cfg',CFG)},
  sets:function(){return sets()},
+ missing:function(rx){return missing(rx)},
  enabled:function(){return !!(CFG&&CFG.enabled)},
  history:function(name,phone){name=up(name).trim();phone=String(phone||'').replace(/\D/g,'').slice(-10);
    return REC.filter(function(r){return (phone&&r.p.phone&&r.p.phone===phone)||(name&&up(r.p.name).trim()===name)}).sort(function(a,b){return b.ts-a.ts})},
  open:function(patient,seed,existing){css();if(!CFG)RxPad.init({});patient=patient||{};seed=seed||{};
-  var rx=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),ts:Date.now(),date:dk(),p:{name:up(patient.name||''),age:patient.age||'',sex:patient.sex||'',place:patient.place||'',phone:String(patient.phone||'').replace(/\D/g,'').slice(-10),wt:'',token:patient.token||''},
-    cc:'',dx:up(seed.dx||''),allergy:'',inv:'',adv:seed.adv||'',review:'',m:[]};
+  var rx=existing?JSON.parse(JSON.stringify(existing)):{id:uid(),ts:Date.now(),date:dk(),p:{name:/^walk-?in patient$/i.test(String(patient.name||'').trim())?'':up(patient.name||''),age:patient.age||'',sex:patient.sex||'',place:patient.place||'',phone:String(patient.phone||'').replace(/\D/g,'').slice(-10),wt:'',token:patient.token||''},
+    cc:'',dx:up(seed.dx||''),allergy:'',inv:'',adv:'',review:'',m:[]};
   if(seed.meds&&!existing)String(seed.meds).split('\n').filter(Boolean).forEach(function(l){rx.m.push({f:'',g:up(l),s:'',d:'',t:'—',u:''})});
   var root=el('<div class="rxp" id="rxpRoot"></div>');document.body.appendChild(root);
   var hist=RxPad.history(rx.p.name,rx.p.phone);
   function medRow(m,i){return '<div class="m" data-i="'+i+'"><select data-k="f">'+FORMS.map(function(f){return'<option'+(m.f===f?' selected':'')+'>'+f+'</option>'}).join('')+'</select>'+
-    '<input class="gn" data-k="g" list="rxpDrugs" placeholder="GENERIC NAME" value="'+esc(m.g)+'"><input data-k="s" placeholder="Strength" value="'+esc(m.s)+'">'+
-    '<select data-k="d"><option value="">Dose / frequency</option>'+DOSES.map(function(x){return'<option'+(m.d===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
+    '<input class="gn" data-k="g" list="rxpDrugs" placeholder="GENERIC NAME" value="'+esc(m.g)+'"><input data-k="s" placeholder="Strength (e.g. 250 MG)" value="'+esc(m.s)+'">'+
+    '<select data-k="d"><option value="">Dose / frequency *</option>'+DOSES.map(function(x){return'<option'+(m.d===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
     '<select data-k="t">'+TIMES.map(function(x){return'<option'+(m.t===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
-    '<input data-k="u" placeholder="Duration e.g. 14 days" value="'+esc(m.u)+'"><input class="full" data-k="n" placeholder="Note (optional)" value="'+esc(m.n||'')+'">'+
+    '<input data-k="u" placeholder="Duration * e.g. 14 days" value="'+esc(m.u)+'"><input class="full" data-k="n" placeholder="Note (optional)" value="'+esc(m.n||'')+'">'+
     (m._t?'<div class="muted full">from: '+esc(m._t)+'</div>':'')+'<button class="d full" data-del="'+i+'">✕ Remove medicine</button></div>'}
   function draw(){
    var T=allTpl(),drugs={};Object.keys(T).forEach(function(k){(T[k].m||[]).forEach(function(x){drugs[x[1]]=1})});(CFG.myDrugs||[]).forEach(function(x){drugs[up(x)]=1});REC.slice(-200).forEach(function(r){r.m.forEach(function(x){drugs[x.g]=1})});
    root.innerHTML='<div class="w"><div class="row" style="justify-content:space-between"><h2>📝 Prescription</h2><button id="rxpX">✕ Close</button></div>'+
    (!CFG.regNo||!CFG.docEn?'<div class="warn">⚠ Add the doctor\'s name, qualification and <b>Registration No.</b> in Rx settings. They are required on every prescription.</div>':'')+
-   '<div class="cd"><div class="g"><div><label>Patient name</label><input id="rxN" value="'+esc(rx.p.name)+'" style="text-transform:uppercase"></div><div><label>Age</label><input id="rxA" inputmode="numeric" value="'+esc(rx.p.age)+'"></div>'+
-   '<div><label>Sex</label><select id="rxS"><option></option>'+['M','F','Other'].map(function(s){return'<option'+(rx.p.sex===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>'+
-   '<div><label>Place</label><input id="rxPl" value="'+esc(rx.p.place)+'"></div><div><label>Mobile (optional)</label><input id="rxPh" inputmode="tel" value="'+esc(rx.p.phone)+'"></div><div><label>Weight kg (children)</label><input id="rxW" inputmode="decimal" value="'+esc(rx.p.wt)+'"></div>'+
+   '<div class="cd"><div class="g"><div><label>Patient name *</label><input id="rxN" value="'+esc(rx.p.name)+'" style="text-transform:uppercase"></div><div><label>Age *</label><input id="rxA" inputmode="numeric" value="'+esc(rx.p.age)+'"></div>'+
+   '<div><label>Sex *</label><select id="rxS"><option></option>'+['M','F','Other'].map(function(s){return'<option'+(rx.p.sex===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>'+
+   '<div><label>Address / place *</label><input id="rxPl" value="'+esc(rx.p.place)+'"></div><div><label>Mobile (optional)</label><input id="rxPh" inputmode="tel" value="'+esc(rx.p.phone)+'"></div><div><label>Weight kg (required under 12 yrs)</label><input id="rxW" inputmode="decimal" value="'+esc(rx.p.wt)+'"></div>'+
    '<div><label>Date</label><input id="rxD" type="date" value="'+rx.date+'"></div></div>'+
    (hist.length?'<p class="muted" style="margin:8px 0 0">Previous visits: '+hist.slice(0,3).map(function(h){return dshow(h.date)+' ('+esc(h.dx||'—')+')'}).join(', ')+' <button id="rxpRep" style="min-height:32px;padding:4px 10px">↻ Repeat last Rx</button></p>':'')+'</div>'+
    '<div class="cd"><label>Chief complaints / findings</label><textarea id="rxCC">'+esc(rx.cc)+'</textarea>'+
@@ -111,27 +122,24 @@ RxPad={
      if(rx.tpls.indexOf(k)>=0){ // tap again = remove this diagnosis and its medicines
        rx.tpls.splice(rx.tpls.indexOf(k),1);rx.m=rx.m.filter(function(m){return m._t!==k});
        if(tdx&&!rx.tpls.some(function(o){var x=allTpl()[o];return x&&up(x.dx||'').trim()===tdx}))dxs=dxs.filter(function(x){return x!==tdx});
-       if(t.adv)rx.adv=String(rx.adv||'').split('\n').filter(function(l){return l!==t.adv}).join('\n');
      }else{
        rx.tpls.push(k);if(tdx&&dxs.indexOf(tdx)<0)dxs.push(tdx);
        var have={};rx.m.forEach(function(m){have[up(m.g)+'|'+up(m.s)]=1});
        (t.m||[]).forEach(function(x){var key=up(x[1])+'|'+up(x[2]);if(have[key])return;have[key]=1;rx.m.push({f:x[0],g:x[1],s:x[2],d:x[3],t:x[4],u:x[5],n:x[6]||'',_t:k})});
-       if(t.adv&&String(rx.adv||'').indexOf(t.adv)<0)rx.adv=(rx.adv?rx.adv+'\n':'')+t.adv;if(t.inv&&!rx.inv)rx.inv=t.inv}
+       }
      rx.dx=dxs.join(' + ');draw()}});
    root.querySelector('#rxpSet2').onclick=function(){read();if(!rx.m.filter(function(m){return m.g}).length)return alert('Add medicines first, then save them as a set.');var nm=prompt('Name for this prescription set (e.g. ACNE - MILD):',rx.dx||'');if(!nm)return;nm=up(nm).trim();if(sets()[nm]&&!confirm('A set called '+nm+' exists. Replace it?'))return;saveSet(nm,{dx:rx.dx,adv:rx.adv,inv:rx.inv,m:rx.m.filter(function(m){return m.g}).map(function(m){return[m.f,m.g,m.s,m.d,m.t,m.u,m.n||'']})});flash('Set saved');draw()};
-   var rep=root.querySelector('#rxpRep');if(rep)rep.onclick=function(){read();var h=hist[0];rx.dx=rx.dx||h.dx;rx.m=JSON.parse(JSON.stringify(h.m));rx.adv=rx.adv||h.adv;draw()};
+   var rep=root.querySelector('#rxpRep');if(rep)rep.onclick=function(){read();var h=hist[0];rx.dx=rx.dx||h.dx;rx.m=JSON.parse(JSON.stringify(h.m));draw()};
    root.querySelectorAll('.gn').forEach(function(i){i.oninput=function(){var p=i.selectionStart;i.value=up(i.value);try{i.setSelectionRange(p,p)}catch(e){}}});
    var rv=root.querySelector('#rxRv'),rvd=root.querySelector('#rxRvD');var sh=function(){rvd.textContent=rv.value?'on '+dshow(addDays(root.querySelector('#rxD').value||dk(),+rv.value)):''};rv.onchange=sh;sh();
    var sb=root.querySelector('#rxpSet');if(sb)sb.onclick=function(){read();RxPad.settings(function(){draw()})};
    root.querySelector('#rxpSave').onclick=function(){read();save();flash('Saved')};
-   function check(){var probs=[];if(!rx.p.name)probs.push('patient name');if(!rx.dx)probs.push('diagnosis (prescribing without a diagnosis/provisional diagnosis is professional misconduct)');
-     if(!CFG.regNo||!CFG.docEn)probs.push("doctor's name / registration number (Rx settings)");if(rx.m.some(function(m){return!m.g}))probs.push('a medicine with no name');
-     return !probs.length||window.confirm('Missing: '+probs.join('; ')+'.\n\nContinue anyway?')}
-   root.querySelector('#rxpPrint').onclick=function(){read();
-     var probs=[];if(!rx.p.name)probs.push('patient name');if(!rx.dx)probs.push('diagnosis (prescribing without a diagnosis/provisional diagnosis is professional misconduct)');
-     if(!CFG.regNo||!CFG.docEn)probs.push("doctor's name / registration number (Rx settings)");if(rx.m.some(function(m){return!m.g}))probs.push('a medicine with no name');
-     if(probs.length&&!window.confirm('Missing: '+probs.join('; ')+'.\n\nPrint anyway?'))return;
-     save();print(rx)};
+   function check(){var miss=missing(rx),mark=function(id,ok){var e=root.querySelector('#'+id);if(e)e.style.borderColor=ok?'':'#dc2626'};
+     mark('rxN',!!rx.p.name);mark('rxA',!!String(rx.p.age).trim());mark('rxS',!!rx.p.sex);mark('rxPl',!!String(rx.p.place||'').trim());mark('rxDx',!!rx.dx);
+     var ag=parseFloat(rx.p.age);mark('rxW',!(ag<12)||!!String(rx.p.wt||'').trim());
+     root.querySelectorAll('#rxM .m').forEach(function(r){var x=rx.m[+r.dataset.i],f={f:!!x.f,g:!!x.g,s:!(NEEDS_STRENGTH.indexOf(x.f)>=0&&!String(x.s||'').trim()&&!/\d/.test(x.g||'')),d:!!x.d,u:!!String(x.u||'').trim()};Object.keys(f).forEach(function(k){var e=r.querySelector('[data-k="'+k+'"]');if(e)e.style.borderColor=f[k]?'':'#dc2626'})});
+     if(miss.length){alert('Cannot print yet. Required on every prescription:\n\n• '+miss.join('\n• '));var f=root.querySelector('[style*="dc2626"]');if(f){f.scrollIntoView({block:'center'});try{f.focus()}catch(e){}}return false}return true}
+   root.querySelector('#rxpPrint').onclick=function(){read();if(!check())return;save();print(rx)};
    var fb=root.querySelector('#rxpFin');if(fb)fb.onclick=function(){read();if(!check())return;save();root.remove();print(rx);opts.finish.run(rx)}}
   function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);var cap=opts.recStore?3000:800;if(REC.length>cap)REC=REC.slice(-cap);if(opts.recStore)opts.recStore.set(REC);else sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
   function flash(t){var b=root.querySelector('#rxpSave');var o=b.textContent;b.textContent='✓ '+t;setTimeout(function(){b.textContent=o},1200)}
@@ -185,6 +193,7 @@ function calibrate(paper,c){var W=paper==='A4'?210:148,H=paper==='A4'?297:210,fu
   frame(html,'Calibration page '+paper)}
 function lines(t){return String(t||'').split('\n').map(esc).join('<br>')}
 function print(rx,paperOverride){
+  if(!/^TEST/.test(rx.id||'')){var miss=missing(rx);if(miss.length){alert('This prescription is incomplete and cannot be printed:\n\n• '+miss.join('\n• ')+'\n\nOpen it with ✏ Edit, complete it, then print.');return}}
   var c=paperOverride?Object.assign({},CFG,{paper:paperOverride}):CFG,rv=rx.review?addDays(rx.date,+rx.review):'',full=c.header!=='blank';
   var qrText=[c.clinicEn,'Dr '+c.docEn+' '+c.qual,'Reg '+c.regNo+' '+c.council,'Pt '+rx.p.name+' '+(rx.p.age||'')+'/'+(rx.p.sex||''),'Date '+dshow(rx.date),'Rx#'+rx.id,rx.m.length+' item(s)'].join(' | ');
   (c.showQR?(opts.qrEncode?opts.qrEncode(rx).then(qrData):qrData(qrText)):Promise.resolve('')).then(function(qr){
@@ -205,11 +214,11 @@ function print(rx,paperOverride){
    '.ft{margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.sg{text-align:right;font-size:.95em}.sg .ln{border-top:1px solid #000;margin-top:34px;padding-top:2px}'+
    '.notes{border-top:1px solid #1d4ed8;margin-top:8px;padding-top:4px;font-style:italic;font-size:.95em}.ad2{background:#b91c1c;color:#fff;text-align:center;font-weight:900;margin-top:4px;padding:2px}.qr img{width:24mm;height:24mm}.small{font-size:.8em;color:#444}'+
    '</style></head><body>'+head+
-   '<div class="pt"><span>Name: <b>'+esc(rx.p.name)+'</b></span><span>Age: <b>'+esc(rx.p.age)+'</b></span><span>Sex: <b>'+esc(rx.p.sex)+'</b></span>'+(rx.p.wt?'<span>Wt: <b>'+esc(rx.p.wt)+' kg</b></span>':'')+'<span>Place: <b>'+esc(rx.p.place)+'</b></span><span style="margin-left:auto">Date: <b>'+dshow(rx.date)+'</b></span></div>'+
+   '<div class="pt"><span>Name: <b>'+esc(rx.p.name)+'</b></span><span>Age: <b>'+esc(rx.p.age)+'</b></span><span>Sex: <b>'+esc(rx.p.sex)+'</b></span>'+(rx.p.wt?'<span>Wt: <b>'+esc(rx.p.wt)+' kg</b></span>':'')+'<span>Address: <b>'+esc(rx.p.place)+'</b></span><span style="margin-left:auto">Date: <b>'+dshow(rx.date)+'</b></span></div>'+
    (rx.cc?'<div class="sec"><span class="lb">C/O: </span>'+lines(rx.cc)+'</div>':'')+'<div class="sec"><span class="lb">Diagnosis: </span><b>'+esc(rx.dx||'—')+'</b>'+(rx.allergy?' &nbsp; <span class="lb">Allergy: </span>'+esc(rx.allergy):'')+'</div>'+
    '<div class="rx">℞</div><ol>'+(meds||'<li>—</li>')+'</ol>'+(rx.inv?'<div class="sec"><span class="lb">Investigations: </span>'+esc(rx.inv)+'</div>':'')+(rx.adv?'<div class="sec"><span class="lb">Advice: </span>'+lines(rx.adv)+'</div>':'')+
    '<div class="ft"><div><div class="sec" style="font-size:1.1em"><span class="lb">Review after: </span>'+(rv?'<b>'+dshow(rv)+'</b>':'________')+'</div>'+(qr?'<div class="qr"><img src="'+qr+'"><div class="small">Rx No. '+esc(rx.id)+'</div></div>':'<div class="small">Rx No. '+esc(rx.id)+'</div>')+'</div>'+
-   '<div class="sg"><div class="ln"><b>'+esc(c.docEn)+'</b><br>'+esc(c.qual)+'<br>Reg. No. '+esc(c.regNo)+(c.council?'<br><span class="small">'+esc(c.council)+'</span>':'')+'</div></div></div>'+
+   '<div class="sg"><div class="small">Signature &amp; stamp</div><div class="ln"><b>'+esc(c.docEn)+'</b><br>'+esc(c.qual)+'<br>Reg. No. '+esc(c.regNo)+(c.council?'<br><span class="small">'+esc(c.council)+'</span>':'')+'</div></div></div>'+
    (full?'<div class="notes">Instruction to Patient: '+esc(c.patientNote)+'<br>Instruction to Pharmacist: '+esc(c.pharmNote)+(c.teNote?'<br><span style="font-style:normal">'+esc(c.teNote)+'</span>':'')+'</div>'+(c.footerAd?'<div class="ad2">'+esc(c.footerAd)+'</div>':''):'')+
    '</body></html>';
   if(window.PrintView)return PrintView.open(html,{title:'Prescription · '+rx.p.name,onPaper:function(z){print(rx,z)}});
