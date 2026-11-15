@@ -26,20 +26,50 @@ input,select,textarea{width:100%;padding:0.625rem;border:1px solid #cbd5e1;borde
 .big{font-size:3.5rem;font-weight:900;text-align:center;margin:0.375rem 0}.m{color:#64748b;font-size:0.6875rem}
 table{width:100%;border-collapse:collapse;font-size:0.75rem}td,th{padding:0.375rem 0.25rem;border-bottom:1px solid #e2e8f0;text-align:left}
 html.min #hd,html.min .qa small,html.min .qa.b3,html.min #ql .sr,html.min .sr,html.min #dhi,html.min label:has(#ap),html.min #ql .m,html.min #ql .ib.w,html.min #ql .ib.s,html.min #ql .ib.t,html.min #dtut,html.min #dut{display:none!important}html.min:not(.r-adm) #bkb{display:none!important}html.min .qa{padding:.7rem .9rem!important;min-height:0!important}html.min .qa b{font-size:1.15rem}html.min #ql .c{padding:.55rem .7rem!important}html.min #dtk{font-size:4.5rem}html.min #cnb{min-height:5rem!important;font-size:1.5rem!important}html.min #minb{background:#16a34a;color:#fff}#dtb{display:none}html.r-doc #dtb{display:block}html.r-doc #qac,html.r-doc #bkb,html.r-doc #ub,html.r-doc #ap,html.r-doc label:has(#ap),html.r-doc #ql .ib.t,html.r-doc #ql .ib.w,html.r-doc #ql .ib.s{display:none!important}html.r-doc #cnb{min-height:5rem!important;font-size:1.5rem!important}html.r-doc #wrx{min-height:3.5rem;font-size:1.1rem}
-/* Doctor on a laptop, PC or 10-11" tablet: two columns. Left = Now Serving (stays in view), right = waiting queue + today's prescriptions. Phones are unchanged. */
-@media(min-width:60rem){
-html.r-doc main,html.dv-doc main,html.r-doc .hd,html.dv-doc .hd{max-width:94rem}
-html.r-doc #rec.on,html.dv-doc #rec.on{display:grid;grid-template-columns:minmax(24rem,5fr) 7fr;column-gap:1.25rem;grid-auto-flow:row dense;align-items:start}
-html.r-doc #rec>*,html.dv-doc #rec>*{grid-column:2;min-width:0}
-html.r-doc #dtb,html.dv-doc #dtb{grid-column:1;grid-row:1}
-html.r-doc #dtb+.c,html.dv-doc #dtb+.c{grid-column:1;grid-row:2}
-html.r-doc #dtb+.c+.c,html.dv-doc #dtb+.c+.c{grid-row:1/span 2}
-html.r-doc #dtk,html.dv-doc #dtk{font-size:clamp(3.5rem,6.5vw,5.5rem);white-space:nowrap}
-html.r-doc #ql .row>div:last-child,html.dv-doc #ql .row>div:last-child{display:flex;gap:.4rem;align-items:center;flex-shrink:0}
-html.r-doc #ql .row,html.dv-doc #ql .row{align-items:center}
-html.r-doc #dnm,html.dv-doc #dnm{font-size:1.4rem}
-html.r-doc #ql,html.dv-doc #ql{max-height:calc(100vh - 14rem);overflow:auto}
-}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
+/* Laptop, PC and tablet (any login): fits one screen, no page scrolling. Left = quick actions + Now Serving. Right = waiting queue (scrolls inside its own box) + today's prescriptions. Phones are unchanged. */
+@media(min-width:50rem){
+main,.hd{max-width:100rem}
+body{padding-bottom:0!important}
+main{padding:.75rem 1rem 5rem}
+#rec.on{display:grid;grid-template-columns:minmax(20rem,5fr) 7fr;grid-template-rows:auto auto auto auto 1fr;column-gap:1rem;align-items:start}
+#rec>*{grid-column:2;min-width:0}
+#rec>.c{margin-bottom:.75rem;padding:1rem}
+#bkb{grid-column:1/-1;grid-row:1}
+#qac{grid-column:1;grid-row:2}
+#dtb{grid-column:1;grid-row:3}
+#dtb+.c{grid-column:1;grid-row:4}
+#dtb+.c+.c{grid-row:2/6;display:flex;flex-direction:column;max-height:calc(100dvh - 11.6rem)}
+#rec:has(#trx:not([style*="none"])) #dtb+.c+.c{max-height:calc((100dvh - 11.6rem)*.62)}
+#trx{grid-row:6;max-height:calc((100dvh - 11.6rem)*.38 - .75rem);overflow:auto}
+#dtb+.c+.c #ql{flex:1;overflow:auto;min-height:5rem;max-height:none}
+#dtb+.c+.c .sh,#dtb+.c+.c .sr{flex:none}
+#qac{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+#qac .sh{display:none}
+#qac{padding:.6rem!important}
+#qac .qa{margin:0;gap:.5rem;min-height:3.4rem;padding:.5rem .6rem!important;border-radius:.9rem}
+#qac .qa small,#qac .qa>svg:last-child,#qac .qa>i:last-child{display:none}
+#qac .qa .ic{width:2.1rem;height:2.1rem;border-radius:.65rem}
+#qac .qa .ic svg{width:1.3rem;height:1.3rem}
+#qac .qa b{font-size:.82rem;line-height:1.2}
+#dtb+.c{container-type:inline-size;overflow:auto;max-height:calc(100dvh - 16.6rem)}
+html.r-doc #dtb+.c{max-height:calc(100dvh - 19.6rem)}
+#dtk{font-size:clamp(2.5rem,min(16cqi,11vh),5rem)!important;white-space:nowrap;margin:0;line-height:1.1}
+#dnm{font-size:1.3rem;margin:.2rem 0}
+#dhi{margin:0 0 .4rem}
+#ql .row{align-items:center}
+#dtb{padding:.6rem!important}
+#dtb .grid button{min-height:2.6rem}
+#ql .row>div:last-child{display:flex;gap:.4rem;align-items:center;flex-shrink:0}
+}
+@media(min-width:50rem) and (orientation:portrait){
+#rec.on{display:flex;flex-direction:column;align-items:stretch;height:calc(100dvh - 10.9rem)}
+#rec>*{flex:none}
+#dtb+.c{max-height:none!important}
+#dtb+.c+.c{flex:1 1 auto;min-height:12rem;max-height:none!important}
+#trx{max-height:30%!important}
+#qac .qa b{font-size:.95rem}
+}
+@media(min-width:50rem) and (max-height:52rem){#cnb{min-height:3rem!important;font-size:1.15rem!important}html.r-doc #cnb{min-height:3.6rem!important;font-size:1.3rem!important}#dtb+.c .grid button,#wrx,#qrx{min-height:2.5rem!important;padding-top:.35rem;padding-bottom:.35rem}#dnm{font-size:1.1rem}}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
 #lock{position:fixed;inset:0;background:#0f172ae6;z-index:50;display:flex;align-items:center;justify-content:center}#lock div{background:#fff;padding:1.5rem;border-radius:1.25rem;width:18.75rem;text-align:center}
 #off{display:none;background:#f59e0b;text-align:center;padding:0.25rem;font-weight:700}#ps,#pb,#pr{display:none}
 .swal2-popup{max-width:92vw}
