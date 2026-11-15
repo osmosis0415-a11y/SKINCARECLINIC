@@ -65,13 +65,30 @@ function rxRef(){return C.uid?firebase.database(app()).ref('rxs/'+C.uid):null}
 function rxPut(rec){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!rec||!rec.id)return;
   CR.enc(JSON.stringify(rec)).then(function(e){var o={ts:rec.ts||Date.now(),i:e.i,c:e.c};count('up',JSON.stringify(o).length);return r.child('r/'+rec.id).set(o)}).catch(function(e){console.warn('rx put',e)})}
 function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
+// ---- clinic devices (for 'lost phone') and the encrypted audit log, both under rxs/<clinic>
+function devName(){try{return localStorage.getItem('scc_device_name')||''}catch(e){return''}}
+function devBeat(){var r=rxRef();if(!r||keyState!=='ok')return;var u=navigator.userAgent,os=/Android/.test(u)?'Android':/iPhone|iPad/.test(u)?'iPhone/iPad':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'Device';
+  r.child('dev/'+DEV).update({name:devName()||(os+' '+DEV.slice(0,4)),os:os,seen:Date.now(),mode:(function(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}})()}).catch(function(){})}
+var LOGQ=[];
+function logKey(t){return String(t).padStart(13,'0')+'_'+DEV.slice(0,4)+Math.random().toString(36).slice(2,5)}
+function logPut(e){LOGQ.push(e);logFlush()}
+function logFlush(){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!LOGQ.length)return;var q=LOGQ.splice(0);
+  q.forEach(function(e){CR.enc(JSON.stringify(e)).then(function(x){count('up',120);return r.child('log/'+logKey(e.t)).set({i:x.i,c:x.c})}).catch(function(){LOGQ.push(e)})})}
+async function logFetch(days){var r=rxRef();if(!r||!CR.key)throw new Error('Cloud sync is off on this phone.');var s=await r.child('log').orderByKey().startAt(String(Date.now()-days*864e5).padStart(13,'0')).once('value');
+  var v=s.val()||{},out=[];count('down',JSON.stringify(v).length);for(var k of Object.keys(v)){try{out.push(JSON.parse(await CR.dec(v[k])))}catch(e){}}return out.sort(function(a,b){return b.t-a.t})}
+async function devices(){var r=rxRef();if(!r)throw new Error('Cloud sync is off on this phone.');var v=(await r.child('dev').once('value')).val()||{};return Object.keys(v).map(function(k){return Object.assign({id:k,me:k===DEV},v[k])}).sort(function(a,b){return(b.seen||0)-(a.seen||0)})}
+function revoke(id,on){var r=rxRef();return r.child('dev/'+id).update(on?{revoked:true,revokedAt:Date.now()}:{revoked:null,revokedAt:null})}
+function devRemove(id){return rxRef().child('dev/'+id).remove()}
 function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Date.now()-RXWIN;
+  devBeat();logFlush();
+  r.child('dev/'+DEV+'/revoked').on('value',function(x){if(x.val()===true&&window.A&&A.selfWipe)A.selfWipe()});
   r.child('meta').on('value',function(s){var m=s.val();count('down',JSON.stringify(m||'').length);if(!m){if(S.rxSets||S.rxCfg)metaPut();return}if(window.A&&A.metaIn)A.metaIn(m)});
   var q=rxQ=r.child('r').orderByChild('ts').startAt(t0);
   q.once('value').then(function(s){var have={},v=s.val()||{};Object.keys(v).forEach(function(k){have[k]=v[k].ts||0});count('down',JSON.stringify(v).length);
     (typeof RXREC!=='undefined'?RXREC:[]).forEach(function(x){if((x.ts||0)>=t0&&(!have[x.id]||have[x.id]<x.ts))rxPut(x)});
     var on=function(c){var o=c.val();if(o&&window.A&&A.rxIn)A.rxIn(c.key,o)};q.on('child_added',on);q.on('child_changed',on);
-    if(typeof ROLE!=='undefined'&&ROLE==='adm')r.child('r').orderByChild('ts').endAt(Date.now()-60*864e5).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){})})
+    if(typeof ROLE!=='undefined'&&ROLE==='adm'){r.child('r').orderByChild('ts').endAt(Date.now()-60*864e5).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){});
+      r.child('log').orderByKey().endAt(String(Date.now()-400*864e5).padStart(13,'0')).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){})}})
    .catch(function(e){rxOn=false;console.warn('rx sync',e)})}
 function doPush(){if(!C.ref||C.applying)return;
   if((keyState==='ok'||keyState==='empty')&&S.vault&&CR.key&&keySig()!==lastKeySig){S.keysAt=Date.now();pushKeys()}
@@ -120,7 +137,7 @@ function start(){
        else{set('err');Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not approved for a clinic yet. Ask the admin to approve it in Firebase.'})}})})
    .catch(function(e){set(navigator.onLine?'err':'offline');console.warn('cloud start',e)});
 }
-function stop(){try{C.ref&&C.ref.off()}catch(e){}try{var r=rxRef();r&&r.child('meta').off();r&&r.child('r').off();rxQ&&rxQ.off()}catch(e){}rxQ=null;rxOn=false;C.ref=null;C.pub=null}
+function stop(){try{C.ref&&C.ref.off()}catch(e){}try{var r=rxRef();r&&r.child('dev/'+DEV+'/revoked').off();r&&r.child('meta').off();r&&r.child('r').off();rxQ&&rxQ.off()}catch(e){}rxQ=null;rxOn=false;C.ref=null;C.pub=null}
 function usageHtml(){var u=U(),pc=Math.min(100,u.down/CAP*100);
   return '<div style="text-align:left;background:#f1f5f9;border-radius:.8rem;padding:.6rem .8rem;margin-top:.8rem;font-size:.8rem"><b>📊 Cloud data used by this phone ('+u.m+')</b><br>Received: <b>'+fmt(u.down)+'</b> &nbsp; Sent: <b>'+fmt(u.up)+'</b> ('+u.w+' updates)'
    +'<div style="height:8px;background:#e2e8f0;border-radius:4px;margin:.4rem 0"><div style="height:8px;width:'+Math.max(1,pc).toFixed(1)+'%;background:'+(pc>80?'#dc2626':pc>50?'#d97706':'#16a34a')+';border-radius:4px"></div></div>'
@@ -151,7 +168,8 @@ async function join(email,pw){await libs();app();await firebase.auth().setPersis
   var a=(await firebase.database(app()).ref('allowed/'+u.uid).once('value')).val(),cid=typeof a==='string'&&a?a:a===true?u.uid:null;
   if(!cid)throw new Error('This cloud login is not approved for a clinic yet.');
   var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});return k}
-window.CloudSync={rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
+setInterval(devBeat,10*60000);
+window.CloudSync={logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
 function go(){if(window.SCC_READY===false){set('off');addEventListener('scc-unlocked',function(){start()},{once:true})}else start()}
 chip();if(window.SCC_BOOTED)go();else addEventListener('scc-boot',go,{once:true});
 })();

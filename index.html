@@ -212,7 +212,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
     <p class="m" style="margin-top:0.5rem"><b>Tip:</b> If your browser blocks live camera access on local `file://` URLs, use <b>Snap / Upload</b> or <b>Type token</b> above.</p>
   </div>
 </section>
-<section id="fin"><div class="c"><div class="row" style="flex-wrap:wrap"><b>Finance</b><span><button class="g" onclick="A.csv()">CSV</button> <button class="ok" onclick="A.pdf()">PDF</button> <button class="r" onclick="A.reset()">Reset shift</button> <button class="g" onclick="A.lock()">Lock</button></span></div>
+<section id="fin"><div class="c"><div class="row" style="flex-wrap:wrap"><b>Finance</b><span><button class="g" onclick="A.csv()">CSV</button> <button class="ok" onclick="A.pdf()">PDF</button> <button class="r" onclick="A.closeDay()">🌙 Close day</button> <button class="g" onclick="A.lock()">Lock</button></span></div>
 <div class="grid"><label>1st visit ₹<input type="number" id="f1" min="0" onchange="A.fees()"></label><label>2nd visit ₹<input type="number" id="f2" min="0" onchange="A.fees()"></label></div></div>
 <div class="grid" id="st"></div><div class="c" style="overflow-x:auto"><table><thead><tr><th>Token</th><th>Patient</th><th>Visit</th><th>Scanned / Seen</th><th>Fee</th></tr></thead><tbody id="fb"></tbody></table></div>
 <div class="c" style="overflow-x:auto"><b>Audit log</b><table><thead><tr><th>When</th><th>Action</th><th>Token / Patient</th></tr></thead><tbody id="lg"></tbody></table></div></section>
@@ -220,7 +220,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 <div class="c" style="border:2px solid #0284c7"><div class="sh"><span class="t d">🛡 Admin portal</span><span class="chip bl">Admin only</span></div>
 <p class="m" style="margin:0 0 .5rem;font-size:.8rem">PINs and passwords can only be changed here. Changes reach every clinic phone signed in to the cloud.</p>
 <div class="grid"><button onclick="A.users()">👥 Logins: Doctor / Reception PINs &amp; this phone's role</button><button class="g" onclick="A.secret('pin')">🔑 Change Admin PIN</button><button class="g" onclick="A.secret('pass')">🔒 Change finance password</button><button class="g" onclick="A.newRec()">🧾 New recovery code</button>
-<button class="g" onclick="window.RxPad&&RxPad.settings()">📝 Rx format &amp; saved prescription sets</button><button class="g" onclick="A.find()">🔎 Patient records</button></div>
+<button class="g" onclick="window.RxPad&&RxPad.settings()">📝 Rx format &amp; saved prescription sets</button><button class="g" onclick="A.find()">🔎 Patient records</button><button class="g" onclick="A.devices()">📱 Clinic devices / lost phone</button><button class="g" onclick="A.clinicLog()">📜 Full clinic log (all phones)</button><button class="g" onclick="A.testBackup()">🧪 Test a backup (monthly)</button></div>
 <label style="margin-top:.6rem">Auto-lock when idle (minutes, 0 = never)<input id="sidle" type="number" min="0" max="240" onchange="S.cfg.idleMin=Math.max(0,+this.value||0);save();toast('Saved')"></label></div>
 <div class="c">
   <div class="sh"><span class="t d"><i data-lucide="layout-template"></i>Token Card Design Studio &amp; Optional Fields</span><span class="chip bl" id="dsn-chip"></span></div>
@@ -411,7 +411,7 @@ const G={
  good(){if(S.lock.f||S.lock.lvl){S.lock={f:0,until:0,lvl:0};save()}},
  tick(){const el=$('lkm');if(!el)return;const l=G.left();el.textContent=l?'Locked: try again in '+G.fmt(l):'';$('pin').disabled=!!l;clearTimeout(G.t);if(l)G.t=setTimeout(G.tick,1000)}
 };
-function L(a,p){S.log=[{t:Date.now(),a,k:p?p.tokenNo:'',n:p?p.name:''},...S.log].slice(0,500)}
+function L(a,p){const e={t:Date.now(),a,k:p?p.tokenNo:'',n:p?p.name:'',r:typeof ROLE!=='undefined'?ROLE:null,d:(()=>{try{return localStorage.getItem('scc_device_name')||''}catch(x){return''}})()};S.log=[e,...S.log].slice(0,500);try{window.CloudSync&&CloudSync.logPut(e)}catch(x){}}
 
 function activeDesignKeys(){
   const en=S.cfg.enabledDesigns||{};
@@ -681,6 +681,61 @@ async rxScan(raw){let id='';try{if(raw.startsWith('SCC0.'))id=raw.slice(5);else{
   const md=m=>[m.f,m.g,m.s,m.d].filter(Boolean).join(' ');
   const r=await Swal.fire({title:'📝 '+x.p.name,html:'<div style="text-align:left;font-size:.88rem"><b>'+fd(x.date)+'</b> · Rx '+esc(x.id)+(x.p.token?' · '+esc(x.p.token):'')+'<br>Diagnosis: <b>'+esc(x.dx||'—')+'</b><br>'+(x.m||[]).map(m=>'• '+esc(md(m))).join('<br>')+'</div>',showDenyButton:ROLE!=='rec',denyButtonText:'📝 Repeat as new Rx',confirmButtonText:'🖨 Reprint',showCancelButton:true});
   if(r.isConfirmed)A.rxPrint(x.id);else if(r.isDenied)RxPad.open({name:x.p.name,phone:x.p.phone,age:x.p.age,sex:x.p.sex,place:x.p.place},{dx:x.dx,adv:x.adv})},
+async selfWipe(){if(A._wiping)return;A._wiping=true;
+  try{for(const k of Object.keys(localStorage))if(/^(SkinCareClinic|scc_)/.test(k))localStorage.removeItem(k)}catch(e){}
+  try{sessionStorage.clear()}catch(e){}try{indexedDB.deleteDatabase('SkinCareClinic')}catch(e){}
+  try{window.firebase&&firebase.auth&&await firebase.auth().signOut()}catch(e){}
+  document.body.innerHTML='<div style="font:16px system-ui;padding:40px;text-align:center"><h2>📵 This phone was reported lost</h2><p>All clinic data on this phone has been erased and it has been signed out of the clinic cloud.</p><p>If this was a mistake, ask the Admin to set it up again with “Join my clinic”.</p></div>';
+  setTimeout(()=>location.reload(),15000)},
+async devices(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');
+  let list;try{list=await CloudSync.devices()}catch(e){return Swal.fire({icon:'info',title:'Cloud sync is off',text:'Sign in to the clinic cloud (☁ badge) on this phone to see and manage clinic devices.'})}
+  const ago=t=>{if(!t)return'never';const m=Math.round((Date.now()-t)/60000);return m<2?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+  const mode={any:'all logins',doc:'Doctor only',rec:'Reception only'};
+  const r=await Swal.fire({title:'📱 Clinic devices',html:'<div style="text-align:left;font-size:.85rem"><label class="m">Name of THIS phone</label><input id="dvn" class="swal2-input" placeholder="e.g. Reception desk phone" value="'+esc(localStorage.getItem('scc_device_name')||'')+'"><div style="margin-top:.6rem">'+
+    list.map(d=>'<div style="border:1px solid #e2e8f0;border-radius:.7rem;padding:.5rem .6rem;margin:.35rem 0;'+(d.revoked?'background:#fee2e2':'')+'"><b>'+esc(d.name||d.id)+'</b>'+(d.me?' <span class="chip">this phone</span>':'')+'<br><span class="m">'+esc(d.os||'')+' · '+(mode[d.mode]||'all logins')+' · last seen '+ago(d.seen)+(d.revoked?' · <b style="color:#b91c1c">REPORTED LOST</b>':'')+'</span><div style="margin-top:.35rem">'+
+      (d.me?'':d.revoked?'<button class="g" onclick="A.devAct(\''+d.id+'\',\'undo\')">Undo lost</button> <button class="g" onclick="A.devAct(\''+d.id+'\',\'rm\')">Remove</button>':'<button class="r" onclick="A.devAct(\''+d.id+'\',\'lost\')">📵 Lost / stolen</button> <button class="g" onclick="A.devAct(\''+d.id+'\',\'rm\')">Remove</button>')+'</div></div>').join('')+'</div></div>',confirmButtonText:'Save name',showCancelButton:true,cancelButtonText:'Close'});
+  if(r.isConfirmed){try{localStorage.setItem('scc_device_name',($('dvn').value||'').trim())}catch(e){}CloudSync.devBeat();toast('Saved')}},
+async devAct(id,what){
+  if(what==='rm'){await CloudSync.devRemove(id);L('Device removed from list ('+id+')');return A.devices()}
+  if(what==='undo'){await CloudSync.revoke(id,false);L('Device lost report undone ('+id+')');return A.devices()}
+  const c=await Swal.fire({icon:'warning',title:'Report this phone lost?',html:'<div style="text-align:left;font-size:.86rem">When it next goes online, the app on that phone <b>erases all clinic data and signs out</b>.<br><br>Next you will set <b>new PINs</b> for everyone (the old ones stop working on all phones).<br><br>Also change the <b>clinic cloud password</b>: Firebase console → Authentication → the clinic login → Reset password.</div>',showCancelButton:true,confirmButtonText:'Report lost',confirmButtonColor:'#dc2626'});
+  if(!c.isConfirmed)return A.devices();
+  await CloudSync.revoke(id,true);L('📵 Phone reported lost ('+id+')');
+  await Swal.fire({icon:'info',title:'Now set new PINs',text:'Step 1: new Doctor & Reception PINs. Step 2: new Admin PIN.'});
+  await A.users();await A.secret('pin');toast('Done. The lost phone will be wiped when it connects.')},
+async clinicLog(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');
+  let L2;try{L2=await CloudSync.logFetch(31)}catch(e){return Swal.fire({icon:'info',title:'Cloud log not available',text:(e&&e.message)||'Turn on cloud sync on this phone.'})}
+  const h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Clinic audit log</title><style>body{font:12px system-ui;margin:12mm}h1{font-size:17px;margin:0}table{width:100%;border-collapse:collapse;margin-top:8px}td,th{border:1px solid #cbd5e1;padding:3px 5px;text-align:left}th{background:#e2e8f0}</style></head><body><h1>'+esc(S.cfg.name)+': audit log, all phones, last 31 days</h1><div>'+L2.length+' entries · printed '+new Date().toLocaleString('en-IN')+'</div><table><tr><th>When</th><th>Phone</th><th>Login</th><th>Action</th><th>Token / patient</th></tr>'+
+    L2.map(e=>'<tr><td>'+new Date(e.t).toLocaleString('en-IN')+'</td><td>'+esc(e.d||'')+'</td><td>'+esc(e.r?ROLES[e.r]?ROLES[e.r].n:e.r:'')+'</td><td>'+esc(e.a)+'</td><td>'+esc(e.k||'')+' '+esc(e.n||'')+'</td></tr>').join('')+'</table></body></html>';
+  const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(h);f.contentDocument.close();
+  const r=await Swal.fire({title:'📜 Clinic audit log',html:'<p style="font-size:.85rem">'+L2.length+' entries from all clinic phones in the last 31 days (kept encrypted in the cloud for a year, even if a phone is reset).</p>',confirmButtonText:'🖨 Print / save PDF',showCancelButton:true});
+  if(r.isConfirmed){f.contentWindow.focus();f.contentWindow.print()}setTimeout(()=>f.remove(),60000)},
+async closeDay(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');
+  const c=S.q.filter(p=>p.status==='Completed'),exp=c.reduce((s,p)=>s+(p.fee||0),0),ns=S.q.filter(p=>p.status==='No-Show').length,wt=S.q.filter(p=>p.status==='Waiting'||p.status==='Serving').length;
+  const r=await Swal.fire({title:'🌙 Close the day',html:`<div style="text-align:left;font-size:.88rem">Tokens: <b>${S.q.length}</b> · Seen: <b>${c.length}</b> · No-shows: <b>${ns}</b>${wt?` · <b style="color:#b45309">Still waiting: ${wt}</b>`:''}<br>Cash expected: <b style="font-size:1.1rem">₹${exp.toLocaleString('en-IN')}</b><br><br>
+    <label class="m">Cash counted in hand ₹ (required)</label><input id="cd1" type="number" min="0" class="swal2-input" inputmode="numeric">
+    <label class="m">If it does not match, why?</label><input id="cd2" class="swal2-input" placeholder="e.g. 1 patient paid by UPI / free review">
+    <label style="display:block;margin-top:.5rem"><input type="checkbox" id="cd3" checked style="width:auto"> Download today's finance PDF</label>
+    <label style="display:block"><input type="checkbox" id="cd4" checked style="width:auto"> Save a backup</label><p class="m" style="margin:.5rem 0 0">Then the queue clears and numbering restarts at OPD-001.</p></div>`,
+    showCancelButton:true,confirmButtonText:'Close day',
+    preConfirm:()=>{const v=$('cd1').value;if(v==='')return Swal.showValidationMessage('Count the cash and enter the amount');const n=+v;if(n!==exp&&!$('cd2').value.trim())return Swal.showValidationMessage('Cash differs by ₹'+(n-exp)+'. Write the reason.');return{n,why:$('cd2').value.trim(),pdf:$('cd3').checked,bk:$('cd4').checked}}});
+  if(!r.isConfirmed)return;
+  const v=r.value,cl={day:today(),at:Date.now(),exp,cash:v.n,diff:v.n-exp,why:v.why,tokens:S.q.length,seen:c.length,ns};
+  S.closings=[...(S.closings||[]),cl].slice(-800);L('🌙 Day closed: expected ₹'+exp+', counted ₹'+v.n+(cl.diff?' (difference ₹'+cl.diff+(v.why?': '+v.why:'')+')':' (matches)'));
+  if(v.pdf)A.finPdf({a:today(),b:today(),pl:true,hr:true,lg:true,hide:false,cash:v.n});
+  if(v.bk)A.backup();
+  UNDO=[];S.arch.push(...S.q);S.q=[];S.ctr=1;S.act=null;commit();A.go('rec');toast('Day closed')},
+async testBackup(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');
+  const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+  i.onchange=()=>{const f=i.files[0];if(!f)return;const rd=new FileReader();rd.onload=async()=>{let d;try{d=JSON.parse(rd.result);if(!Array.isArray(d.q))throw 0}catch(e){L('🧪 Backup test FAILED (unreadable file)');commit();return Swal.fire({icon:'error',title:'❌ This backup cannot be read',text:'The file is damaged or is not a clinic backup. Check the hard-disk folder and make a new backup now.'})}
+    const vis=[...(d.arch||[]),...d.q],rx=d.rx||[],ds=vis.map(p=>p.scanDate).filter(Boolean).sort(),mine=new Set(vis.map(p=>p.id)),cur=[...S.arch,...S.q],have=cur.filter(p=>mine.has(p.id)).length,pc=cur.length?Math.round(have*100/cur.length):100,age=d.backupAt?Math.round((Date.now()-d.backupAt)/864e5):null;
+    S.lastBkTest=Date.now();L('🧪 Backup test passed ('+vis.length+' visits, '+rx.length+' prescriptions)');commit();
+    Swal.fire({icon:pc>=90&&(age===null||age<=7)?'success':'warning',title:'✅ Backup can be restored',html:'<div style="text-align:left;font-size:.88rem">File: <b>'+esc(f.name)+'</b><br>Visits: <b>'+vis.length+'</b>'+(ds.length?' ('+fd(ds[0])+' to '+fd(ds[ds.length-1])+')':'')+'<br>Prescriptions: <b>'+rx.length+'</b><br>'+(age!==null?'Saved: <b>'+(age===0?'today':age+' day(s) ago')+'</b><br>':'')+'It contains <b>'+pc+'%</b> of the visits on this phone.'+(pc<90?'<br><b style="color:#b45309">Older than this phone\'s data: make a fresh backup.</b>':'')+'<br><br><span class="m">Nothing on this phone was changed. Next check due in 30 days.</span></div>'})};rd.readAsText(f)};
+  i.click()},
 async migrate(pin){
   const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
     showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
@@ -1248,6 +1303,9 @@ finPdf(o){
   if(o.lg){const st=new Date(a+'T00:00').getTime(),en=new Date(b+'T23:59:59').getTime(),lg=(S.log||[]).filter(l=>l.t>=st&&l.t<=en).reverse();
     sec('Audit log');table([{h:'Date & time',w:34},{h:'Action',w:62},{h:'Token',w:20},{h:'Patient',w:40}],lg.length?lg.map(l=>[new Date(l.t).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),asc(l.a),l.k||'',l.n?nm({name:l.n}):'']):[['No activity recorded','','','']],{fs:7.2})}
   }
+  {const CL=(S.closings||[]).filter(c=>c.day>=a&&c.day<=b);if(CL.length){sec('Day closings (cash counted)');table([{h:'Date',w:24},{h:'Expected',w:24,a:'r'},{h:'Counted',w:24,a:'r'},{h:'Difference',w:22,a:'r'},{h:'Reason',w:60}],
+    [...CL.map(c=>{const r=[fd(c.day),rs(c.exp),rs(c.cash),c.diff?(c.diff>0?'+':'-')+' '+rs(Math.abs(c.diff)):'0',asc(c.why)||(c.diff?'-':'matches')];if(c.diff)r._c=[185,28,28];return r}),Object.assign(['TOTAL',rs(CL.reduce((x,c)=>x+c.exp,0)),rs(CL.reduce((x,c)=>x+c.cash,0)),String(CL.reduce((x,c)=>x+c.diff,0)),''],{_t:1})]);
+    if(o.cash==null&&!multi)o.cash=CL[CL.length-1].cash}}
   // cash reconciliation + sign-off
   need(48);sec('Cash reconciliation & sign-off');J.setFontSize(9);
   const line=(l,v)=>{J.text(l,M,y);if(v!=null)J.text(v,M+95,y,{align:'right'});else{J.setDrawColor(148,163,184);J.setLineWidth(.2);J.line(M+60,y+.5,M+95,y+.5)}y+=7};
@@ -1319,7 +1377,7 @@ function render(){
  $('st').innerHTML=[['Tokens',S.q.length],['Seen',c.length],['No-shows',S.q.filter(p=>p.status==='No-Show').length],['Avg time',av+'m'],['Revenue','₹'+c.reduce((s,p)=>s+(p.fee||0),0).toLocaleString('en-IN')]].map(([k,x])=>`<div class="c"><span class="m">${k}</span><div style="font-size:1.375rem;font-weight:900">${x}</div></div>`).join('');
  $('fb').innerHTML=[...c].reverse().map(p=>`<tr><td>${p.tokenNo}</td><td>${esc(p.name)}</td><td>${p.visitType}</td><td>${fd(p.scanDate)} ${ft(p.scannedAt)}<br>Seen ${ft(p.completedAtTimestamp)}</td><td>₹${p.fee}</td></tr>`).join('')||'<tr><td colspan="5">No completed visits yet</td></tr>';
  {const lb=A.lastBk(),has=S.q.length+S.arch.length>0,age=lb?Date.now()-lb:Infinity,d=Math.floor(age/864e5),txt=!lb?'No backup yet':d<1?'Last backup: today, '+ft(lb):'Last backup: '+d+' day'+(d>1?'s':'')+' ago';
-  const dp=DISK.h&&!DISK.ok&&ROLE==='adm';$('bkb').style.display=dp||(has&&age>864e5)?'':'none';$('bkt').textContent=dp?'Hard-disk saving paused: tap Allow':txt;$('bkb').querySelector('button').textContent=dp?'Allow':'Back up now';$('bkb').querySelector('button').onclick=dp?()=>DISK.perm():()=>A.backup();$('bks').textContent=txt+(lb?' ('+fd(dk(new Date(lb)))+')':'');}
+  const dp=DISK.h&&!DISK.ok&&ROLE==='adm',tdue=ROLE==='adm'&&has&&Date.now()-(S.lastBkTest||0)>30*864e5&&!(has&&age>864e5);$('bkb').style.display=dp||(has&&age>864e5)||tdue?'':'none';$('bkt').textContent=dp?'Hard-disk saving paused: tap Allow':tdue?'🧪 Monthly backup check due':txt;$('bkb').querySelector('button').textContent=dp?'Allow':tdue?'Test a backup':'Back up now';$('bkb').querySelector('button').onclick=dp?()=>DISK.perm():tdue?()=>A.testBackup():()=>A.backup();$('bks').textContent=txt+(lb?' ('+fd(dk(new Date(lb)))+')':'');}
  tr();
  window.lucide&&lucide.createIcons();
 }
