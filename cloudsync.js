@@ -44,18 +44,35 @@ function push(){if(!C.ref||C.applying)return;clearTimeout(tmr);tmr=setTimeout(do
 // ---- shared clinic logins: PIN/password hashes + wrapped data key live at scc/<clinic>/keys (signed-in clinic logins only)
 var lastKeySig=null,keyState='unknown'; // unknown | empty | ok | foreign (cloud has another phone's logins: never overwrite automatically)
 function keySig(){return JSON.stringify([S.sec||null,S.vault&&S.vault.w||null,S.vault&&S.vault.kid||null])}
-function pushKeys(){if(!C.ref||!S.vault||!S.sec||!CR.key)return;keyState='ok';if(!S.vault.kid){S.vault.kid=Math.random().toString(36).slice(2,12)}if(!S.keysAt)S.keysAt=Date.now();
+function pushKeys(){if(!C.ref||!S.vault||!S.sec||!CR.key)return;keyState='ok';setTimeout(rxStart,0);if(!S.vault.kid){S.vault.kid=Math.random().toString(36).slice(2,12)}if(!S.keysAt)S.keysAt=Date.now();
   var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();
   // sent together with the queue fields so the database rules (which require day/rev/updatedAt) accept it
   var j=JSON.stringify(pl);count('up',j.length);lastBody=JSON.stringify([pl.q,pl.ctr,pl.act,pl.auto,pl.fees,pl.day]);C.ref.update(JSON.parse(j)).catch(function(e){console.warn('keys',e);keyState='empty';lastKeySig=null})}
 function keysIn(k){
   if(!k){keyState='empty';if(S.vault&&CR.key)pushKeys();return}
-  if(S.vault&&S.vault.kid&&k.kid===S.vault.kid){keyState='ok';
+  if(S.vault&&S.vault.kid&&k.kid===S.vault.kid){keyState='ok';setTimeout(rxStart,0);
     if((k.at||0)>(S.keysAt||0)){S.sec=k.sec;S.vault.w=k.w;S.keysAt=k.at;lastKeySig=keySig();origSave();typeof render==='function'&&render();if(k.by!==DEV)toast('Clinic logins updated')}
     else if((k.at||0)<(S.keysAt||0))pushKeys();else lastKeySig=keySig();
     return}
-  keyState='foreign';if(window.A&&A.adoptKeys)A.adoptKeys(k);
+  keyState='foreign';
+  // only ask once this phone has its own logins and someone is logged in (a brand-new phone uses 'Join my clinic' instead)
+  if(S.sec&&typeof ROLE!=='undefined'&&ROLE&&window.A&&A.adoptKeys)A.adoptKeys(k);
 }
+// ---- prescriptions: each one stored end-to-end encrypted at rxs/<clinic>/r/<id> (only clinic phones hold the key);
+// the last 45 days are kept in the cloud, everything stays on the phones and the hard-disk backups.
+var RXWIN=45*864e5,rxOn=false,rxQ=null;
+function rxRef(){return C.uid?firebase.database(app()).ref('rxs/'+C.uid):null}
+function rxPut(rec){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!rec||!rec.id)return;
+  CR.enc(JSON.stringify(rec)).then(function(e){var o={ts:rec.ts||Date.now(),i:e.i,c:e.c};count('up',JSON.stringify(o).length);return r.child('r/'+rec.id).set(o)}).catch(function(e){console.warn('rx put',e)})}
+function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
+function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Date.now()-RXWIN;
+  r.child('meta').on('value',function(s){var m=s.val();count('down',JSON.stringify(m||'').length);if(!m){if(S.rxSets||S.rxCfg)metaPut();return}if(window.A&&A.metaIn)A.metaIn(m)});
+  var q=rxQ=r.child('r').orderByChild('ts').startAt(t0);
+  q.once('value').then(function(s){var have={},v=s.val()||{};Object.keys(v).forEach(function(k){have[k]=v[k].ts||0});count('down',JSON.stringify(v).length);
+    (typeof RXREC!=='undefined'?RXREC:[]).forEach(function(x){if((x.ts||0)>=t0&&(!have[x.id]||have[x.id]<x.ts))rxPut(x)});
+    var on=function(c){var o=c.val();if(o&&window.A&&A.rxIn)A.rxIn(c.key,o)};q.on('child_added',on);q.on('child_changed',on);
+    if(typeof ROLE!=='undefined'&&ROLE==='adm')r.child('r').orderByChild('ts').endAt(Date.now()-60*864e5).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){})})
+   .catch(function(e){rxOn=false;console.warn('rx sync',e)})}
 function doPush(){if(!C.ref||C.applying)return;
   if((keyState==='ok'||keyState==='empty')&&S.vault&&CR.key&&keySig()!==lastKeySig){S.keysAt=Date.now();pushKeys()}
   var p=payload(),body=JSON.stringify([p.q,p.ctr,p.act,p.auto,p.fees,p.day]);
@@ -103,7 +120,7 @@ function start(){
        else{set('err');Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not approved for a clinic yet. Ask the admin to approve it in Firebase.'})}})})
    .catch(function(e){set(navigator.onLine?'err':'offline');console.warn('cloud start',e)});
 }
-function stop(){try{C.ref&&C.ref.off()}catch(e){}C.ref=null;C.pub=null}
+function stop(){try{C.ref&&C.ref.off()}catch(e){}try{var r=rxRef();r&&r.child('meta').off();r&&r.child('r').off();rxQ&&rxQ.off()}catch(e){}rxQ=null;rxOn=false;C.ref=null;C.pub=null}
 function usageHtml(){var u=U(),pc=Math.min(100,u.down/CAP*100);
   return '<div style="text-align:left;background:#f1f5f9;border-radius:.8rem;padding:.6rem .8rem;margin-top:.8rem;font-size:.8rem"><b>📊 Cloud data used by this phone ('+u.m+')</b><br>Received: <b>'+fmt(u.down)+'</b> &nbsp; Sent: <b>'+fmt(u.up)+'</b> ('+u.w+' updates)'
    +'<div style="height:8px;background:#e2e8f0;border-radius:4px;margin:.4rem 0"><div style="height:8px;width:'+Math.max(1,pc).toFixed(1)+'%;background:'+(pc>80?'#dc2626':pc>50?'#d97706':'#16a34a')+';border-radius:4px"></div></div>'
@@ -134,7 +151,7 @@ async function join(email,pw){await libs();app();await firebase.auth().setPersis
   var a=(await firebase.database(app()).ref('allowed/'+u.uid).once('value')).val(),cid=typeof a==='string'&&a?a:a===true?u.uid:null;
   if(!cid)throw new Error('This cloud login is not approved for a clinic yet.');
   var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});return k}
-window.CloudSync={join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig()},menu:menu,start:start,status:function(){return C.status},usage:U};
+window.CloudSync={rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,status:function(){return C.status},usage:U};
 function go(){if(window.SCC_READY===false){set('off');addEventListener('scc-unlocked',function(){start()},{once:true})}else start()}
 chip();if(window.SCC_BOOTED)go();else addEventListener('scc-boot',go,{once:true});
 })();
