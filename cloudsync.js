@@ -111,8 +111,9 @@ async function menu(){
 // hook the app's save(): every local change is pushed to the cloud
 var origSave=window.save;
 window.save=function(){origSave.apply(this,arguments);push()};
-addEventListener('online',function(){if(pref().on&&!C.ref)start()});
+addEventListener('online',function(){if(pref().on&&!C.ref&&window.SCC_READY!==false)start()});
 addEventListener('offline',function(){if(C.ref)set('offline')});
 window.CloudSync={menu:menu,start:start,status:function(){return C.status},usage:U};
-chip();start();
+function go(){if(window.SCC_READY===false){set('off');addEventListener('scc-unlocked',function(){start()},{once:true})}else start()}
+chip();if(window.SCC_BOOTED)go();else addEventListener('scc-boot',go,{once:true});
 })();

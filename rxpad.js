@@ -53,7 +53,9 @@ function css(){if(document.getElementById('rxp-css'))return;var s=document.creat
 function el(h){var d=document.createElement('div');d.innerHTML=h;return d.firstElementChild}
 
 RxPad={
- init:function(o){opts=o||{};P=opts.prefix||'rxpad';CFG=Object.assign({},DEF,opts.defaults||{},ld(P+'_cfg',{}));REC=ld(P+'_rec',[]);return CFG},
+ init:function(o){opts=o||{};P=opts.prefix||'rxpad';CFG=Object.assign({},DEF,opts.defaults||{},ld(P+'_cfg',{}));REC=opts.recStore?(opts.recStore.get()||[]):ld(P+'_rec',[]);return CFG},
+ records:function(){return REC.slice()},
+ setRecords:function(a){REC=Array.isArray(a)?a:[]},
  cfg:function(){return CFG},
  enabled:function(){return !!(CFG&&CFG.enabled)},
  history:function(name,phone){name=up(name).trim();phone=String(phone||'').replace(/\D/g,'').slice(-10);
@@ -109,7 +111,7 @@ RxPad={
      if(!CFG.regNo||!CFG.docEn)probs.push("doctor's name / registration number (Rx settings)");if(rx.m.some(function(m){return!m.g}))probs.push('a medicine with no name');
      if(probs.length&&!window.confirm('Missing: '+probs.join('; ')+'.\n\nPrint anyway?'))return;
      save();print(rx)}}
-  function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);if(REC.length>800)REC=REC.slice(-800);sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
+  function save(){var i=REC.findIndex(function(r){return r.id===rx.id});var c=JSON.parse(JSON.stringify(rx));c.ts=Date.now();if(i>=0)REC[i]=c;else REC.push(c);var cap=opts.recStore?3000:800;if(REC.length>cap)REC=REC.slice(-cap);if(opts.recStore)opts.recStore.set(REC);else sv(P+'_rec',REC);opts.onSave&&opts.onSave(c)}
   function flash(t){var b=root.querySelector('#rxpSave');var o=b.textContent;b.textContent='✓ '+t;setTimeout(function(){b.textContent=o},1200)}
   draw();return rx},
  settings:function(done){css();var s=Object.assign({},CFG);var root=el('<div class="rxp" id="rxpSetRoot"></div>');document.body.appendChild(root);

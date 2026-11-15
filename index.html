@@ -194,7 +194,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 <header><div class="hd"><div class="lg"><i data-lucide="activity"></i></div><div class="ht"><h1 id="hn"></h1><small id="hd"></small></div><button id="rolec" type="button" onclick="A.logout()" title="Switch user / Lock" style="border:0;min-height:0;cursor:pointer"></button><button class="ib" onclick="A.menu(1)"><i data-lucide="menu"></i></button></div></header>
 <nav id="nav"><button data-t="rec" class="on"><i data-lucide="monitor"></i>Reception</button><button data-t="scan" class="nodoc"><i data-lucide="scan"></i>Scan</button><button data-t="fin" class="adm"><i data-lucide="lock"></i>Finance</button><button onclick="A.menu(1)"><i data-lucide="menu"></i>Menu</button></nav>
 <div id="ov" onclick="A.menu(0)"></div><aside id="dr"><div class="dh"><b>Clinic Management</b><button class="ib" onclick="A.menu(0)"><i data-lucide="x"></i></button></div>
-<button class="mi" onclick="A.go('rec');A.menu(0)"><span class="ic"><i data-lucide="monitor"></i></span>Reception</button><button class="mi nodoc" onclick="A.go('scan');A.menu(0)"><span class="ic"><i data-lucide="scan"></i></span>Scan</button><button class="mi adm" onclick="A.go('fin');A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Finance</button><button class="mi adm" onclick="A.go('set');A.menu(0)"><span class="ic"><i data-lucide="settings"></i></span>Settings &amp; Token Studio</button><button class="mi adm" onclick="A.users();A.menu(0)"><span class="ic"><i data-lucide="users"></i></span>Logins: Doctor / Reception PINs</button><button class="mi" onclick="A.logout();A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Switch user / Lock</button><button class="mi" onclick="A.lang();A.menu(0)"><span class="ic"><i data-lucide="languages"></i></span><span id="lbt">తెలుగు</span></button><div class="sz"><b><span>Text size</span><span id="szv">100%</span></b><input type="range" id="sz" min="85" max="160" step="5" value="100" oninput="A.size(this.value)"></div></aside>
+<button class="mi" onclick="A.go('rec');A.menu(0)"><span class="ic"><i data-lucide="monitor"></i></span>Reception</button><button class="mi nodoc" onclick="A.go('scan');A.menu(0)"><span class="ic"><i data-lucide="scan"></i></span>Scan</button><button class="mi adm" onclick="A.go('fin');A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Finance</button><button class="mi adm" onclick="A.go('set');A.menu(0)"><span class="ic"><i data-lucide="settings"></i></span>Settings &amp; Token Studio</button><button class="mi adm" onclick="A.users();A.menu(0)"><span class="ic"><i data-lucide="users"></i></span>Logins: Doctor / Reception PINs</button><button class="mi norec" onclick="A.find();A.menu(0)"><span class="ic"><i data-lucide="search"></i></span>Patient records</button><button class="mi" onclick="A.logout();A.menu(0)"><span class="ic"><i data-lucide="lock"></i></span>Switch user / Lock</button><button class="mi" onclick="A.lang();A.menu(0)"><span class="ic"><i data-lucide="languages"></i></span><span id="lbt">తెలుగు</span></button><div class="sz"><b><span>Text size</span><span id="szv">100%</span></b><input type="range" id="sz" min="85" max="160" step="5" value="100" oninput="A.size(this.value)"></div></aside>
 <main>
 <section id="rec" class="on"><div id="bkb" class="bk" style="display:none"><span><b id="bkt"></b><small>Phone data can be lost if the phone is reset or lost.</small></span><button onclick="A.backup()">Back up now</button></div><div class="c nodoc" id="qac"><div class="sh"><span class="t"><i data-lucide="user-plus"></i>Quick Actions</span><span class="chip" id="dt"></span></div><button class="qa b1" onclick="A.walkin()"><span class="ic"><i data-lucide="user-plus"></i></span><span class="tx"><b>Register Walk-in &amp; Print QR Card</b><small>Optional design picker, visit type &amp; instant print</small></span><i data-lucide="chevron-right"></i></button><button class="qa b2" onclick="A.go('scan')"><span class="ic"><i data-lucide="scan"></i></span><span class="tx"><b>Scan QR Ticket</b><small>Smart visit-type auto-detection</small></span><i data-lucide="chevron-right"></i></button><button class="qa b3" onclick="A.batch()"><span class="ic"><i data-lucide="printer"></i></span><span class="tx"><b>Print A4 Batch Cards</b><small>All 5 token designs &amp; optional fields</small></span><i data-lucide="chevron-right"></i></button><button class="am" id="ub" onclick="A.undo()" style="display:none;width:100%"></button></div>
 <div class="c"><div class="row"><span class="m">NOW SERVING</span><label><input type="checkbox" id="ap" style="width:auto" onchange="S.auto=this.checked;commit()"> Auto-Pilot</label></div>
@@ -269,7 +269,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
   <label>Return-visit window (days)<input id="swin" type="number" min="0"></label>
   <button onclick="A.cfg()" style="width:100%;margin-top:0.375rem">Save Settings</button>
 </div>
-<div class="c"><b>Security &amp; backup</b><div class="grid" style="margin-top:0.375rem"><button class="g" onclick="A.secret('pin')">Change PIN</button><button class="g" onclick="A.secret('pass')">Change password</button><button class="g" onclick="A.users()">👥 Doctor / Reception PINs</button><button class="r" onclick="A.fresh()">🧹 Start fresh</button><button class="g" onclick="A.newRec()">New recovery code</button><button class="g" onclick="A.backup()">⬇ Backup</button><label class="b g" style="text-align:center">⬆ Restore<input type="file" accept=".json" hidden onchange="A.restore(event)"></label></div><p class="m" id="bks" style="margin:0.5rem 0 0"></p></div></section>
+<div class="c"><b>Security &amp; backup</b><div class="grid" style="margin-top:0.375rem"><button class="g" onclick="A.secret('pin')">Change PIN</button><button class="g" onclick="A.secret('pass')">Change password</button><button class="g" onclick="A.users()">👥 Doctor / Reception PINs</button><button class="r" onclick="A.fresh()">🧹 Start fresh</button><button class="g" onclick="A.newRec()">New recovery code</button><button class="g" onclick="A.backup()">⬇ Backup</button><label class="b g" style="text-align:center">⬆ Restore<input type="file" accept=".json" hidden onchange="A.restore(event)"></label></div><p class="m" id="bks" style="margin:0.5rem 0 0"></p><div id="dsk" style="margin-top:.75rem;padding-top:.6rem;border-top:1px solid #e2e8f0"></div><button class="g" style="width:100%;margin-top:.5rem" onclick="A.find()">🔎 Find &amp; print a patient's records</button></div></section>
 </main>
 <div id="ps"></div><div id="pb"></div><div id="pr"></div>
 <script>
@@ -339,13 +339,52 @@ S.cfg={
 S.log=S.log||[];S.q=S.q||[];S.arch=S.arch||[];S.lock={f:0,until:0,lvl:0,...(S.lock||{})};
 }
 norm();
+function bootData(){if(S.vault){if(!CR.key){VK.forEach(k=>S[k]=k==='act'?null:[]);RXREC=[]}}else{try{RXREC=JSON.parse(localStorage.getItem('scc_rx_rec')||'[]')}catch(e){RXREC=[]}}window.SCC_READY=!S.vault||!!CR.key}
 const IDB={db:null,open(){return this.db||(this.db=new Promise((ok,no)=>{try{const r=indexedDB.open('SkinCareClinic',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}))},
  async get(){const d=await this.open();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get('S');q.onsuccess=()=>ok(q.result||null);q.onerror=()=>no(q.error)})},
  async put(v){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,'S');t.oncomplete=ok;t.onerror=()=>no(t.error)})}};
-let saveWarned=false;
-function save(){S.savedAt=Date.now();const j=JSON.stringify(S);let ls=true;try{localStorage.setItem(KEY,j)}catch(e){ls=false}
- IDB.put(j).then(()=>{if(!ls&&!saveWarned){saveWarned=true;toast('Phone storage nearly full: saved to backup store. Please back up.','warning')}}).catch(()=>{if(!ls){$('stw').style.display='block';toast('Data NOT saved on this phone','error')}})}
+// ---- Encryption at rest: patient data is stored AES-256-GCM encrypted. One random data key, wrapped
+// separately by each login PIN, the finance password and the recovery code (PBKDF2-SHA256, 250k rounds).
+const VK=['q','arch','log','act'];let RXREC=[];
+const B64=u=>{u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)},UB=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const CR={key:null,
+ async kdf(sec,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(sec),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey'])},
+ async gen(){CR.key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt'])},
+ async wrap(sec){const s=crypto.getRandomValues(new Uint8Array(16)),i=crypto.getRandomValues(new Uint8Array(12)),k=await CR.kdf(sec,s);return{s:B64(s),i:B64(i),w:B64(await crypto.subtle.wrapKey('raw',CR.key,k,{name:'AES-GCM',iv:i}))}},
+ async unwrap(sec,o){const k=await CR.kdf(sec,UB(o.s));return crypto.subtle.unwrapKey('raw',UB(o.w),k,{name:'AES-GCM',iv:UB(o.i)},{name:'AES-GCM',length:256},true,['encrypt','decrypt'])},
+ async enc(txt){const i=crypto.getRandomValues(new Uint8Array(12));return{i:B64(i),c:B64(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(txt)))}},
+ async dec(o){return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:UB(o.i)},CR.key,UB(o.c)))}};
+const SECRET={adm:p=>'pin:'+p,doc:p=>'pin:'+p,rcp:p=>'pin:'+p,pass:p=>'pass:'+p,rec:p=>'rec:'+String(p).toUpperCase().replace(/[^A-Z0-9]/g,'')};
+async function vWrap(slot,plain){if(!CR.key||!S.vault)return;S.vault.w[slot]=await CR.wrap(SECRET[slot](plain))}
+async function vOpen(slot,plain){ // unlock the stored data with one secret; true if it worked
+  if(!S.vault)return true;if(CR.key)return true;const w=S.vault.w[slot];if(!w)return false;
+  try{CR.key=await CR.unwrap(SECRET[slot](plain),w)}catch(e){return false}
+  if(S.enc){try{const b=JSON.parse(await CR.dec(S.enc));VK.forEach(k=>{if(b[k]!==undefined)S[k]=b[k]});RXREC=b.rx||[]}catch(e){CR.key=null;return false}}
+  norm();window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();return true}
+function dataReady(){if(window.SCC_READY)return;window.SCC_READY=true;dispatchEvent(new Event('scc-unlocked'));render()}
+let saveWarned=false,SQ=Promise.resolve();
+function wr(j){let ls=true;try{localStorage.setItem(KEY,j)}catch(e){ls=false;try{localStorage.removeItem(KEY)}catch(x){}}
+ return IDB.put(j).catch(()=>{if(!ls){$('stw').style.display='block';toast('Data NOT saved on this phone','error')}})}
+function save(){S.savedAt=Date.now();
+ if(!S.vault){try{localStorage.setItem('scc_rx_rec',JSON.stringify(RXREC))}catch(e){}SQ=SQ.then(()=>wr(JSON.stringify(S)));return}
+ const o={...S};VK.forEach(k=>delete o[k]);delete o.rx;
+ if(!CR.key){SQ=SQ.then(()=>wr(JSON.stringify(o)));return} // locked: keep the stored encrypted data untouched
+ const b={};VK.forEach(k=>b[k]=S[k]);b.rx=RXREC;const t=JSON.stringify(b);
+ SQ=SQ.then(()=>CR.enc(t)).then(e=>{S.enc=o.enc=e;return wr(JSON.stringify(o))}).catch(()=>toast('Could not save securely','error'))}
 const commit=()=>{save();render()};
+const DISK={h:null,ok:false,at:0,last:'',
+ async db(){return IDB.open()},
+ async get(){const d=await this.db();return new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get('dir');q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})},
+ async put(v){const d=await this.db();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,'dir');t.oncomplete=ok;t.onerror=()=>no(t.error)})},
+ async load(){try{this.h=await this.get();if(this.h)this.ok=(await this.h.queryPermission({mode:'readwrite'}))==='granted'}catch(e){this.ok=false}A.diskUi();render()},
+ async pick(){if(ROLE!=='adm')return toast('Only Admin','warning');if(!window.showDirectoryPicker)return A.diskUi();try{const h=await showDirectoryPicker({id:'scc-records',mode:'readwrite'});this.h=h;this.ok=true;await this.put(h);L('Hard-disk folder connected: '+h.name);await this.save(true);toast('Folder connected')}catch(e){if(e&&e.name!=='AbortError')toast('Could not use that folder','error')}A.diskUi();render()},
+ async perm(){if(!this.h)return;try{this.ok=(await this.h.requestPermission({mode:'readwrite'}))==='granted'}catch(e){this.ok=false}if(this.ok)await this.save(true);A.diskUi();render()},
+ async save(force){if(!this.h||!this.ok||!window.SCC_READY)return;const j=JSON.stringify(A.backupData()),sig=j.length+':'+S.savedAt;if(!force&&sig===this.last)return;
+  try{const fh=await this.h.getFileHandle('SkinCareClinic_'+today()+'.json',{create:true}),w=await fh.createWritable();await w.write(j);await w.close();this.last=sig;this.at=Date.now();try{localStorage.setItem(BKEY,String(this.at))}catch(e){}this.prune()}
+  catch(e){this.ok=false;toast('Hard-disk save failed: check the folder or drive','error')}A.diskUi();render()},
+ async prune(){try{const cut=new Date(Date.now()-31*864e5).toISOString().slice(0,10),old=[];for await(const [n] of this.h.entries()){const m=/^SkinCareClinic_(\d{4}-\d{2}-\d{2})\.json$/.exec(n);if(m&&m[1]<cut)old.push(m[1])}
+  old.sort();const keep=new Set();old.forEach(d=>{const mo=d.slice(0,7);if(![...keep].some(k=>k.slice(0,7)===mo))keep.add(d)});for(const d of old)if(!keep.has(d))await this.h.removeEntry('SkinCareClinic_'+d+'.json')}catch(e){}}};
+setInterval(()=>DISK.save(),10*60000);addEventListener('pagehide',()=>DISK.save());document.addEventListener('visibilitychange',()=>{if(document.hidden)DISK.save()});
 function out(id,html,fill){$(id).innerHTML=html;fill&&fill();document.body.className=id;setTimeout(()=>window.print(),600)}
 let ROLE=null;const ROLES={adm:{n:'Admin',i:'🛡 Admin',t:['rec','scan','fin','set']},doc:{n:'Doctor',i:'👨‍⚕️ Doctor',t:['rec']},rec:{n:'Reception',i:'🧾 Reception',t:['rec','scan']}};
 let ok=false,busy=false,scn=null,UNDO=[];
@@ -564,14 +603,16 @@ async resetPinPrompt(){
   if(G.blocked())return;
   const v=(r.value||'').trim();
   if(!S.sec||!(H(v)===S.sec.pass||(S.sec.rec&&H(v.toUpperCase().replace(/[^A-Z0-9]/g,''))===S.sec.rec))){L('Failed PIN reset attempt');return G.fail('password or recovery code')}
+  const byPass=H(v)===S.sec.pass;
+  if(S.vault&&!(await vOpen(byPass?'pass':'rec',v))){L('PIN reset: data could not be unlocked');return Swal.fire({icon:'error',title:'Could not unlock patient data',text:'Try the other one (finance password or recovery code).'})}
   G.good();
-  L('PIN reset with '+(H(v)===S.sec.pass?'finance password':'recovery code'));
+  L('PIN reset with '+(byPass?'finance password':'recovery code'));
   S.sec0=S.sec;await A.setup(true);
 },
 async newRec(){
   const r=await Swal.fire({title:'New recovery code',text:'Enter the finance password to create a new recovery code. The old code stops working.',input:'password',showCancelButton:true});
   if(!r.isConfirmed)return;if(H(r.value||'')!==S.sec.pass)return toast('Incorrect password','error');
-  const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');S.sec.rec=H(rc);L('New recovery code created');commit();
+  const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');S.sec.rec=H(rc);await vWrap('rec',rc);L('New recovery code created');commit();
   Swal.fire({icon:'info',title:'Your new recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">Write it down. It is shown only once.</p>'});
 },
 async wipePrompt(){
@@ -586,9 +627,21 @@ pin(){
   if(!S.sec){$('lock').style.display='none';A.role('adm');return}
   const h=H($('pin').value),dm=A.dev();let r=h===S.sec.pin?'adm':(S.sec.doc&&h===S.sec.doc)?'doc':(S.sec.rcp&&h===S.sec.rcp)?'rec':null;
   if(r&&r!=='adm'&&dm!=='any'&&r!==dm){$('pin').value='';return toast('This phone is set for '+ROLES[dm].n+' only','error')}
-  if(r){$('lock').style.display='none';G.good();A.role(r)}
-  else G.fail('PIN');
-  $('pin').value='';
+  if(!r){$('pin').value='';return G.fail('PIN')}
+  const pv=$('pin').value;$('pin').value='';$('pin').disabled=true;$('lkm').textContent='Unlocking…';
+  vOpen(r==='rec'?'rcp':r,pv).then(okd=>{$('pin').disabled=false;$('lkm').textContent='';
+    if(!okd)return Swal.fire({icon:'error',title:'Cannot open patient data',text:r==='adm'?'The stored data could not be unlocked with this PIN. Use "Forgot PIN? Reset" with your finance password or recovery code.':'This login was set before encryption was turned on. Ask Admin to set the '+ROLES[r].n+' PIN again (Menu → Logins).'});
+    $('lock').style.display='none';G.good();A.role(r);if(r==='adm'&&!S.vault)A.migrate(pv)})
+},
+async migrate(pin){
+  const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
+    showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
+  if(!r.isConfirmed)return;
+  const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
+  await CR.gen();S.vault={v:1,w:{}};await vWrap('adm',pin);await vWrap('pass',r.value);await vWrap('rec',rc);S.sec.rec=H(rc);delete S.sec.doc;delete S.sec.rcp;
+  try{localStorage.removeItem('scc_rx_rec')}catch(e){}window.SCC_READY=true;L('Encryption switched on');commit();
+  await Swal.fire({icon:'success',title:'Encrypted. Write down your NEW recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">The old recovery code no longer works. Next: set the Doctor and Reception PINs again.</p>',confirmButtonText:'I have written it down',allowOutsideClick:false,allowEscapeKey:false});
+  A.users();
 },
 async setup(reset){
   const r=await Swal.fire({
@@ -607,6 +660,8 @@ async setup(reset){
   const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
   S.sec={pin:H(r.value[0]),pass:H(r.value[1]),rec:H(rc)};
   if(reset&&S.sec0){S.sec.doc=S.sec0.doc;S.sec.rcp=S.sec0.rcp}delete S.sec0;
+  if(!S.vault&&!reset){await CR.gen();S.vault={v:1,w:{}};window.SCC_READY=true;try{localStorage.removeItem('scc_rx_rec')}catch(e){}}
+  if(S.vault&&CR.key){await vWrap('adm',r.value[0]);await vWrap('pass',r.value[1]);await vWrap('rec',rc)}
   commit();
   $('lock').style.display='none';A.role('adm');
   await Swal.fire({icon:'info',title:'Write down your recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">If you forget both the PIN and the finance password, this code lets you reset them. It is shown only once.</p>',confirmButtonText:'I have written it down',allowOutsideClick:false,allowEscapeKey:false});
@@ -635,7 +690,7 @@ async fresh(){
   Swal.fire({icon:'success',title:'Done. The app is fresh.',text:'Token numbering starts again at OPD-001.',timer:2200,showConfirmButton:false});
   setTimeout(()=>location.reload(),2400);
 },
-wipeLocal(at){S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
+wipeLocal(at){S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;RXREC=[];window.RxPad&&RxPad.setRecords&&RxPad.setRecords([]);try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
 dev(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}},
 lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕️ Doctor phone (Doctor or Admin PIN)':d==='rec'?'🧾 Reception phone (Reception or Admin PIN)':'Doctor · Reception · Admin'},
 async users(){
@@ -651,8 +706,8 @@ async users(){
     if(new Set(all).size!==all.length)return Swal.showValidationMessage('Each login needs a different PIN (and not the Admin PIN)');
     return{a,b,dm}}});
   if(!r.isConfirmed)return;
-  if(r.value.x){delete S.sec.doc;delete S.sec.rcp;L('Doctor & Reception logins removed')}
-  else{if(r.value.a){S.sec.doc=H(r.value.a);L('Doctor PIN set')}if(r.value.b){S.sec.rcp=H(r.value.b);L('Reception PIN set')}}
+  if(r.value.x){delete S.sec.doc;delete S.sec.rcp;if(S.vault){delete S.vault.w.doc;delete S.vault.w.rcp}L('Doctor & Reception logins removed')}
+  else{if(r.value.a){S.sec.doc=H(r.value.a);await vWrap('doc',r.value.a);L('Doctor PIN set')}if(r.value.b){S.sec.rcp=H(r.value.b);await vWrap('rcp',r.value.b);L('Reception PIN set')}}
   if(r.value.dm){try{localStorage.setItem('scc_device_role',r.value.dm)}catch(e){}L('This phone set for: '+(r.value.dm==='any'?'Anyone':ROLES[r.value.dm].n));A.lkLabel()}
   commit();toast('Logins updated');
 },
@@ -1152,10 +1207,36 @@ finPdf(o){
 },
 async secret(k){
   const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New 4-digit PIN':'New password (6+)'}">`,showCancelButton:true,preConfirm:()=>{const o=$('o').value,n=$('n').value;if(H(o)!==S.sec[k])return Swal.showValidationMessage('Current value is wrong');if(p?!/^\d{4}$/.test(n):n.length<6)return Swal.showValidationMessage(p?'PIN must be 4 digits':'Use 6+ characters');return n}});
-  if(r.isConfirmed){S.sec[k]=H(r.value);commit();toast('Updated')}
+  if(r.isConfirmed){S.sec[k]=H(r.value);await vWrap(p?'adm':'pass',r.value);commit();toast('Updated')}
 },
 lastBk(){try{return +localStorage.getItem(BKEY)||0}catch(e){return 0}},
-backup(){const n=new Date(),nm='clinic_backup_'+today()+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+'.json';A.dl(nm,JSON.stringify(S),'application/json');try{localStorage.setItem(BKEY,String(Date.now()))}catch(e){}L('Backup saved ('+nm+')');commit();toast('Backup saved to Downloads')},
+backupData(){const o={...S,rx:RXREC,backupAt:Date.now(),app:'SkinCareClinic'};['enc','vault','sec','lock','sec0'].forEach(k=>delete o[k]);return o},
+backup(){if(DISK.ok)return DISK.save(true).then(()=>toast('Backup saved to hard-disk folder'));const n=new Date(),nm='clinic_backup_'+today()+'_'+String(n.getHours()).padStart(2,'0')+String(n.getMinutes()).padStart(2,'0')+'.json';A.dl(nm,JSON.stringify(A.backupData()),'application/json');try{localStorage.setItem(BKEY,String(Date.now()))}catch(e){}L('Backup saved ('+nm+')');commit();toast('Backup saved to Downloads')},
+diskUi(){const el=$('dsk');if(!el)return;
+  if(!window.showDirectoryPicker){el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 0;font-size:.8rem">Phones cannot save straight to a folder. Tap <b>⬇ Backup</b> (it goes to Downloads), then copy the file to the clinic computer\'s hard disk. Or open this app on the clinic PC in Chrome or Edge and connect a folder there.</p>';return}
+  el.innerHTML='<b>💾 Hard-disk records</b><p class="m" style="margin:.3rem 0 .4rem;font-size:.8rem">'+(!DISK.h?'Choose a folder on this computer\'s hard disk (for example D:\\Clinic Records). The app then saves a full backup there by itself, including prescriptions: every 10 minutes when something changes, and when the app is closed. Daily files are kept for 31 days, then one file per month is kept.'
+   :DISK.ok?'✅ Saving to folder <b>'+esc(DISK.h.name)+'</b>'+(DISK.at?'. Last saved '+ft(DISK.at):'')+'.':'⚠ Saving to <b>'+esc(DISK.h.name)+'</b> is paused. The browser needs your permission again after a restart.')+'</p>'
+   +'<div class="grid">'+(DISK.h&&!DISK.ok?'<button onclick="DISK.perm()">Allow saving</button>':'')+(DISK.ok?'<button class="ok" onclick="DISK.save(true).then(()=>toast(\'Saved\'))">Save now</button>':'')+'<button class="g" onclick="DISK.pick()">'+(DISK.h?'Change folder':'Choose folder')+'</button></div>'},
+async find(){
+  if(ROLE!=='adm'&&ROLE!=='doc')return toast('Only Admin or Doctor','warning');
+  const r=await Swal.fire({title:'🔎 Patient records',text:'Type the patient name or mobile number. Use this when a patient asks for their records (to be given within 72 hours).',input:'text',inputPlaceholder:'Name or mobile',showCancelButton:true,confirmButtonText:'Search'});
+  if(!r.isConfirmed||!(r.value||'').trim())return;
+  const q=r.value.trim().toUpperCase(),dg=q.replace(/\D/g,''),hit=n=>String(n||'').toUpperCase().includes(q);
+  const vis=[...S.arch,...S.q].filter(p=>hit(p.name)).sort((a,b)=>(a.scannedAt||0)-(b.scannedAt||0));
+  const rxs=RXREC.filter(x=>hit(x.p&&x.p.name)||(dg.length>=6&&x.p&&String(x.p.phone).includes(dg))).sort((a,b)=>a.ts-b.ts);
+  if(!vis.length&&!rxs.length)return Swal.fire({icon:'info',title:'Nothing found',text:'No visits or prescriptions match "'+r.value+'" on this device. Check the hard-disk backups for older records.'});
+  const names=[...new Set([...vis.map(p=>String(p.name).toUpperCase()),...rxs.map(x=>x.p.name)])];
+  const go=await Swal.fire({title:'Found',html:'<p style="text-align:left;font-size:.88rem"><b>'+vis.length+'</b> visit(s) and <b>'+rxs.length+'</b> prescription(s).<br>Names matched: '+esc(names.slice(0,6).join(', '))+(names.length>6?'…':'')+'</p>',showCancelButton:true,confirmButtonText:'🖨 Print record'});
+  if(!go.isConfirmed)return;
+  const md=m=>[m.f,m.g,m.s,m.d,m.t&&m.t!=='—'?m.t:'',m.u].filter(Boolean).join(' ');
+  const h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Patient record</title><style>body{font:13px system-ui,sans-serif;margin:18mm;color:#0f172a}h1{font-size:19px;margin:0}h2{font-size:14px;color:#0369a1;border-bottom:1.5px solid #0369a1;margin:18px 0 6px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cbd5e1;padding:4px 6px;text-align:left;vertical-align:top}th{background:#e2e8f0}.m{color:#64748b;font-size:11px}</style></head><body>'
+   +'<h1>'+esc(S.cfg.name)+'</h1><div class="m">'+esc(S.cfg.doc)+' · '+esc(S.cfg.addr)+'</div><h2>Patient record: '+esc(r.value)+'</h2><div class="m">Printed '+new Date().toLocaleString('en-IN')+' from this device\'s records. Confidential.</div>'
+   +'<h2>Visits ('+vis.length+')</h2><table><tr><th>Date</th><th>Token</th><th>Name</th><th>Visit</th><th>Status</th><th>Fee</th></tr>'+(vis.map(p=>'<tr><td>'+fd(p.scanDate)+' '+ft(p.scannedAt)+'</td><td>'+esc(p.tokenNo)+'</td><td>'+esc(p.name)+'</td><td>'+esc(p.visitType)+'</td><td>'+esc(p.status)+'</td><td>Rs. '+(p.fee||0)+'</td></tr>').join('')||'<tr><td colspan="6">None</td></tr>')+'</table>'
+   +'<h2>Prescriptions ('+rxs.length+')</h2>'+(rxs.map(x=>'<table style="margin-bottom:8px"><tr><th style="width:28%">'+esc(x.date||'')+'</th><th>'+esc(x.p.name)+(x.p.age?', '+esc(x.p.age):'')+(x.p.sex?' / '+esc(x.p.sex):'')+(x.p.phone?' · '+esc(x.p.phone):'')+'</th></tr><tr><td>Diagnosis</td><td><b>'+esc(x.dx)+'</b></td></tr>'+(x.cc?'<tr><td>Complaints</td><td>'+esc(x.cc)+'</td></tr>':'')+'<tr><td>Medicines</td><td>'+(x.m||[]).map(m=>esc(md(m))).join('<br>')+'</td></tr>'+(x.adv?'<tr><td>Advice</td><td>'+esc(x.adv)+'</td></tr>':'')+(x.review?'<tr><td>Review</td><td>'+esc(x.review)+'</td></tr>':'')+'</table>').join('')||'<p>None</p>')
+   +'<p class="m" style="margin-top:24px">Signature of the doctor: ____________________ &nbsp; Reg. No.: ________</p></body></html>';
+  const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0;right:0;bottom:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(h);f.contentDocument.close();
+  setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)},400);L('Patient record printed ('+r.value+')');commit();
+},
 restore(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -1164,7 +1245,7 @@ restore(e){
       const d=JSON.parse(r.result);
       if(!Array.isArray(d.q))throw 0;
       const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});
-      if(c.isConfirmed){S={...S,...d};commit();toast('Restored')}
+      if(c.isConfirmed){if(Array.isArray(d.rx)){RXREC=d.rx;window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC)}const keep={sec:S.sec,vault:S.vault,lock:S.lock};['rx','enc','vault','sec','lock','sec0','app','backupAt'].forEach(k=>delete d[k]);S={...S,...d,...keep};norm();L('Backup restored');commit();toast('Restored')}
     }catch(x){toast('Invalid backup file','error')}
   };
   r.readAsText(f);
@@ -1185,7 +1266,7 @@ function render(){
  $('st').innerHTML=[['Tokens',S.q.length],['Seen',c.length],['No-shows',S.q.filter(p=>p.status==='No-Show').length],['Avg time',av+'m'],['Revenue','₹'+c.reduce((s,p)=>s+(p.fee||0),0).toLocaleString('en-IN')]].map(([k,x])=>`<div class="c"><span class="m">${k}</span><div style="font-size:1.375rem;font-weight:900">${x}</div></div>`).join('');
  $('fb').innerHTML=[...c].reverse().map(p=>`<tr><td>${p.tokenNo}</td><td>${esc(p.name)}</td><td>${p.visitType}</td><td>${fd(p.scanDate)} ${ft(p.scannedAt)}<br>Seen ${ft(p.completedAtTimestamp)}</td><td>₹${p.fee}</td></tr>`).join('')||'<tr><td colspan="5">No completed visits yet</td></tr>';
  {const lb=A.lastBk(),has=S.q.length+S.arch.length>0,age=lb?Date.now()-lb:Infinity,d=Math.floor(age/864e5),txt=!lb?'No backup yet':d<1?'Last backup: today, '+ft(lb):'Last backup: '+d+' day'+(d>1?'s':'')+' ago';
-  $('bkb').style.display=has&&age>864e5?'':'none';$('bkt').textContent=txt;$('bks').textContent=txt+(lb?' ('+fd(dk(new Date(lb)))+')':'');}
+  const dp=DISK.h&&!DISK.ok&&ROLE==='adm';$('bkb').style.display=dp||(has&&age>864e5)?'':'none';$('bkt').textContent=dp?'Hard-disk saving paused: tap Allow':txt;$('bkb').querySelector('button').textContent=dp?'Allow':'Back up now';$('bkb').querySelector('button').onclick=dp?()=>DISK.perm():()=>A.backup();$('bks').textContent=txt+(lb?' ('+fd(dk(new Date(lb)))+')':'');}
  tr();
  window.lucide&&lucide.createIcons();
 }
@@ -1194,14 +1275,14 @@ addEventListener('online',()=>$('off').style.display='none');addEventListener('o
 $('nav').onclick=e=>{const b=e.target.closest('[data-t]');b&&A.go(b.dataset.t)};$('dt').textContent=fd(today());
 (async()=>{
   let lsOK=true;try{localStorage.setItem('__t','1');lsOK=localStorage.getItem('__t')==='1';localStorage.removeItem('__t')}catch(e){lsOK=false}
-  let idbOK=true;try{const raw=await IDB.get();const d=raw?JSON.parse(raw):null;if(d&&d.q&&(d.savedAt||0)>(S.savedAt||0)){S={...S,...d};norm()}}catch(e){idbOK=false}
+  let idbOK=true;try{const raw=await IDB.get();const d=raw?JSON.parse(raw):null;if(d&&(d.q||d.enc)&&(d.savedAt||0)>(S.savedAt||0)){S={...S,...d};norm()}}catch(e){idbOK=false}
   if(!lsOK&&!idbOK)$('stw').style.display='block';
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  render();G.tick();A.lkLabel();if(!S.sec)A.setup().then(()=>A.users());else setTimeout(()=>$('pin').focus(),300);
+  bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec)A.setup().then(()=>A.users());else setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
 </script><script src="cloudsync.js"></script><script src="rxpad.js"></script><script>
-try{RxPad.init({prefix:'scc_rx',qrLib:'vendor/qrcode.min.js',defaults:{clinicEn:'SKIN CARE CLINIC',clinicTe:'స్కిన్ కేర్ క్లినిక్',
+try{RxPad.init({prefix:'scc_rx',recStore:{get:()=>RXREC,set:a=>{RXREC=a;save()}},qrLib:'vendor/qrcode.min.js',defaults:{clinicEn:'SKIN CARE CLINIC',clinicTe:'స్కిన్ కేర్ క్లినిక్',
  addrEn:'Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad',addrTe:'మున్సిపల్ కాంప్లెక్స్ నెం. 25, 26, తిలక్ గార్డెన్, ఖలీల్‌వాడి, నిజామాబాద్',
  phone:'7207896169',hours:'10-00 a.m. to 2-30 p.m.\n05-00 p.m. to 8-30 p.m.',holiday:'SUNDAY HOLIDAY',docEn:'DR. D. SRINIVAS',qual:'M.D. (DERM) OSM.',
  fellow:'IADVL FELLOWSHIP IN HIV/AIDS',spec:'SKIN SPECIALIST',regNo:'37094',docTe:'డా. డి. శ్రీనివాస్\nఎం.డి. (చర్మవ్యాధుల నిపుణులు)',
