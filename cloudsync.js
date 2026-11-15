@@ -66,7 +66,11 @@ function start(){
   if(!navigator.onLine){set('offline')}
   set('wait');
   return libs().then(function(){app();return new Promise(function(ok){var off=firebase.auth().onAuthStateChanged(function(u){off();ok(u)})})})
-   .then(function(u){if(!u||String(u.email).toLowerCase()!==p.email.toLowerCase()){set('login');return}C.email=u.email;listen(u.uid)})
+   .then(function(u){if(!u||String(u.email).toLowerCase()!==p.email.toLowerCase()){set('login');return}C.email=u.email;
+     // per-device logins: /allowed/<login uid> = clinic id (legacy true = own uid)
+     return firebase.database(app()).ref('allowed/'+u.uid).once('value').then(function(s){var a=s.val();
+       if(typeof a==='string'&&a)listen(a);else if(a===true)listen(u.uid);
+       else{set('err');Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not approved for a clinic yet. Ask the admin to approve it in Firebase.'})}})})
    .catch(function(e){set(navigator.onLine?'err':'offline');console.warn('cloud start',e)});
 }
 function stop(){try{C.ref&&C.ref.off()}catch(e){}C.ref=null;C.pub=null}
