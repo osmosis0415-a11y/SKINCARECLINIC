@@ -75,8 +75,11 @@ function connect(){
   es.addEventListener('keep-alive',()=>{lastMsg=Date.now();live=true;$('dot').className='dot on'});
   es.onerror=()=>{live=false;draw()};
 }
-setInterval(()=>{if(lastMsg&&Date.now()-lastMsg>90000){lastMsg=0;live=false;draw();connect()}},15000);
+setInterval(()=>{if(es&&lastMsg&&Date.now()-lastMsg>90000){lastMsg=0;live=false;draw();connect()}},15000);
 addEventListener('online',connect);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!live)connect()});
+// Save free-plan data: close the live connection 2 min after the page goes to the background, and after 3 h open
+let hideT=null;const opened=Date.now();
+document.addEventListener('visibilitychange',()=>{clearTimeout(hideT);if(document.hidden){hideT=setTimeout(()=>{try{es&&es.close()}catch(e){}es=null;live=false},120000)}else if(!es||!live)connect()});
+setInterval(()=>{if(Date.now()-opened>3*3600e3&&es){try{es.close()}catch(e){}es=null;live=false;$('live').textContent='Paused · tap to refresh / రిఫ్రెష్ చేయండి';$('live').onclick=()=>location.reload()}},60000);
 draw();connect();
 </script></body></html>
