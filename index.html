@@ -257,8 +257,13 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
   <input id="stm" placeholder="Appointment time (e.g. 9:30 AM to 2:00 PM)">
   <input id="swt" placeholder="Waiting time text (e.g. Waiting Time : 2 to 12 Hrs Approximately)">
   <input id="slt" placeholder="Telugu late arrival text">
-  <select id="sl"><option value="en-IN">English</option><option value="hi-IN">Hindi</option><option value="te-IN">Telugu</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="bn-IN">Bengali</option></select>
-  <input id="stp" placeholder="Template using {token} and {name}">
+  <div class="c" style="background:#f0f9ff;margin:.5rem 0;padding:.75rem"><b>📢 Token announcement</b><p class="m" style="margin:.2rem 0 .4rem;font-size:.8rem">Each call is spoken in every ticked language, one after another. Use {num} for the token number and {name} for the patient's name.</p>
+   <label class="opt-item"><input type="checkbox" id="an_en"> English</label><input id="at_en">
+   <label class="opt-item"><input type="checkbox" id="an_te"> తెలుగు Telugu</label><input id="at_te">
+   <label class="opt-item"><input type="checkbox" id="an_hi"> हिन्दी Hindi</label><input id="at_hi">
+   <label>Say the name<select id="an_nm"><option value="1">Yes: token number and name</option><option value="0">No: token number only</option></select></label>
+   <label>Repeat whole announcement<select id="an_rp"><option value="1">Once</option><option value="2">Twice</option></select></label>
+   <button type="button" class="g" style="width:100%;margin-top:.4rem" onclick="A.cfg(1);A.say({tokenNo:'OPD-083',name:'Ramesh'})">▶ Test announcement (token 83)</button><p class="m" id="an_ms" style="font-size:.78rem;margin:.3rem 0 0"></p></div>
   <label class="opt-item" style="margin:0.375rem 0"><input type="checkbox" id="srx"> Show Rx pad on reception</label>
   <label class="opt-item" style="margin:0.375rem 0"><input type="checkbox" id="swp"> Ask for token design &amp; visit type on Walk-in</label>
   <label>Return-visit window (days)<input id="swin" type="number" min="0"></label>
@@ -508,8 +513,7 @@ go(t){
     $('stm').value=S.cfg.timings||'9:30 AM to 2:00 PM';
     $('swt').value=S.cfg.waitText||'Waiting Time : 2 to 12 Hrs Approximately';
     $('slt').value=S.cfg.lateText||'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.';
-    $('sl').value=S.cfg.lang;
-    $('stp').value=S.cfg.tpl;
+    {const a=A.ann();['en','te','hi'].forEach(k=>{$('an_'+k).checked=a[k].on;$('at_'+k).value=a[k].t});$('an_nm').value=a.nm?'1':'0';$('an_rp').value=String(a.rp);A.voiceCheck()}
     $('srx').checked=!!S.cfg.rx;
     $('swp').checked=S.cfg.walkinPrompt!==false;
     $('swin').value=S.cfg.win;
@@ -953,13 +957,21 @@ del(id){
   S.q=S.q.filter(x=>x.id!==id);
   commit();
 },
+annDef(){return{en:{on:true,t:'Token number {num}, {name}, please come to the doctor cabin.'},te:{on:true,t:'టోకెన్ నంబర్ {num}, {name}, దయచేసి డాక్టర్ గదికి రండి.'},hi:{on:true,t:'टोकन नंबर {num}, {name}, कृपया डॉक्टर के कमरे में आइए।'},nm:true,rp:1}},
+ann(){const d=A.annDef(),a=S.cfg.ann||{};return{nm:a.nm!==undefined?a.nm:d.nm,rp:a.rp||1,en:{...d.en,...(a.en||{})},te:{...d.te,...(a.te||{})},hi:{...d.hi,...(a.hi||{})}}},
+voice(l){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[],p=l.slice(0,2);return v.find(x=>x.lang.replace('_','-')===l)||v.find(x=>x.lang.toLowerCase().startsWith(p))||null},
+voiceCheck(){const el=$('an_ms');if(!el||!window.speechSynthesis)return;const v=speechSynthesis.getVoices();if(!v.length){speechSynthesis.onvoiceschanged=()=>A.voiceCheck();return}
+  const miss=[['te-IN','Telugu'],['hi-IN','Hindi']].filter(x=>!A.voice(x[0])).map(x=>x[1]);
+  el.innerHTML=miss.length?'⚠ This device has no '+miss.join(' / ')+' voice. On Android: Settings → Text-to-speech → Speech Services by Google → install voice data → '+miss.join(', ')+'. That language will be skipped until then.':'✅ English, Telugu and Hindi voices are available on this device.'},
 say(p){
   if(!window.speechSynthesis)return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(S.cfg.tpl.split('{token}').join(p.tokenNo).split('{num}').join(+p.tokenNo.slice(4)).split('{name}').join(p.name));
-  u.lang=S.cfg.lang;
-  u.rate=.95;
-  speechSynthesis.speak(u);
+  const a=A.ann(),num=String(+String(p.tokenNo).replace(/\D/g,'')||p.tokenNo),L3={en:'en-IN',te:'te-IN',hi:'hi-IN'},have=speechSynthesis.getVoices().length;
+  const parts=[];
+  ['en','te','hi'].forEach(k=>{if(!a[k].on)return;let t=a[k].t.split('{token}').join(num).split('{num}').join(num);
+    t=a.nm?t.split('{name}').join(p.name||''):t.split('{name}').join('').replace(/\s*,\s*,/g,',').replace(/^\s*,|,\s*$/g,'');
+    const v=A.voice(L3[k]);if(have&&!v&&k!=='en')return;parts.push({t,l:L3[k],v})});
+  for(let r=0;r<a.rp;r++)parts.forEach(x=>{const u=new SpeechSynthesisUtterance(x.t);u.lang=x.l;if(x.v)try{u.voice=x.v}catch(e){}u.rate=.9;speechSynthesis.speak(u)});
 },
 med(s){if(s.value){$('rb').value+=($('rb').value?'\n':'')+s.value;s.value=''}},
 rx(){
@@ -978,7 +990,7 @@ fees(){
     toast('Fees updated');
   }
 },
-cfg(){
+cfg(q){
   S.cfg={
     ...S.cfg,
     name:$('sn').value.trim()||S.cfg.name,
@@ -989,15 +1001,14 @@ cfg(){
     timings:$('stm').value.trim()||'9:30 AM to 2:00 PM',
     waitText:$('swt').value.trim()||'Waiting Time : 2 to 12 Hrs Approximately',
     lateText:$('slt').value.trim()||'ఆలస్యంగా వచ్చిన వారిని 3 నుండి 18 నంబర్ల తర్వాత చూడబడును.',
-    lang:$('sl').value,
-    tpl:$('stp').value.trim()||S.cfg.tpl,
+    ann:(()=>{const d=A.annDef(),o={nm:$('an_nm').value==='1',rp:+$('an_rp').value||1};['en','te','hi'].forEach(k=>o[k]={on:$('an_'+k).checked,t:$('at_'+k).value.trim()||d[k].t});if(!o.en.on&&!o.te.on&&!o.hi.on)o.en.on=true;return o})(),
     rx:$('srx').checked,
     walkinPrompt:$('swp').checked,
     win:Math.max(0,parseInt($('swin').value)||0)
   };
   commit();
   A.renderPreview();
-  toast('Saved');
+  if(!q)toast('Saved');
 },
 async reset(){
   const r=await Swal.fire({icon:'warning',title:'Reset daily shift?',text:'Today’s records move to the archive (kept in CSV export), the queue clears and numbering restarts at #001. Save a backup first so today’s data is safe off this phone.',showCancelButton:true,showDenyButton:true,confirmButtonText:'Back up & reset',denyButtonText:'Reset without backup',confirmButtonColor:'#059669'});
