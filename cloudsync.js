@@ -64,7 +64,7 @@ var RXWIN=45*864e5,rxOn=false,rxQ=null;
 function rxRef(){return C.uid?firebase.database(app()).ref('rxs/'+C.uid):null}
 function rxPut(rec){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!rec||!rec.id)return;
   CR.enc(JSON.stringify(rec)).then(function(e){var o={ts:rec.ts||Date.now(),i:e.i,c:e.c};count('up',JSON.stringify(o).length);return r.child('r/'+rec.id).set(o)}).catch(function(e){console.warn('rx put',e)})}
-function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
+function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null,formulary:S.formulary||[],formOnly:!!S.formOnly};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
 // ---- clinic devices (for 'lost phone') and the encrypted audit log, both under rxs/<clinic>
 function devName(){try{return localStorage.getItem('scc_device_name')||''}catch(e){return''}}
 function devBeat(){var r=rxRef();if(!r||keyState!=='ok')return;var u=navigator.userAgent,os=/Android/.test(u)?'Android':/iPhone|iPad/.test(u)?'iPhone/iPad':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'Device';
@@ -82,7 +82,7 @@ function devRemove(id){return rxRef().child('dev/'+id).remove()}
 function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Date.now()-RXWIN;
   devBeat();logFlush();
   r.child('dev/'+DEV+'/revoked').on('value',function(x){if(x.val()===true&&window.A&&A.selfWipe)A.selfWipe()});
-  r.child('meta').on('value',function(s){var m=s.val();count('down',JSON.stringify(m||'').length);if(!m){if(S.rxSets||S.rxCfg)metaPut();return}if(window.A&&A.metaIn)A.metaIn(m)});
+  r.child('meta').on('value',function(s){var m=s.val();count('down',JSON.stringify(m||'').length);if(!m){if(S.rxSets||S.rxCfg||S.formulary)metaPut();return}if(window.A&&A.metaIn)A.metaIn(m)});
   var q=rxQ=r.child('r').orderByChild('ts').startAt(t0);
   q.once('value').then(function(s){var have={},v=s.val()||{};Object.keys(v).forEach(function(k){have[k]=v[k].ts||0});count('down',JSON.stringify(v).length);
     (typeof RXREC!=='undefined'?RXREC:[]).forEach(function(x){if((x.ts||0)>=t0&&(!have[x.id]||have[x.id]<x.ts))rxPut(x)});
