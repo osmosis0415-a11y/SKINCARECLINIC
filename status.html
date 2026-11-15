@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="te"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Token Status · Skin Care Clinic</title><meta name="theme-color" content="#0284c7">
+<link rel="icon" href="icon-192.png">
+<style>
+@font-face{font-family:"PJS";src:url("vendor/PlusJakartaSans.woff2") format("woff2");font-weight:200 800}
+*{box-sizing:border-box}body{margin:0;font-family:PJS,system-ui,"Noto Sans Telugu",sans-serif;background:#f0f9ff;color:#0f172a}
+.w{max-width:440px;margin:0 auto;padding:18px}
+h1{font-size:1.25rem;margin:.2rem 0 0;text-align:center}.sub{text-align:center;color:#64748b;font-size:.85rem;margin-bottom:14px}
+.c{background:#fff;border-radius:20px;padding:20px;box-shadow:0 4px 18px rgba(2,132,199,.10);margin-bottom:14px;text-align:center}
+.lb{font-size:.8rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.big{font-size:3rem;font-weight:900;color:#0369a1;line-height:1.1}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.g div{background:#f0f9ff;border-radius:14px;padding:10px}.g b{display:block;font-size:1.6rem}
+.msg{font-size:1.1rem;font-weight:800;margin-top:12px}.te{display:block;font-size:.95rem;font-weight:600;color:#334155;margin-top:2px}
+.go{background:#16a34a;color:#fff}.go .lb,.go .te,.go .big{color:#fff}
+input{width:100%;font:inherit;font-size:1.6rem;text-align:center;text-transform:uppercase;padding:12px;border:2px solid #bae6fd;border-radius:14px;margin:10px 0}
+button{font:inherit;font-weight:800;border:0;border-radius:14px;padding:13px 16px;background:#0284c7;color:#fff;width:100%;font-size:1rem;cursor:pointer}
+button.al{background:#f59e0b;color:#1f1300;margin-top:4px}button.al.on{background:#16a34a;color:#fff}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px}.dot.on{background:#16a34a}
+.foot{text-align:center;color:#94a3b8;font-size:.75rem;margin-top:10px}a{color:#0284c7}
+</style></head><body><div class="w">
+<h1 id="cn">Skin Care Clinic</h1><div class="sub"><span class="dot" id="dot"></span><span id="live">Connecting… / కనెక్ట్ అవుతోంది…</span></div>
+<div id="app"></div>
+<div class="foot">Only token numbers are shown here. No names. · ఇక్కడ పేర్లు చూపబడవు.</div>
+</div>
+<script>
+'use strict';
+const DB='https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app';
+const P=new URLSearchParams(location.search), CID=(P.get('c')||'').replace(/[^A-Za-z0-9]/g,'');
+let tok=(P.get('t')||(()=>{try{return localStorage.getItem('scc_tok_'+CID)||''}catch(e){return''}})()).toUpperCase();
+let D=null, live=false, alertOn=false, warned={soon:false,turn:false};
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function normTok(v){v=String(v||'').toUpperCase().replace(/\s/g,'');const n=v.replace(/[^0-9]/g,'');return n?'OPD-'+String(+n).padStart(3,'0'):''}
+function beep(n){try{const A=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=A.createOscillator(),g=A.createGain();o.frequency.value=880;o.connect(g);g.connect(A.destination);const t=A.currentTime+i*.5;g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.start(t);o.stop(t+.45)}}catch(e){}try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}}
+const L=(en,te)=>`${en}<span class="te">${te}</span>`;
+function draw(){
+  $('dot').className='dot'+(live?' on':'');
+  $('live').textContent=live?'Live · లైవ్':(D?'Reconnecting… / మళ్ళీ కనెక్ట్ అవుతోంది…':'Connecting… / కనెక్ట్ అవుతోంది…');
+  if(D&&D.clinic)$('cn').textContent=D.clinic;
+  if(!CID){$('app').innerHTML='<div class="c"><div class="msg">'+L('Invalid link. Please scan the QR at the clinic.','చెల్లని లింక్. క్లినిక్‌లోని QR స్కాన్ చేయండి.')+'</div></div>';return}
+  const isToday=D&&D.day===today();
+  let h='';
+  if(D&&isToday)h+=`<div class="c"><div class="lb">Now serving · ఇప్పుడు</div><div class="big">${esc(D.serving||'—')}</div><div class="te">${D.waiting?D.waiting.length:0} waiting · ${D.waiting?D.waiting.length:0} మంది వేచి ఉన్నారు</div></div>`;
+  else if(D)h+=`<div class="c"><div class="msg">${L("Today's queue has not started yet.",'ఈరోజు క్యూ ఇంకా ప్రారంభం కాలేదు.')}</div></div>`;
+  if(!tok){
+    h+=`<div class="c"><div class="msg">${L('Enter your token number','మీ టోకెన్ నంబర్ నమోదు చేయండి')}</div><form id="f"><input id="ti" inputmode="numeric" placeholder="OPD-012" autocomplete="off"><button>Check · చూడండి</button></form></div>`;
+  } else if(D&&isToday){
+    const w=D.waiting||[], i=w.indexOf(tok), avg=D.avgMin||7;
+    let cls='',body='';
+    if(D.serving===tok){cls='go';body=`<div class="msg">${L("It's your turn! Please go to the doctor's cabin.",'మీ వంతు వచ్చింది! దయచేసి డాక్టర్ గదికి వెళ్ళండి.')}</div>`;if(alertOn&&!warned.turn){warned.turn=true;beep(5)}}
+    else if(i>=0){const ahead=i+(D.serving?1:0),eta=Math.max(1,Math.round(ahead*avg));
+      body=`<div class="g"><div>Ahead of you<span class="te">మీ ముందు</span><b>${ahead}</b></div><div>Approx. wait<span class="te">సుమారు సమయం</span><b>${eta>=60?Math.floor(eta/60)+'h '+(eta%60)+'m':eta+' min'}</b></div></div>
+        <div class="msg">${ahead<=3?L('Your turn is near. Please stay close to the cabin.','మీ వంతు దగ్గరలో ఉంది. గది దగ్గరే ఉండండి.'):L('Please wait. We will call your number.','దయచేసి వేచి ఉండండి. మీ నంబర్ పిలుస్తాము.')}</div>
+        <button class="al ${alertOn?'on':''}" id="al">${alertOn?'🔔 Alert ON · keep this page open':'🔔 Alert me when my turn is near'}<span class="te" style="color:inherit">${alertOn?'ఈ పేజీ తెరిచి ఉంచండి':'నా వంతు దగ్గరైనప్పుడు తెలియజేయండి'}</span></button>`;
+      if(alertOn&&ahead<=3&&!warned.soon){warned.soon=true;beep(2)}}
+    else if((D.done||[]).includes(tok))body=`<div class="msg">${L('Consultation completed. Get well soon!','మీ సంప్రదింపు పూర్తయింది. త్వరగా కోలుకోండి!')}</div>`;
+    else if((D.noshow||[]).includes(tok))body=`<div class="msg">${L('You were called but not present. Please meet reception.','మిమ్మల్ని పిలిచాము, మీరు లేరు. దయచేసి రిసెప్షన్‌ను కలవండి.')}</div>`;
+    else body=`<div class="msg">${L('This token is not registered yet today. Please show your card at reception.','ఈ టోకెన్ ఈరోజు నమోదు కాలేదు. రిసెప్షన్‌లో మీ కార్డ్ చూపించండి.')}</div>`;
+    h+=`<div class="c ${cls}"><div class="lb">Your token · మీ టోకెన్</div><div class="big">${esc(tok)}</div>${body}<p style="margin:12px 0 0"><a href="#" id="chg">Change token · టోకెన్ మార్చండి</a></p></div>`;
+  }
+  $('app').innerHTML=h;
+  const f=$('f');if(f)f.onsubmit=e=>{e.preventDefault();const t=normTok($('ti').value);if(!t)return;tok=t;try{localStorage.setItem('scc_tok_'+CID,tok)}catch(x){}warned={soon:false,turn:false};draw()};
+  const a=$('al');if(a)a.onclick=()=>{alertOn=true;beep(1);draw()};
+  const c=$('chg');if(c)c.onclick=e=>{e.preventDefault();tok='';try{localStorage.removeItem('scc_tok_'+CID)}catch(x){}draw()};
+}
+// Live updates over a single streaming connection (no polling = stays inside the free plan)
+let es=null,lastMsg=0;
+function connect(){
+  if(!CID)return draw();
+  try{es&&es.close()}catch(e){}
+  es=new EventSource(DB+'/pub/'+CID+'.json');
+  es.addEventListener('put',ev=>{lastMsg=Date.now();try{const m=JSON.parse(ev.data);if(m.path==='/')D=m.data;else if(D){const k=m.path.replace(/^\//,'');D[k]=m.data}live=true;draw()}catch(e){}});
+  es.addEventListener('patch',ev=>{lastMsg=Date.now();try{const m=JSON.parse(ev.data);D=Object.assign(D||{},m.data);live=true;draw()}catch(e){}});
+  es.addEventListener('keep-alive',()=>{lastMsg=Date.now();live=true;$('dot').className='dot on'});
+  es.onerror=()=>{live=false;draw()};
+}
+setInterval(()=>{if(lastMsg&&Date.now()-lastMsg>90000){lastMsg=0;live=false;draw();connect()}},15000);
+addEventListener('online',connect);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!live)connect()});
+draw();connect();
+</script></body></html>

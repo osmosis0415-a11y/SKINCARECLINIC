@@ -1,10 +1,10 @@
 // Offline cache for Skin Care Clinic. Everything the app needs is stored on
 // the phone at install; later visits load from the cache and refresh it
 // quietly in the background when there is a connection.
-const C='clinic-v11';
+const C='clinic-v12';
 const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png',
  './vendor/icons.js','./vendor/dialogs.js','./vendor/qrcode.min.js','./vendor/html5-qrcode.min.js',
- './vendor/jspdf.umd.min.js','./vendor/PlusJakartaSans.woff2','./cloudsync.js'];
+ './vendor/jspdf.umd.min.js','./vendor/PlusJakartaSans.woff2','./cloudsync.js','./status.html'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES.map(u=>new Request(u,{cache:'reload'})))));self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

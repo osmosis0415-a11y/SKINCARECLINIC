@@ -24,14 +24,31 @@ function load(src){return new Promise(function(ok,no){var s=document.createEleme
 function libs(){if(window.firebase&&firebase.database&&firebase.auth)return Promise.resolve();return load(BASE+'firebase-app.js').then(function(){return Promise.all([load(BASE+'firebase-auth.js'),load(BASE+'firebase-database.js')])})}
 function app(){return firebase.apps.length?firebase.app():firebase.initializeApp(CONF)}
 function payload(){return{q:S.q,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():''),rev:++C.rev,updatedAt:Date.now(),by:DEV}}
-function push(){if(!C.ref||C.applying)return;C.ref.set(JSON.parse(JSON.stringify(payload()))).catch(function(e){set('err');console.warn('cloud push',e)})}
+function pub(){
+  // Public, name-free summary for the patient status page (token numbers only)
+  var q=S.q||[],a=q.find(function(p){return p.id===S.act}),tk=function(p){return p.tokenNo};
+  var c=q.filter(function(p){return p.status==='Completed'&&p.calledAtTimestamp&&p.completedAtTimestamp}).slice(-10)
+         .map(function(p){return (p.completedAtTimestamp-p.calledAtTimestamp)/60000}).filter(function(m){return m>0.3&&m<60});
+  return{clinic:S.cfg&&S.cfg.name||'Clinic',day:(typeof today==='function'?today():''),serving:a?a.tokenNo:null,
+    waiting:q.filter(function(p){return p.status==='Waiting'}).map(tk),done:q.filter(function(p){return p.status==='Completed'}).map(tk),
+    noshow:q.filter(function(p){return p.status==='No-Show'}).map(tk),avgMin:c.length>=3?Math.round(c.reduce(function(x,y){return x+y},0)/c.length*10)/10:7,updatedAt:Date.now()}}
+function push(){if(!C.ref||C.applying)return;C.ref.set(JSON.parse(JSON.stringify(payload()))).catch(function(e){set('err');console.warn('cloud push',e)});
+  if(C.pub)C.pub.set(JSON.parse(JSON.stringify(pub()))).catch(function(e){console.warn('pub',e)})}
+function statusUrl(){return new URL('status.html?c='+C.uid,location.href).href}
+function poster(){
+  var u=statusUrl(),w=window.open('','_blank');if(!w){Swal.fire({icon:'info',title:'Patient status link',html:'<code style="word-break:break-all">'+u+'</code>'});return}
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Token status QR</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:30px}h1{font-size:34px;margin:0}p{font-size:22px;margin:10px 0}#q{display:inline-block;margin:24px 0}code{font-size:12px;word-break:break-all;color:#555}@media print{button{display:none}}</style></head><body>'
+   +'<h1>'+(S.cfg&&S.cfg.name||'Clinic')+'</h1><p><b>Know your turn on your phone</b></p><p>మీ వంతు మీ ఫోన్‌లో చూడండి</p><div id="q"></div><p>1. Scan this QR &nbsp; 2. Type your token number (e.g. 12)</p><p>QR స్కాన్ చేసి, మీ టోకెన్ నంబర్ నమోదు చేయండి</p><p><code>'+u+'</code></p><button onclick="print()" style="font-size:20px;padding:12px 24px">Print poster</button>'
+   +'<script src="'+new URL('vendor/qrcode.min.js',location.href).href+'"><\/script><script>new QRCode(document.getElementById("q"),{text:'+JSON.stringify(u)+',width:320,height:320});<\/script></body></html>');
+  w.document.close();
+}
 function apply(v){
   C.applying=true;
   try{S.q=v.q||[];S.ctr=v.ctr||1;S.act=v.act||null;S.auto=!!v.auto;if(v.fees)S.fees=v.fees;C.rev=Math.max(C.rev,v.rev||0);
     origSave();typeof render==='function'&&render()}finally{C.applying=false}
 }
 function listen(uid){
-  C.ref=firebase.database(app()).ref('scc/'+uid);
+  C.uid=uid;C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
   var first=true;
   C.ref.on('value',function(snap){
     var v=snap.val();set('on');
@@ -52,11 +69,12 @@ function start(){
    .then(function(u){if(!u||String(u.email).toLowerCase()!==p.email.toLowerCase()){set('login');return}C.email=u.email;listen(u.uid)})
    .catch(function(e){set(navigator.onLine?'err':'offline');console.warn('cloud start',e)});
 }
-function stop(){try{C.ref&&C.ref.off()}catch(e){}C.ref=null}
+function stop(){try{C.ref&&C.ref.off()}catch(e){}C.ref=null;C.pub=null}
 async function menu(){
   var p=pref();
   if(p.on&&C.status==='on'){
-    var r=await Swal.fire({title:'Cloud sync is on',html:'Signed in as <b>'+(C.email||p.email)+'</b>.<br><small>The live queue is shared with your other signed-in devices.</small>',showDenyButton:true,confirmButtonText:'OK',denyButtonText:'Sign out'});
+    var r=await Swal.fire({title:'Cloud sync is on',html:'Signed in as <b>'+(C.email||p.email)+'</b>.<br><small>The live queue is shared with your other signed-in devices.</small><br><br><small>Patients can check their turn here (token numbers only, no names):</small><br><code style="font-size:.7rem;word-break:break-all">'+statusUrl()+'</code>',showDenyButton:true,showCancelButton:true,confirmButtonText:'📱 Patient status QR poster',denyButtonText:'Sign out',cancelButtonText:'Close'});
+    if(r.isConfirmed){poster();return}
     if(r.isDenied){stop();try{await firebase.auth().signOut()}catch(e){}setPref({on:false,email:p.email});set('off');toast('Cloud sync turned off')}
     return}
   var f=await Swal.fire({title:'Cloud sync',html:'<p style="font-size:.85rem;text-align:left">Share the live queue between reception, doctor and other phones. Needs internet. Use the clinic cloud login (not your PIN).</p><input id="ce" class="swal2-input" type="email" placeholder="Clinic login email" value="'+(p.email||'')+'"><input id="cp" class="swal2-input" type="password" placeholder="Cloud password" autocomplete="current-password">',
