@@ -23,7 +23,7 @@ function set(s){C.status=s;chip()}
 function load(src){return new Promise(function(ok,no){var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
 function libs(){if(window.firebase&&firebase.database&&firebase.auth)return Promise.resolve();return load(BASE+'firebase-app.js').then(function(){return Promise.all([load(BASE+'firebase-auth.js'),load(BASE+'firebase-database.js')])})}
 function app(){return firebase.apps.length?firebase.app():firebase.initializeApp(CONF)}
-function payload(){return{q:S.q,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():''),rev:++C.rev,updatedAt:Date.now(),by:DEV}}
+function payload(){return{wipeAt:S.wipeAt||0,q:S.q,ctr:S.ctr,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():''),rev:++C.rev,updatedAt:Date.now(),by:DEV}}
 function pub(){
   // Public, name-free summary for the patient status page (token numbers only)
   var q=S.q||[],a=q.find(function(p){return p.id===S.act}),tk=function(p){return p.tokenNo};
@@ -54,6 +54,7 @@ function poster(){
   w.document.close();
 }
 function apply(v){
+  if((v.wipeAt||0)>(S.wipeAt||0)&&window.A&&A.wipeLocal){A.wipeLocal(v.wipeAt);origSave();try{Swal.fire({icon:'info',title:'Clinic data was cleared',text:'Admin started fresh on another phone. Old patient records on this phone were removed.',timer:3500,showConfirmButton:false})}catch(e){}setTimeout(function(){location.reload()},3600)}
   lastBody=JSON.stringify([v.q||[],v.ctr||1,v.act||null,!!v.auto,v.fees||S.fees,v.day||'']);C.applying=true;
   try{S.q=v.q||[];S.ctr=v.ctr||1;S.act=v.act||null;S.auto=!!v.auto;if(v.fees)S.fees=v.fees;C.rev=Math.max(C.rev,v.rev||0);
     origSave();typeof render==='function'&&render()}finally{C.applying=false}
@@ -66,7 +67,7 @@ function listen(uid){
     if(first){first=false;
       if(!v){push();return}
       // first connect: keep whichever side changed most recently
-      if((v.updatedAt||0)>=(S.savedAt||0))apply(v);else push();return}
+      if((v.wipeAt||0)>(S.wipeAt||0)||(v.updatedAt||0)>=(S.savedAt||0))apply(v);else if((S.wipeAt||0)>=(v.wipeAt||0))push();return}
     if(!v||v.by===DEV&&v.rev===C.rev)return;
     if(v.by!==DEV)apply(v);
   },function(e){set('err');console.warn(e);if(String(e&&e.code||e).indexOf('PERMISSION_DENIED')>=0)Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not on the clinic approved list. Ask the admin to approve it in Firebase.'})});
