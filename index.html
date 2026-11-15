@@ -240,7 +240,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 @media print{html{font-size:16px!important}}
 .bk{display:flex;gap:.75rem;align-items:center;justify-content:space-between;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:1.25rem;padding:.75rem 1rem;margin-bottom:1rem}.bk b{display:block;font-size:.95rem}.bk small{display:block;font-size:.75rem;opacity:.85}.bk button{background:#d97706;flex:none}
 </style></head><body>
-<div id="stw" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#b91c1c;color:#fff;padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom));font-weight:700;font-size:.9rem;text-align:center">⚠ This browser is not saving data here. The PIN, password and patients will be lost when the page is refreshed. Open the app from the website link or the home-screen icon instead of a downloaded file.</div><div id="lock"><div><h3>🔒 Enter your PIN</h3><p class="m" id="lkd" style="margin:-.3rem 0 .5rem;font-size:.8rem">Doctor · Reception · Admin</p><input id="pin" type="password" inputmode="numeric" maxlength="4" style="text-align:center;font-size:1.375rem" onkeydown="if(event.key==='Enter')A.pin()"><p id="lkm" style="color:#b91c1c;font-weight:700;font-size:.85rem;min-height:1.1em;margin:.4rem 0 0"></p><button onclick="A.pin()" style="width:100%;margin-top:0.375rem">Unlock</button><button onclick="A.resetPinPrompt()" class="g" style="width:100%;margin-top:0.5rem;background:#f1f5f9;color:#64748b;font-size:0.6875rem;min-height:2.25rem">Forgot PIN? Reset</button></div></div>
+<div id="stw" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#b91c1c;color:#fff;padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom));font-weight:700;font-size:.9rem;text-align:center">⚠ This browser is not saving data here. The PIN, password and patients will be lost when the page is refreshed. Open the app from the website link or the home-screen icon instead of a downloaded file.</div><div id="lock"><div><h3>🔒 Enter your PIN</h3><p class="m" id="lkd" style="margin:-.3rem 0 .5rem;font-size:.8rem">Doctor · Reception · Admin</p><input id="pin" type="password" inputmode="numeric" maxlength="6" style="text-align:center;font-size:1.375rem" onkeydown="if(event.key==='Enter')A.pin()"><p id="lkm" style="color:#b91c1c;font-weight:700;font-size:.85rem;min-height:1.1em;margin:.4rem 0 0"></p><button onclick="A.pin()" style="width:100%;margin-top:0.375rem">Unlock</button><button onclick="A.resetPinPrompt()" class="g" style="width:100%;margin-top:0.5rem;background:#f1f5f9;color:#64748b;font-size:0.6875rem;min-height:2.25rem">Forgot PIN? Reset</button></div></div>
 <div id="off">Offline mode</div>
 <header><div class="hd"><div class="lg"><i data-lucide="activity"></i></div><div class="ht"><h1 id="hn"></h1><small id="hd"></small></div><button id="rolec" type="button" onclick="A.logout()" title="Switch user / Lock" style="border:0;min-height:0;cursor:pointer"></button><button class="ib" onclick="A.menu(1)"><i data-lucide="menu"></i></button></div></header>
 <nav id="nav"><button data-t="rec" class="on"><i data-lucide="monitor"></i>Reception</button><button data-t="scan"><i data-lucide="scan"></i>Scan</button><button data-t="fin" class="adm"><i data-lucide="lock"></i>Finance</button><button onclick="A.menu(1)"><i data-lucide="menu"></i>Menu</button></nav>
@@ -420,6 +420,21 @@ const CR={key:null,
  async enc(txt){const i=crypto.getRandomValues(new Uint8Array(12));return{i:B64(i),c:B64(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(txt)))}},
  async dec(o){return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:UB(o.i)},CR.key,UB(o.c)))}};
 const SECRET={adm:p=>'pin:'+p,doc:p=>'pin:'+p,rcp:p=>'pin:'+p,pass:p=>'pass:'+p,rec:p=>'rec:'+String(p).toUpperCase().replace(/[^A-Z0-9]/g,'')};
+// ---- PIN / password checks. Each is stored as a salted PBKDF2-SHA256 (250k rounds) check value, as costly to
+// guess as the data lock itself. Older phones stored a fast hash: it is replaced on the first correct use, and
+// with encryption on, the check is done by opening the data lock itself (nothing extra is stored).
+const SK={pin:'adm',doc:'doc',rcp:'rcp',pass:'pass',rec:'rec'};
+async function pbits(sec,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(sec),'PBKDF2',false,['deriveBits']);return B64(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},m,256))}
+async function mkv(k,plain){if(CR.key&&S.vault&&S.vault.w&&S.vault.w[SK[k]])return{v:'w'};const s=crypto.getRandomValues(new Uint8Array(16));return{v:2,s:B64(s),h:await pbits('v:'+SECRET[SK[k]](plain),s)}}
+const rawOf=(k,p)=>k==='rec'?String(p||'').toUpperCase().replace(/[^A-Z0-9]/g,''):String(p||'');
+async function chk(k,plain){ // true if 'plain' is the stored PIN/password k (pin, doc, rcp, pass, rec)
+  chk.key=null;const st=S.sec&&S.sec[k];if(!st||!plain)return false;
+  if(typeof st==='string'){if(H(rawOf(k,plain))!==st)return false;S.sec[k]=await mkv(k,plain);S.keysAt=Date.now();save();return true}
+  if(st.v==='w'){const w=S.vault&&S.vault.w&&S.vault.w[SK[k]];if(!w)return false;try{chk.key=await CR.unwrap(SECRET[SK[k]](plain),w);return true}catch(e){return false}}
+  try{return st.h===await pbits('v:'+SECRET[SK[k]](plain),UB(st.s))}catch(e){return false}}
+// once the data is open, old fast hashes that have a data-lock slot are dropped (checked through the lock instead)
+function secScrub(){if(!S.sec||!S.vault||!S.vault.w)return;let ch=false;for(const k in SK){if(typeof S.sec[k]==='string'&&S.vault.w[SK[k]]){S.sec[k]={v:'w'};ch=true}}if(ch){S.keysAt=Date.now();save()}}
+const PINRE=/^\d{4,6}$/,PINMSG='PIN must be 4 to 6 digits (6 is safer)';
 async function vWrap(slot,plain){if(!CR.key||!S.vault)return;S.vault.w[slot]=await CR.wrap(SECRET[slot](plain))}
 async function vOpen(slot,plain){ // unlock the stored data with one secret; true if it worked
   if(!S.vault)return true;if(CR.key)return true;const w=S.vault.w[slot];if(!w)return false;
@@ -427,7 +442,7 @@ async function vOpen(slot,plain){ // unlock the stored data with one secret; tru
   return openWith(k)}
 async function openWith(k){CR.key=k;
   if(S.enc){try{const b=JSON.parse(await CR.dec(S.enc));VK.forEach(x=>{if(b[x]!==undefined)S[x]=b[x]});if(b.arch)S.arch=b.arch;if(b.rx)RXREC=b.rx}catch(e){CR.key=null;return false}}
-  norm();window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();loadHist();return true}
+  norm();window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();loadHist();setTimeout(secScrub,0);return true}
 // stay unlocked across a page refresh for up to 12 h (this browser tab / app session only)
 async function sessSet(r){try{if(!r)return sessionStorage.removeItem('scc_sess');const o={r,exp:Date.now()+12*3600e3};if(CR.key)o.k=B64(await crypto.subtle.exportKey('raw',CR.key));sessionStorage.setItem('scc_sess',JSON.stringify(o))}catch(e){}}
 async function sessRestore(){try{const o=JSON.parse(sessionStorage.getItem('scc_sess')||'null');if(!o||o.exp<Date.now()||!S.sec||!ROLES[o.r])return false;
@@ -698,8 +713,8 @@ async resetPinPrompt(){
   if(!r.isConfirmed)return;
   if(G.blocked())return;
   const v=(r.value||'').trim();
-  if(!S.sec||!(H(v)===S.sec.pass||(S.sec.rec&&H(v.toUpperCase().replace(/[^A-Z0-9]/g,''))===S.sec.rec))){L('Failed PIN reset attempt');return G.fail('password or recovery code')}
-  const byPass=H(v)===S.sec.pass;
+  $('lkm').textContent='Checking…';const byPass=await chk('pass',v),byRec=!byPass&&await chk('rec',v);$('lkm').textContent='';
+  if(!S.sec||!(byPass||byRec)){L('Failed PIN reset attempt');return G.fail('password or recovery code')}
   if(S.vault&&!(await vOpen(byPass?'pass':'rec',v))){L('PIN reset: data could not be unlocked');return Swal.fire({icon:'error',title:'Could not unlock patient data',text:'Try the other one (finance password or recovery code).'})}
   G.good();
   L('PIN reset with '+(byPass?'finance password':'recovery code'));
@@ -707,8 +722,8 @@ async resetPinPrompt(){
 },
 async newRec(){
   const r=await Swal.fire({title:'New recovery code',text:'Enter the finance password to create a new recovery code. The old code stops working.',input:'password',showCancelButton:true});
-  if(!r.isConfirmed)return;if(H(r.value||'')!==S.sec.pass)return toast('Incorrect password','error');
-  const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');S.sec.rec=H(rc);await vWrap('rec',rc);L('New recovery code created');commit();
+  if(!r.isConfirmed)return;if(!await chk('pass',r.value||''))return toast('Incorrect password','error');
+  const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');await vWrap('rec',rc);S.sec.rec=await mkv('rec',rc);S.keysAt=Date.now();L('New recovery code created');commit();
   Swal.fire({icon:'info',title:'Your new recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">Write it down. It is shown only once.</p>'});
 },
 async wipePrompt(){
@@ -718,14 +733,17 @@ async wipePrompt(){
   try{await IDB.put('{}')}catch(e){}
   location.reload();
 },
-pin(){
+async pin(){
   if(G.blocked())return;
   if(!S.sec){$('lock').style.display='none';A.role('adm');return}
-  const h=H($('pin').value),dm=A.dev();let r=h===S.sec.pin?'adm':(S.sec.doc&&h===S.sec.doc)?'doc':(S.sec.rcp&&h===S.sec.rcp)?'rec':null;
-  if(r&&r!=='adm'&&dm!=='any'&&r!==dm){$('pin').value='';return toast('This phone is set for '+ROLES[dm].n+' only','error')}
-  if(!r){$('pin').value='';return G.fail('PIN')}
-  const pv=$('pin').value;$('pin').value='';$('pin').disabled=true;$('lkm').textContent='Unlocking…';
-  vOpen(r==='rec'?'rcp':r,pv).then(okd=>{$('pin').disabled=false;$('lkm').textContent='';
+  if(A._pinBusy)return;const pv=$('pin').value,dm=A.dev();if(!pv)return;
+  A._pinBusy=true;$('pin').value='';$('pin').disabled=true;$('lkm').textContent='Checking…';
+  const res=await Promise.all([['pin','adm'],['doc','doc'],['rcp','rec']].map(async([k,rl])=>{const ok=await chk(k,pv);return ok?{rl,key:chk.key}:null}));
+  A._pinBusy=false;const hit=res.find(Boolean),r=hit&&hit.rl;$('pin').disabled=false;$('lkm').textContent='';
+  if(r&&r!=='adm'&&dm!=='any'&&r!==dm){return toast('This phone is set for '+ROLES[dm].n+' only','error')}
+  if(!r){return G.fail('PIN')}
+  $('pin').disabled=true;$('lkm').textContent='Unlocking…';
+  (hit.key&&S.vault&&!CR.key?openWith(hit.key):vOpen(r==='rec'?'rcp':r,pv)).then(okd=>{$('pin').disabled=false;$('lkm').textContent='';
     if(!okd)return Swal.fire({icon:'error',title:'Cannot open patient data',text:r==='adm'?'The stored data could not be unlocked with this PIN. Use "Forgot PIN? Reset" with your finance password or recovery code.':'This login was set before encryption was turned on. Ask Admin to set the '+ROLES[r].n+' PIN again (Menu → Logins).'});
     $('lock').style.display='none';G.good();if(r==='adm')A._admAt=Date.now();A.role(r);if(r==='adm'&&!S.vault)A.migrate(pv)})
 },
@@ -740,15 +758,15 @@ async join(){
   $('lock').style.display='flex';$('lkm').textContent='Joined. Enter your clinic PIN.';setTimeout(()=>$('pin').focus(),300);return true},
 async adoptKeys(k){
   if(A._adopting||A._adoptLater===k.kid)return;A._adopting=true;
-  try{const r=await Swal.fire({icon:'info',title:'Use the clinic\'s shared logins?',html:'<p style="font-size:.86rem;text-align:left">The clinic\'s PINs are saved in the cloud, but this phone still has its own. Enter a <b>clinic</b> PIN (the Admin, Doctor or Reception PIN used on the main phone) to switch this phone over. The data on this phone stays.</p><input id="ak1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="Clinic PIN">',
+  try{const r=await Swal.fire({icon:'info',title:'Use the clinic\'s shared logins?',html:'<p style="font-size:.86rem;text-align:left">The clinic\'s PINs are saved in the cloud, but this phone still has its own. Enter a <b>clinic</b> PIN (the Admin, Doctor or Reception PIN used on the main phone) to switch this phone over. The data on this phone stays.</p><input id="ak1" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="Clinic PIN">',
     showCancelButton:true,cancelButtonText:'Later',showDenyButton:ROLE==='adm',denyButtonText:'Make THIS phone\'s PINs the clinic\'s',confirmButtonText:'Switch',
-    preConfirm:async()=>{const v=$('ak1').value;if(!/^\d{4}$/.test(v))return Swal.showValidationMessage('4-digit PIN');for(const sl of ['adm','doc','rcp']){if(!k.w[sl])continue;try{return{key:await CR.unwrap('pin:'+v,k.w[sl]),sl}}catch(e){}}return Swal.showValidationMessage('That is not a clinic PIN')}});
+    preConfirm:async()=>{const v=$('ak1').value;if(!PINRE.test(v))return Swal.showValidationMessage(PINMSG);for(const sl of ['adm','doc','rcp']){if(!k.w[sl])continue;try{return{key:await CR.unwrap('pin:'+v,k.w[sl]),sl}}catch(e){}}return Swal.showValidationMessage('That is not a clinic PIN')}});
   if(r.isDenied){if(!S.vault||!CR.key)return toast('Turn on encryption on this phone first (log in as Admin)','warning');S.keysAt=Date.now();CloudSync.pushKeys();L('This phone\'s logins made the clinic\'s');toast('Other phones will be asked to switch');return}
   if(!r.isConfirmed){A._adoptLater=k.kid;return}
   await loadHist();SIGS.A={};SIGS.R={};QK.A=QK.R='';CR.key=r.value.key;S.sec=k.sec;S.vault={v:1,kid:k.kid,w:k.w};S.keysAt=k.at;try{localStorage.removeItem('scc_rx_rec')}catch(e){}CloudSync.keysAdopted();L('Switched to the clinic\'s shared logins');commit();
   const role={adm:'adm',doc:'doc',rcp:'rec'}[r.value.sl];A.role(role);toast('This phone now uses the clinic PINs')}finally{A._adopting=false}},
-async stepUp(then){if(G.blocked())return;const r=await Swal.fire({title:'🛡 Admin portal',text:'Enter the Admin PIN to continue.',input:'password',inputAttributes:{inputmode:'numeric',maxlength:4},showCancelButton:true});
-  if(!r.isConfirmed)return;if(H(r.value||'')!==S.sec.pin)return G.fail('PIN');G.good();A._admAt=Date.now();then&&then()},
+async stepUp(then){if(G.blocked())return;const r=await Swal.fire({title:'🛡 Admin portal',text:'Enter the Admin PIN to continue.',input:'password',inputAttributes:{inputmode:'numeric',maxlength:6},showCancelButton:true});
+  if(!r.isConfirmed)return;if(!await chk('pin',r.value||''))return G.fail('PIN');G.good();A._admAt=Date.now();then&&then()},
 pt(p){p={...p,name:/^walk-?in patient$/i.test(String(p.name||'').trim())?'':p.name};const last=p.name||p.phone?RXREC.filter(x=>x.p&&((p.phone&&x.p.phone===p.phone)||(p.name&&String(x.p.name).toUpperCase()===String(p.name).toUpperCase()))).sort((a,b)=>(b.ts||0)-(a.ts||0))[0]:null;
   return{name:p.name,token:p.tokenNo,age:p.age||(last&&last.p.age)||'',sex:p.sex||(last&&last.p.sex)||'',phone:p.phone||(last&&last.p.phone)||'',place:p.place||(last&&last.p.place)||''}},
 rxEdit(id){const x=RXREC.find(r=>r.id===id);if(!x)return;RxPad.open({name:x.p.name,token:x.p.token},{},x);L('Rx opened for edit',{tokenNo:x.p.token||'',name:x.p.name})},
@@ -983,10 +1001,10 @@ async cloudSetup(){
   else if(r.isDenied){L('Cloud switched back to default');commit();if(!cs.setConf(null))location.reload()}},
 async migrate(pin){
   const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
-    showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
+    showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:async()=>{const v=$('mg1').value;if(!await chk('pass',v))return Swal.showValidationMessage('Wrong finance password');return v}});
   if(!r.isConfirmed)return;
   const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
-  await loadHist();SIGS.A={};SIGS.R={};QK.A=QK.R='';await CR.gen();S.vault={v:1,kid:Math.random().toString(36).slice(2,12),w:{}};await vWrap('adm',pin);await vWrap('pass',r.value);await vWrap('rec',rc);S.sec.rec=H(rc);delete S.sec.doc;delete S.sec.rcp;
+  await loadHist();SIGS.A={};SIGS.R={};QK.A=QK.R='';await CR.gen();S.vault={v:1,kid:Math.random().toString(36).slice(2,12),w:{}};await vWrap('adm',pin);await vWrap('pass',r.value);await vWrap('rec',rc);S.sec.pin={v:'w'};S.sec.pass={v:'w'};S.sec.rec={v:'w'};delete S.sec.doc;delete S.sec.rcp;S.keysAt=Date.now();
   try{localStorage.removeItem('scc_rx_rec')}catch(e){}window.SCC_READY=true;L('Encryption switched on');commit();
   await Swal.fire({icon:'success',title:'Encrypted. Write down your NEW recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">The old recovery code no longer works. Next: set the Doctor and Reception PINs again.</p>',confirmButtonText:'I have written it down',allowOutsideClick:false,allowEscapeKey:false});
   A.users();
@@ -994,24 +1012,25 @@ async migrate(pin){
 async setup(reset){
   const r=await Swal.fire({
     title:reset?'Set a new PIN & password':'First-time setup',
-    html:'<input id="n1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New 4-digit PIN"><input id="n2" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',
+    html:'<input id="n1" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="New PIN (6 digits safer)"><input id="n2" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',
     allowOutsideClick:false,
     showDenyButton:!reset,denyButtonText:'🔗 Join my clinic (use the clinic\'s PINs)',
     allowEscapeKey:false,
     confirmButtonText:'Save',
     preConfirm:()=>{
       const a=$('n1').value,b=$('n2').value;
-      if(!/^\d{4}$/.test(a))return Swal.showValidationMessage('PIN must be 4 digits');
+      if(!PINRE.test(a))return Swal.showValidationMessage(PINMSG);
       if(b.length<6)return Swal.showValidationMessage('Password needs 6+ characters');
       return[a,b];
     }
   });
   if(r.isDenied){const j=await A.join();if(j)return 'joined';return A.setup(reset)}
   const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
-  S.sec={pin:H(r.value[0]),pass:H(r.value[1]),rec:H(rc)};
-  if(reset&&S.sec0){S.sec.doc=S.sec0.doc;S.sec.rcp=S.sec0.rcp}delete S.sec0;
+  const old=S.sec0;
   if(!S.vault&&!reset){await CR.gen();S.vault={v:1,kid:Math.random().toString(36).slice(2,12),w:{}};window.SCC_READY=true;try{localStorage.removeItem('scc_rx_rec')}catch(e){}}
   if(S.vault&&CR.key){await vWrap('adm',r.value[0]);await vWrap('pass',r.value[1]);await vWrap('rec',rc)}
+  S.sec={pin:await mkv('pin',r.value[0]),pass:await mkv('pass',r.value[1]),rec:await mkv('rec',rc)};
+  if(reset&&old){if(old.doc)S.sec.doc=old.doc;if(old.rcp)S.sec.rcp=old.rcp}delete S.sec0;S.keysAt=Date.now();
   commit();
   $('lock').style.display='none';A.role('adm');
   await Swal.fire({icon:'info',title:'Write down your recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">If you forget both the PIN and the finance password, this code lets you reset them. It is shown only once.</p>',confirmButtonText:'I have written it down',allowOutsideClick:false,allowEscapeKey:false});
@@ -1021,7 +1040,7 @@ async auth(){
   const r=await Swal.fire({title:'Finance password',input:'password',showCancelButton:true});
   if(!r.isConfirmed)return;
   if(G.blocked())return;
-  if(H(r.value)===S.sec.pass){G.good();ok=true;A.go('fin')}else G.fail('password');
+  if(await chk('pass',r.value)){G.good();ok=true;A.go('fin')}else G.fail('password');
 },
 lock(){ok=false;A.go('rec')},
 role(r,quiet){ROLE=r;ok=false;sessSet(r);const h=document.documentElement;h.classList.remove('r-adm','r-doc','r-rec');h.classList.add('r-'+r);$('rolec').textContent=ROLES[r].i;if(!quiet){L('Logged in as '+ROLES[r].n);commit()}render();A.go('rec')},
@@ -1046,18 +1065,17 @@ lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕
 async users(){
   if(ROLE!=='adm')return toast('Only Admin can change logins','warning');
   const st=k=>S.sec[k]?'<b style="color:#16a34a">set</b>':'<b style="color:#b91c1c">not set</b>';
-  const r=await Swal.fire({title:'Logins',html:'<p class="m" style="font-size:.85rem;text-align:left">Each person unlocks the app with their own 4-digit PIN.<br>🛡 <b>Admin</b> (your PIN): everything.<br>👨‍⚕️ <b>Doctor</b> ('+st('doc')+'): Now Serving, queue, Rx pad. No finance or settings.<br>🧾 <b>Reception</b> ('+st('rcp')+'): walk-in, token print, scan, queue. No finance, settings or Rx.<br>Leave a box empty to keep the current PIN.</p><input id="u1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New Doctor PIN"><input id="u2" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New Reception PIN"><label class="m" style="display:block;text-align:left;margin-top:.6rem">📱 This phone is for<select id="u4" class="swal2-select"><option value="any">Anyone (all logins)</option><option value="doc">Doctor only (+ Admin)</option><option value="rec">Reception only (+ Admin)</option></select></label><label style="display:block;margin-top:.6rem;font-size:.85rem"><input type="checkbox" id="u3" style="width:auto"> Remove Doctor &amp; Reception logins</label>',showCancelButton:true,confirmButtonText:'Save',
+  const r=await Swal.fire({title:'Logins',html:'<p class="m" style="font-size:.85rem;text-align:left">Each person unlocks the app with their own PIN (4 to 6 digits; 6 is safer).<br>🛡 <b>Admin</b> (your PIN): everything.<br>👨‍⚕️ <b>Doctor</b> ('+st('doc')+'): Now Serving, queue, Rx pad. No finance or settings.<br>🧾 <b>Reception</b> ('+st('rcp')+'): walk-in, token print, scan, queue. No finance, settings or Rx.<br>Leave a box empty to keep the current PIN.</p><input id="u1" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="New Doctor PIN"><input id="u2" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="New Reception PIN"><label class="m" style="display:block;text-align:left;margin-top:.6rem">📱 This phone is for<select id="u4" class="swal2-select"><option value="any">Anyone (all logins)</option><option value="doc">Doctor only (+ Admin)</option><option value="rec">Reception only (+ Admin)</option></select></label><label style="display:block;margin-top:.6rem;font-size:.85rem"><input type="checkbox" id="u3" style="width:auto"> Remove Doctor &amp; Reception logins</label>',showCancelButton:true,confirmButtonText:'Save',
    didOpen:()=>{$('u4').value=A.dev()},
    preConfirm:()=>{const a=$('u1').value,b=$('u2').value,dm=$('u4').value;if($('u3').checked)return{x:1,dm:'any'};
-    if(a&&!/^\d{4}$/.test(a)||b&&!/^\d{4}$/.test(b))return Swal.showValidationMessage('PIN must be 4 digits');
+    if(a&&!PINRE.test(a)||b&&!PINRE.test(b))return Swal.showValidationMessage(PINMSG);
     if(dm==='doc'&&!a&&!S.sec.doc||dm==='rec'&&!b&&!S.sec.rcp)return Swal.showValidationMessage('Set the '+(dm==='doc'?'Doctor':'Reception')+' PIN for this phone');
     if(!a&&!b)return{dm};
-    const ha=a?H(a):S.sec.doc,hb=b?H(b):S.sec.rcp,all=[S.sec.pin,ha,hb].filter(Boolean);
-    if(new Set(all).size!==all.length)return Swal.showValidationMessage('Each login needs a different PIN (and not the Admin PIN)');
-    return{a,b,dm}}});
+    if(a&&b&&a===b)return Swal.showValidationMessage('Each login needs a different PIN (and not the Admin PIN)');
+    return(async()=>{for(const[v,ks]of[[a,['pin','rcp']],[b,['pin','doc']]]){if(!v)continue;for(const k of ks){if((k!=='rcp'||!b)&&(k!=='doc'||!a)&&await chk(k,v))return Swal.showValidationMessage('Each login needs a different PIN (and not the Admin PIN)')}}return{a,b,dm}})()}});
   if(!r.isConfirmed)return;
   if(r.value.x){delete S.sec.doc;delete S.sec.rcp;if(S.vault){delete S.vault.w.doc;delete S.vault.w.rcp}L('Doctor & Reception logins removed')}
-  else{if(r.value.a){S.sec.doc=H(r.value.a);await vWrap('doc',r.value.a);L('Doctor PIN set')}if(r.value.b){S.sec.rcp=H(r.value.b);await vWrap('rcp',r.value.b);L('Reception PIN set')}}
+  else{if(r.value.a){await vWrap('doc',r.value.a);S.sec.doc=await mkv('doc',r.value.a);L('Doctor PIN set')}if(r.value.b){await vWrap('rcp',r.value.b);S.sec.rcp=await mkv('rcp',r.value.b);L('Reception PIN set')}S.keysAt=Date.now()}
   if(r.value.dm){try{localStorage.setItem('scc_device_role',r.value.dm)}catch(e){}L('This phone set for: '+(r.value.dm==='any'?'Anyone':ROLES[r.value.dm].n));A.lkLabel()}
   commit();toast('Logins updated');
 },
@@ -1588,8 +1606,8 @@ finPdf(o){
   const fn='Finance_'+asc(S.cfg.name).replace(/\W+/g,'_')+'_'+(multi?a+'_to_'+b:a)+'.pdf';J.save(fn);L('Finance PDF exported ('+per+')');commit();toast('PDF saved: '+fn);
 },
 async secret(k){
-  const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New 4-digit PIN':'New password (6+)'}">`,showCancelButton:true,preConfirm:()=>{const o=$('o').value,n=$('n').value;if(H(o)!==S.sec[k])return Swal.showValidationMessage('Current value is wrong');if(p?!/^\d{4}$/.test(n):n.length<6)return Swal.showValidationMessage(p?'PIN must be 4 digits':'Use 6+ characters');return n}});
-  if(r.isConfirmed){S.sec[k]=H(r.value);await vWrap(p?'adm':'pass',r.value);commit();toast('Updated')}
+  const p=k==='pin',r=await Swal.fire({title:p?'Change PIN':'Change finance password',html:`<input id="o" type="password" class="swal2-input" placeholder="Current"><input id="n" type="password" class="swal2-input" placeholder="${p?'New PIN (6 digits safer)':'New password (6+)'}">`,showCancelButton:true,preConfirm:async()=>{const o=$('o').value,n=$('n').value;if(p?!PINRE.test(n):n.length<6)return Swal.showValidationMessage(p?PINMSG:'Use 6+ characters');if(!await chk(k,o))return Swal.showValidationMessage('Current value is wrong');return n}});
+  if(r.isConfirmed){await vWrap(p?'adm':'pass',r.value);S.sec[k]=await mkv(k,r.value);S.keysAt=Date.now();commit();toast('Updated')}
 },
 lastBk(){try{return +localStorage.getItem(BKEY)||0}catch(e){return 0}},
 backupData(){const o={...S,rx:RXREC,backupAt:Date.now(),app:'SkinCareClinic'};['enc','vault','sec','lock','sec0','qb'].forEach(k=>delete o[k]);return o},
