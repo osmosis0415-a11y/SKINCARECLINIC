@@ -200,7 +200,7 @@ html{font-size:calc(16px*var(--s,1))}.sz{margin:.875rem .75rem 0;padding:.75rem;
 <div class="big" id="dtk">#---</div><p id="dnm" style="text-align:center;font-weight:800;color:#0284c7"></p><p id="dhi" class="m" style="text-align:center"></p>
 <button class="ok" style="width:100%" onclick="A.next()">📢 Call Next</button><div class="grid" style="margin-top:0.5rem"><button class="am" onclick="A.done('No-Show')">No Show</button><button class="lt" onclick="A.late()">⏳ Late (+3–18)</button><button onclick="A.done('Completed')">✔ Complete</button></div></div>
 <div class="c"><div class="sh"><span class="t d"><i data-lucide="users"></i>Live Waiting Queue</span><span class="chip bl" id="wc"></span></div><div class="sr"><i data-lucide="search"></i><input id="srch" placeholder="Search patient name or token number..." oninput="render()"></div><div id="ql"></div></div><div class="c" id="rxc" style="display:none"><b>Rx pad</b><input id="rd" placeholder="Diagnosis"><select onchange="A.med(this)"><option value="">+ Common drug…</option><option>Tab. Cetirizine 10mg - 1 OD x 5 days</option><option>Cap. Doxycycline 100mg - 1 BD x 7 days</option><option>Clindamycin Gel - Apply night</option><option>Moisturizing Cream - Apply twice daily</option></select><textarea id="rb" rows="5" placeholder="Medications and dosage"></textarea>
-<div class="grid"><button onclick="A.rx()">🖨 Print Rx</button><button class="g" onclick="$('rd').value=$('rb').value=''">Clear</button></div></div></section>
+<div class="grid"><button onclick="A.rx()">🖨 Print Rx</button><button class="g" onclick="window.RxPad&&RxPad.settings()">⚙ Rx format</button><button class="g" onclick="$('rd').value=$('rb').value=''">Clear</button></div></div></section>
 <section id="scan">
   <div class="c">
     <div id="qr" style="min-height:15rem;background:#020617;border-radius:0.75rem"></div>
@@ -943,6 +943,7 @@ med(s){if(s.value){$('rb').value+=($('rb').value?'\n':'')+s.value;s.value=''}},
 rx(){
   const a=S.q.find(p=>p.id===S.act);
   if(!a)return toast('No active patient','error');
+  if(window.RxPad&&RxPad.enabled())return RxPad.open({name:a.name,token:a.tokenNo},{dx:$('rd').value,meds:$('rb').value});
   const c=S.cfg;
   out('pr',`<h2>${esc(c.name)}</h2><p><b>${esc(c.doc)}</b><br>${esc(c.addr)}</p><p>Date: ${fd(today())} &nbsp; Token: ${a.tokenNo}<br>Patient: <b>${esc(a.name)}</b><br>Diagnosis: ${esc($('rd').value)}</p><hr><b>Rx</b><pre style="white-space:pre-wrap;min-height:15.625rem">${esc($('rb').value)||'—'}</pre><p class="m">Fee valid for ${S.cfg.win} days only.</p>`);
 },
@@ -1063,4 +1064,10 @@ $('nav').onclick=e=>{const b=e.target.closest('[data-t]');b&&A.go(b.dataset.t)};
   render();G.tick();if(!S.sec)A.setup();else setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
-</script><script src="cloudsync.js"></script></body></html>
+</script><script src="cloudsync.js"></script><script src="rxpad.js"></script><script>
+try{RxPad.init({prefix:'scc_rx',qrLib:'vendor/qrcode.min.js',defaults:{clinicEn:'SKIN CARE CLINIC',clinicTe:'స్కిన్ కేర్ క్లినిక్',
+ addrEn:'Municipal Complex No. 25, 26, Tilak Garden, Khaleelwadi, Nizamabad',addrTe:'మున్సిపల్ కాంప్లెక్స్ నెం. 25, 26, తిలక్ గార్డెన్, ఖలీల్‌వాడి, నిజామాబాద్',
+ phone:'7207896169',hours:'10-00 a.m. to 2-30 p.m.\n05-00 p.m. to 8-30 p.m.',holiday:'SUNDAY HOLIDAY',docEn:'DR. D. SRINIVAS',qual:'M.D. (DERM) OSM.',
+ fellow:'IADVL FELLOWSHIP IN HIV/AIDS',spec:'SKIN SPECIALIST',regNo:'37094',docTe:'డా. డి. శ్రీనివాస్\nఎం.డి. (చర్మవ్యాధుల నిపుణులు)',
+ myDrugs:['CETIRIZINE 10 MG','DOXYCYCLINE 100 MG','CLINDAMYCIN 1% GEL','MOISTURISING CREAM']}})}catch(e){}
+</script></body></html>
