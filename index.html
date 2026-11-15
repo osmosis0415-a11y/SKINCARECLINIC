@@ -25,7 +25,21 @@ input,select,textarea{width:100%;padding:0.625rem;border:1px solid #cbd5e1;borde
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.125rem,1fr));gap:0.5rem}
 .big{font-size:3.5rem;font-weight:900;text-align:center;margin:0.375rem 0}.m{color:#64748b;font-size:0.6875rem}
 table{width:100%;border-collapse:collapse;font-size:0.75rem}td,th{padding:0.375rem 0.25rem;border-bottom:1px solid #e2e8f0;text-align:left}
-html.min #hd,html.min .qa small,html.min .qa.b3,html.min #ql .sr,html.min .sr,html.min #dhi,html.min label:has(#ap),html.min #ql .m,html.min #ql .ib.w,html.min #ql .ib.s,html.min #ql .ib.t,html.min #dtut,html.min #dut{display:none!important}html.min:not(.r-adm) #bkb{display:none!important}html.min .qa{padding:.7rem .9rem!important;min-height:0!important}html.min .qa b{font-size:1.15rem}html.min #ql .c{padding:.55rem .7rem!important}html.min #dtk{font-size:4.5rem}html.min #cnb{min-height:5rem!important;font-size:1.5rem!important}html.min #minb{background:#16a34a;color:#fff}#dtb{display:none}html.r-doc #dtb{display:block}html.r-doc #qac,html.r-doc #bkb,html.r-doc #ub,html.r-doc #ap,html.r-doc label:has(#ap),html.r-doc #ql .ib.t,html.r-doc #ql .ib.w,html.r-doc #ql .ib.s{display:none!important}html.r-doc #cnb{min-height:5rem!important;font-size:1.5rem!important}html.r-doc #wrx{min-height:3.5rem;font-size:1.1rem}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
+html.min #hd,html.min .qa small,html.min .qa.b3,html.min #ql .sr,html.min .sr,html.min #dhi,html.min label:has(#ap),html.min #ql .m,html.min #ql .ib.w,html.min #ql .ib.s,html.min #ql .ib.t,html.min #dtut,html.min #dut{display:none!important}html.min:not(.r-adm) #bkb{display:none!important}html.min .qa{padding:.7rem .9rem!important;min-height:0!important}html.min .qa b{font-size:1.15rem}html.min #ql .c{padding:.55rem .7rem!important}html.min #dtk{font-size:4.5rem}html.min #cnb{min-height:5rem!important;font-size:1.5rem!important}html.min #minb{background:#16a34a;color:#fff}#dtb{display:none}html.r-doc #dtb{display:block}html.r-doc #qac,html.r-doc #bkb,html.r-doc #ub,html.r-doc #ap,html.r-doc label:has(#ap),html.r-doc #ql .ib.t,html.r-doc #ql .ib.w,html.r-doc #ql .ib.s{display:none!important}html.r-doc #cnb{min-height:5rem!important;font-size:1.5rem!important}html.r-doc #wrx{min-height:3.5rem;font-size:1.1rem}
+/* Doctor on a laptop, PC or 10-11" tablet: two columns. Left = Now Serving (stays in view), right = waiting queue + today's prescriptions. Phones are unchanged. */
+@media(min-width:60rem){
+html.r-doc main,html.dv-doc main,html.r-doc .hd,html.dv-doc .hd{max-width:94rem}
+html.r-doc #rec.on,html.dv-doc #rec.on{display:grid;grid-template-columns:minmax(24rem,5fr) 7fr;column-gap:1.25rem;grid-auto-flow:row dense;align-items:start}
+html.r-doc #rec>*,html.dv-doc #rec>*{grid-column:2;min-width:0}
+html.r-doc #dtb,html.dv-doc #dtb{grid-column:1;grid-row:1}
+html.r-doc #dtb+.c,html.dv-doc #dtb+.c{grid-column:1;grid-row:2}
+html.r-doc #dtb+.c+.c,html.dv-doc #dtb+.c+.c{grid-row:1/span 2}
+html.r-doc #dtk,html.dv-doc #dtk{font-size:clamp(3.5rem,6.5vw,5.5rem);white-space:nowrap}
+html.r-doc #ql .row>div:last-child,html.dv-doc #ql .row>div:last-child{display:flex;gap:.4rem;align-items:center;flex-shrink:0}
+html.r-doc #ql .row,html.dv-doc #ql .row{align-items:center}
+html.r-doc #dnm,html.dv-doc #dnm{font-size:1.4rem}
+html.r-doc #ql,html.dv-doc #ql{max-height:calc(100vh - 14rem);overflow:auto}
+}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
 #lock{position:fixed;inset:0;background:#0f172ae6;z-index:50;display:flex;align-items:center;justify-content:center}#lock div{background:#fff;padding:1.5rem;border-radius:1.25rem;width:18.75rem;text-align:center}
 #off{display:none;background:#f59e0b;text-align:center;padding:0.25rem;font-weight:700}#ps,#pb,#pr{display:none}
 .swal2-popup{max-width:92vw}
@@ -984,7 +998,7 @@ async fresh(){
 },
 wipeLocal(at){HIST.A=HIST.R=true;S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;RXREC=[];window.RxPad&&RxPad.setRecords&&RxPad.setRecords([]);try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
 dev(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}},
-lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕️ Doctor phone (Doctor or Admin PIN)':d==='rec'?'🧾 Reception phone (Reception or Admin PIN)':'Doctor · Reception · Admin'},
+lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕️ Doctor screen (Doctor or Admin PIN)':d==='rec'?'🧾 Reception phone (Reception or Admin PIN)':'Doctor · Reception · Admin'},
 async users(){
   if(ROLE!=='adm')return toast('Only Admin can change logins','warning');
   const st=k=>S.sec[k]?'<b style="color:#16a34a">set</b>':'<b style="color:#b91c1c">not set</b>';
@@ -1559,6 +1573,7 @@ restore(e){
 };
 
 function render(){
+ document.documentElement.classList.toggle('dv-doc',A.dev()==='doc');
  $('hn').textContent=S.cfg.name;$('hd').textContent=S.cfg.doc;document.title=S.cfg.name;$('lbt').textContent=S.cfg.ui==='te'?'EN':'తెలుగు';$('dt').textContent=fd(today());A.zoom();const PAD=window.RxPad&&RxPad.enabled();$('rxc').style.display=!PAD&&(S.cfg.rx||ROLE==='doc')?'':'none';
  const u=UNDO[UNDO.length-1];$('ub').style.display=u?'':'none';if(u)$('ub').textContent='↩ '+T('Undo')+': '+u.l;$('dub').disabled=!u;$('dub').style.opacity=u?1:.45;$('dut').textContent=u?'Undo will reverse: '+u.l:'';
  $('lg').innerHTML=S.log.slice(0,100).map(e=>`<tr><td>${fd(dk(new Date(e.t)))} ${ft(e.t)}</td><td>${esc(e.a)}</td><td>${e.k} ${esc(e.n)}</td></tr>`).join('')||'<tr><td colspan="3">No activity yet</td></tr>';
