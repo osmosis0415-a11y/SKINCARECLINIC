@@ -27,7 +27,7 @@ input,select,textarea{width:100%;padding:0.625rem;border:1px solid #cbd5e1;borde
 table{width:100%;border-collapse:collapse;font-size:0.75rem}td,th{padding:0.375rem 0.25rem;border-bottom:1px solid #e2e8f0;text-align:left}
 html.min #hd,html.min .qa small,html.min .qa.b3,html.min #ql .sr,html.min .sr,html.min #dhi,html.min label:has(#ap),html.min #ql .m,html.min #ql .ib.w,html.min #ql .ib.s,html.min #ql .ib.t,html.min #dtut,html.min #dut{display:none!important}html.min:not(.r-adm) #bkb{display:none!important}html.min .qa{padding:.7rem .9rem!important;min-height:0!important}html.min .qa b{font-size:1.15rem}html.min #ql .c{padding:.55rem .7rem!important}html.min #dtk{font-size:4.5rem}html.min #cnb{min-height:5rem!important;font-size:1.5rem!important}html.min #minb{background:#16a34a;color:#fff}#dtb{display:none}html.r-doc #dtb{display:block}html.r-doc #qac,html.r-doc #bkb,html.r-doc #ub,html.r-doc #ap,html.r-doc label:has(#ap),html.r-doc #ql .ib.t,html.r-doc #ql .ib.w,html.r-doc #ql .ib.s{display:none!important}html.r-doc #cnb{min-height:5rem!important;font-size:1.5rem!important}html.r-doc #wrx{min-height:3.5rem;font-size:1.1rem}
 /* Laptop, PC and tablet (any login): fits one screen, no page scrolling. Left = quick actions + Now Serving. Right = waiting queue (scrolls inside its own box) + today's prescriptions. Phones are unchanged. */
-@media(min-width:50rem){
+@media(min-width:40rem) and (min-height:30rem){
 main,.hd{max-width:100rem}
 body{padding-bottom:0!important}
 main{padding:.75rem 1rem 5rem}
@@ -61,15 +61,22 @@ html.r-doc #dtb+.c{max-height:calc(100dvh - 19.6rem)}
 #dtb .grid button{min-height:2.6rem}
 #ql .row>div:last-child{display:flex;gap:.4rem;align-items:center;flex-shrink:0}
 }
-@media(min-width:50rem) and (orientation:portrait){
+@media(min-width:40rem) and (min-height:30rem) and (max-aspect-ratio:4/3){
 #rec.on{display:flex;flex-direction:column;align-items:stretch;height:calc(100dvh - 10.9rem)}
 #rec>*{flex:none}
 #dtb+.c{max-height:none!important}
-#dtb+.c+.c{flex:1 1 auto;min-height:12rem;max-height:none!important}
+#dtb+.c+.c{flex:1 1 auto;min-height:9rem;max-height:none!important}
+html.r-doc #dtb{display:flex!important;gap:.4rem;align-items:stretch}#dtb>.grid{flex:3;margin:0}#dtb>button{flex:1.4;margin:0!important;min-height:2.3rem}#dtb>p{display:none}
 #trx{max-height:30%!important}
+/* Stacked (upright tablet, unfolded foldable): Now Serving goes side-by-side to save height: token + name left, Call Next right */
+#dtb+.c{display:grid;grid-template-columns:1fr 1fr;column-gap:.75rem;align-items:center}
+#dtb+.c>.row,#dtb+.c>.grid{grid-column:1/-1}
+#dtk{grid-column:1;grid-row:2}#dnm{grid-column:1;grid-row:3}#dhi{grid-column:1;grid-row:4}
+#cnb{grid-column:2;grid-row:2/5;align-self:stretch;height:auto!important}
+#dtk{font-size:clamp(2.5rem,min(8cqi,9vh),4.5rem)!important}
 #qac .qa b{font-size:.95rem}
 }
-@media(min-width:50rem) and (max-height:52rem){#cnb{min-height:3rem!important;font-size:1.15rem!important}html.r-doc #cnb{min-height:3.6rem!important;font-size:1.3rem!important}#dtb+.c .grid button,#wrx,#qrx{min-height:2.5rem!important;padding-top:.35rem;padding-bottom:.35rem}#dnm{font-size:1.1rem}}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
+@media(min-width:40rem) and (min-height:30rem) and (max-height:52rem){#cnb{min-height:3rem!important;font-size:1.15rem!important}#rec>.c{margin-bottom:.5rem}#dtb .grid button{min-height:2.3rem}#dtb .grid,#dtb>button{margin-top:.3rem!important}#dhi{display:none}html.r-doc #cnb{min-height:3.6rem!important;font-size:1.3rem!important}#dtb+.c .grid button,#wrx,#qrx{min-height:2.5rem!important;padding-top:.35rem;padding-bottom:.35rem}#dnm{font-size:1.1rem}}html.r-doc .nodoc,html.r-rec .norec,html:not(.r-adm) .adm{display:none!important}html:not(.r-adm) #cloudChip{pointer-events:none}#rolec:empty{display:none}#rolec{font-size:.7rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;background:#e0f2fe;color:#0369a1;margin-left:auto;margin-right:.4rem;white-space:nowrap}
 #lock{position:fixed;inset:0;background:#0f172ae6;z-index:50;display:flex;align-items:center;justify-content:center}#lock div{background:#fff;padding:1.5rem;border-radius:1.25rem;width:18.75rem;text-align:center}
 #off{display:none;background:#f59e0b;text-align:center;padding:0.25rem;font-weight:700}#ps,#pb,#pr{display:none}
 .swal2-popup{max-width:92vw}
