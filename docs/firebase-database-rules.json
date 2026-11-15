@@ -17,26 +17,47 @@
     },
     "scc": {
       "$cid": {
-        ".read": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
-        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".read": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && newData.exists()",
         ".validate": "newData.hasChildren(['day', 'rev', 'updatedAt'])"
       }
     },
     "pub": {
       "$cid": {
         ".read": true,
-        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && newData.exists()",
         ".validate": "newData.hasChildren(['day', 'updatedAt'])"
       }
     },
     "rxs": {
       "$cid": {
-        ".read": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
-        ".write": "auth != null && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
+        ".read": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))",
         "r": {
           ".indexOn": [
             "ts"
-          ]
+          ],
+          "$rid": {
+            ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && (newData.exists() || data.child('ts').val() < now - 3888000000)"
+          }
+        },
+        "meta": {
+          ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && newData.exists()"
+        },
+        "dev": {
+          "$did": {
+            ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true))"
+          }
+        },
+        "log": {
+          "$lid": {
+            ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && ((!data.exists() && newData.exists()) || (!newData.exists() && data.child('ts').val() < now - 34560000000))"
+          }
+        },
+        "blocked": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": "auth != null && !root.child('rxs').child($cid).child('blocked').child(auth.uid).exists() && (root.child('allowed').child(auth.uid).val() === $cid || (auth.uid === $cid && root.child('allowed').child(auth.uid).val() === true)) && auth.uid !== $uid"
+          }
         }
       }
     }

@@ -62,6 +62,8 @@ Use the **clinic's own Google account** if possible, so the clinic owns its data
 4. Sign in with the clinic cloud email and password, then enter a clinic PIN.
 5. In Admin portal → Logins, choose **This phone is for**: Doctor only / Reception only / Anyone.
 
+**Recommended: one cloud login per phone.** Create a separate user for each phone in Firebase → Authentication, and add its UID under `allowed` with the clinic's first UID as the value (in quotes). Then, if a phone is lost, Admin portal → 📱 Clinic devices → **📵 Lost / stolen** blocks that phone in the database itself. If phones share one login, the app can only erase the lost phone when it next goes online, and you must change the shared cloud password.
+
 The queue, logins, saved prescription sets, medicine list, clinic details and the last 45 days of prescriptions now sync between this clinic's phones only.
 
 ## Part 4: Patient status page and backups

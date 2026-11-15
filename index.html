@@ -336,6 +336,18 @@ const dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Strin
 const fd=i=>{const p=(i||'').split('-');return p.length==3?new Date(p[0],p[1]-1,p[2]).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'--'};
 const ft=t=>t?new Date(t).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'--';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Anything that arrives from the cloud or a backup file is cleaned before use, so one bad or stolen clinic login cannot
+// plant code that runs on the other phones.
+const IDRE=/[^A-Za-z0-9_.-]/g;
+function cleanP(p){if(!p||typeof p!=='object'||Array.isArray(p))return null;const o={};for(const k in p){let v=p[k];if(typeof v==='string')v=v.replace(/[<>`]/g,'');else if(v&&typeof v==='object')v=cleanDeep(v);o[k]=v}
+  o.id=String(o.id??'').replace(IDRE,'');if(!o.id)return null;
+  if(!/^OPD-\d{1,5}$/.test(String(o.tokenNo||''))){const n=String(o.tokenNo||'').replace(/\D/g,'').slice(0,5);o.tokenNo='OPD-'+String(+n||0).padStart(3,'0')}
+  if(o.visitType!=='1st'&&o.visitType!=='2nd')o.visitType='1st';o.fee=+o.fee||0;if(o.lateShift!=null)o.lateShift=+o.lateShift||0;
+  ['timestamp','scannedAt','calledAtTimestamp','completedAtTimestamp','o'].forEach(k=>{if(o[k]!=null)o[k]=+o[k]||0});
+  if(o.rxId!=null)o.rxId=String(o.rxId).replace(IDRE,'');if(o.scanDate!=null&&!/^\d{4}-\d{2}-\d{2}$/.test(o.scanDate))o.scanDate='';return o}
+function cleanDeep(v,k){if(typeof v==='string')return k==='id'?v.replace(IDRE,''):v.replace(/[<>`]/g,'');if(Array.isArray(v))return v.map(x=>cleanDeep(x));
+  if(v&&typeof v==='object'){const o={};for(const x in v)o[x]=cleanDeep(v[x],x);return o}return v}
+window.cleanP=cleanP;
 const hash=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
 Swal=Swal.mixin({didOpen:e=>tr(e)});
 const TE={"No backup yet":"ఇంకా బ్యాకప్ లేదు","Back up now":"ఇప్పుడే బ్యాకప్ చేయండి","Phone data can be lost if the phone is reset or lost.":"ఫోన్ రీసెట్ అయినా, పోయినా డేటా పోతుంది.","Back up & reset":"బ్యాకప్ చేసి రీసెట్","Reset without backup":"బ్యాకప్ లేకుండా రీసెట్","Text size":"అక్షరాల పరిమాణం","Quick Actions": "త్వరిత చర్యలు", "Register Walk-in & Print QR Card": "వాక్-ఇన్ నమోదు & QR కార్డ్ ప్రింట్", "Scan QR Ticket": "QR టికెట్ స్కాన్", "Smart visit-type auto-detection": "సందర్శన రకం ఆటోమేటిక్‌గా గుర్తింపు", "Print A4 Batch Cards": "A4 బ్యాచ్ కార్డులు ప్రింట్", "Live Waiting Queue": "లైవ్ వెయిటింగ్ క్యూ", "Menu": "మెనూ", "Clinic Management": "క్లినిక్ నిర్వహణ", "Waiting": "వేచి ఉన్నారు", "Search patient name or token number...": "రోగి పేరు లేదా టోకెన్ వెతకండి...","Reception": "రిసెప్షన్", "Scan": "స్కాన్", "Finance": "ఫైనాన్స్", "Settings": "సెట్టింగ్స్", "NOW SERVING": "ఇప్పుడు పిలిచినది", "Auto-Pilot": "ఆటో-పైలట్", "Call Next": "తదుపరి వారిని పిలవండి", "No Show": "రాలేదు", "Late (+3–18)": "ఆలస్యం (+3–18)", "Complete": "పూర్తి", "Available": "ఖాళీగా ఉంది", "No patients waiting": "ఎవరూ వేచి లేరు", "Rx pad": "ప్రిస్క్రిప్షన్", "Print Rx": "ప్రిస్క్రిప్షన్ ప్రింట్", "Clear": "తొలగించు", "Snap / Upload": "ఫోటో తీయండి / అప్‌లోడ్", "Type token": "టోకెన్ టైప్ చేయండి", "Reset shift": "షిఫ్ట్ రీసెట్", "Lock": "లాక్", "Tokens": "టోకెన్లు", "Seen": "చూసినవారు", "No-shows": "రానివారు", "Avg time": "సగటు సమయం", "Revenue": "ఆదాయం", "Token": "టోకెన్", "Patient": "రోగి", "Visit": "సందర్శన", "Scanned / Seen": "స్కాన్ / చూసిన సమయం", "Fee": "ఫీజు", "1st visit ₹": "మొదటి సందర్శన ఫీజు ₹", "2nd visit ₹": "రెండో సందర్శన ఫీజు ₹", "Audit log": "కార్యకలాపాల లాగ్", "When": "ఎప్పుడు", "Action": "చర్య", "Token / Patient": "టోకెన్ / రోగి", "No completed visits yet": "ఇంకా పూర్తయిన సందర్శనలు లేవు", "No activity yet": "ఇంకా కార్యకలాపాలు లేవు", "Security & backup": "భద్రత & బ్యాకప్", "Save Settings": "సేవ్ చేయండి", "Change PIN": "పిన్ మార్చండి", "Change password": "పాస్‌వర్డ్ మార్చండి", "Backup": "బ్యాకప్", "Restore": "రీస్టోర్", "Show Rx pad on reception": "రిసెప్షన్‌లో ప్రిస్క్రిప్షన్ చూపించు", "Return-visit window (days)": "మళ్ళీ రావడానికి గడువు (రోజులు)", "Enter PIN": "పిన్ నమోదు చేయండి", "Unlock": "అన్‌లాక్", "Offline mode": "ఆఫ్‌లైన్ మోడ్", "Register walk-in": "వాక్-ఇన్ నమోదు", "Register & print": "నమోదు & ప్రింట్", "Cancel": "రద్దు", "OK": "సరే", "Completed": "పూర్తయింది", "No-Show": "రాలేదు", "Patient full name": "రోగి పూర్తి పేరు", "Diagnosis": "రోగ నిర్ధారణ", "waiting": "వేచి ఉన్నారు", "Scanned": "స్కాన్ చేసినది", "Undo": "వెనక్కి"},T=s=>S.cfg.ui==='te'&&TE[s]||s;
@@ -448,7 +460,7 @@ async function sessSet(r){try{if(!r)return sessionStorage.removeItem('scc_sess')
 async function sessRestore(){try{const o=JSON.parse(sessionStorage.getItem('scc_sess')||'null');if(!o||o.exp<Date.now()||!S.sec||!ROLES[o.r])return false;
   if(S.vault){if(!o.k)return false;const k=await crypto.subtle.importKey('raw',UB(o.k),{name:'AES-GCM',length:256},true,['encrypt','decrypt']);if(!(await openWith(k)))return false}
   $('lock').style.display='none';ROLE=null;A.role(o.r,true);return true}catch(e){return false}}
-function dataReady(){if(window.SCC_READY)return;window.SCC_READY=true;dispatchEvent(new Event('scc-unlocked'));render()}
+function dataReady(){if(window.SCC_READY)return;window.SCC_READY=true;try{A.dayRoll()}catch(e){console.warn('day roll',e)}dispatchEvent(new Event('scc-unlocked'));render()}
 let saveWarned=false,SQ=Promise.resolve();
 // ---- Past days (archive) and prescriptions are stored in monthly parts, so an everyday save only rewrites
 // today's queue and, at most, the current month. They load in the background after unlock.
@@ -796,7 +808,7 @@ async rxAlert(x){return; // prescriptions are printed only at the doctor's side
   if(r.isConfirmed)A.rxPrint(x.id)},
 rxIn(id,o){try{if(!CR.key)return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if(i<0){RXREC.push(x);if(x.date===today()&&Date.now()-(x.ts||0)<10*60e3)setTimeout(()=>A.rxAlert(x),800)}else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
   RXREC.sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords(RXREC);clearTimeout(A._rxT);A._rxT=setTimeout(()=>{save();render()},700)}).catch(()=>{})}catch(e){}},
-metaIn(m){if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(m.clinic){Object.assign(S.cfg,m.clinic);S.clinicSet=true}if(Array.isArray(m.formulary))S.formulary=m.formulary;if(m.formOnly!==undefined)S.formOnly=!!m.formOnly;if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
+metaIn(m){m=cleanDeep(m);if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(m.clinic){Object.assign(S.cfg,m.clinic);S.clinicSet=true}if(Array.isArray(m.formulary))S.formulary=m.formulary;if(m.formOnly!==undefined)S.formOnly=!!m.formOnly;if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
 async qrEnc(rx){if(!CR.key)return 'SCC0.'+rx.id;const i=crypto.getRandomValues(new Uint8Array(12)),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(rx.id))),b=new Uint8Array(12+c.length);b.set(i);b.set(c,12);
   return 'SCC1.'+B64(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
 async rxScan(raw){let id='';try{if(raw.startsWith('SCC0.'))id=raw.slice(5);else{if(!CR.key)throw 0;let t=raw.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const b=UB(t);id=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},CR.key,b.slice(12)))}}catch(e){return Swal.fire({icon:'error',title:'Not this clinic\'s prescription',text:'This QR could not be opened with this clinic\'s key.'})}
@@ -824,8 +836,10 @@ async devAct(id,what){
   if(what==='undo'){await CloudSync.revoke(id,false);L('Device lost report undone ('+id+')');return A.devices()}
   const c=await Swal.fire({icon:'warning',title:'Report this phone lost?',html:'<div style="text-align:left;font-size:.86rem">When it next goes online, the app on that phone <b>erases all clinic data and signs out</b>.<br><br>Next you will set <b>new PINs</b> for everyone (the old ones stop working on all phones).<br><br>Also change the <b>clinic cloud password</b>: Firebase console → Authentication → the clinic login → Reset password.</div>',showCancelButton:true,confirmButtonText:'Report lost',confirmButtonColor:'#dc2626'});
   if(!c.isConfirmed)return A.devices();
-  await CloudSync.revoke(id,true);L('📵 Phone reported lost ('+id+')');
-  await Swal.fire({icon:'info',title:'Now set new PINs',text:'Step 1: new Doctor & Reception PINs. Step 2: new Admin PIN.'});
+  let how='shared';try{how=await CloudSync.revoke(id,true)}catch(e){return Swal.fire({icon:'error',title:'Could not report it',text:'Check the internet and try again. '+(e&&e.message||'')})}
+  L('📵 Phone reported lost ('+id+(how==='blocked'?', cloud login blocked':', shares the cloud login')+')');
+  await Swal.fire(how==='blocked'?{icon:'success',title:'Cloud access blocked',text:'The cloud now refuses that phone. It erases its clinic data when it next goes online. Now set new PINs: step 1 Doctor & Reception, step 2 Admin.'}
+    :{icon:'warning',title:'Change the cloud password now',html:'<div style="text-align:left;font-size:.86rem">That phone uses the <b>same cloud login</b> as other clinic phones, so the cloud cannot block it alone. Its data will be erased when it next opens the app online, but to be sure:<br><br>1. Firebase console → Authentication → the clinic login → <b>Reset password</b>.<br>2. Sign the other phones in again with the new password (☁ badge).<br><br>Tip: give each phone its own cloud login (see the setup guide) so a single lost phone can be blocked.<br><br>Next: set new PINs (Doctor & Reception, then Admin).</div>'});
   await A.users();await A.secret('pin');toast('Done. The lost phone will be wiped when it connects.')},
 async clinicLog(){
   if(ROLE!=='adm')return toast('Only Admin','warning');
@@ -1047,7 +1061,7 @@ async auth(){
   if(await chk('pass',r.value)){G.good();ok=true;A.go('fin')}else G.fail('password');
 },
 lock(){ok=false;A.go('rec')},
-role(r,quiet){ROLE=r;ok=false;sessSet(r);const h=document.documentElement;h.classList.remove('r-adm','r-doc','r-rec');h.classList.add('r-'+r);$('rolec').textContent=ROLES[r].i;if(!quiet){L('Logged in as '+ROLES[r].n);commit()}render();A.go('rec')},
+role(r,quiet){ROLE=r;ok=false;sessSet(r);setTimeout(()=>{try{A.unclosedNote()}catch(e){}},1500);const h=document.documentElement;h.classList.remove('r-adm','r-doc','r-rec');h.classList.add('r-'+r);$('rolec').textContent=ROLES[r].i;if(!quiet){L('Logged in as '+ROLES[r].n);commit()}render();A.go('rec')},
 logout(auto){sessSet(null);if(!auto&&ROLE==='adm'&&!S.sec.doc&&!S.sec.rcp){toast('No Doctor or Reception PIN yet. Set them first.','warning');return A.users()}if(ROLE)L('Logged out ('+ROLES[ROLE].n+')');ROLE=null;ok=false;document.documentElement.classList.remove('r-adm','r-doc','r-rec');$('rolec').textContent='';A.stop&&A.stop();commit();$('pin').value='';A.lkLabel();$('lock').style.display='flex';G.tick();setTimeout(()=>$('pin').focus(),200)},
 async fresh(){
   if(ROLE!=='adm')return toast('Only Admin can do this','warning');
@@ -1063,6 +1077,16 @@ async fresh(){
   Swal.fire({icon:'success',title:'Done. The app is fresh.',text:'Token numbering starts again at OPD-001.',timer:2200,showConfirmButton:false});
   setTimeout(()=>location.reload(),2400);
 },
+// New day: patients from an earlier day that was not closed are moved to past days by themselves (on every phone),
+// so the queue and token numbers start fresh. Skipped if this phone's clock disagrees with the cloud's clock.
+dayRoll(){if(!window.SCC_READY||(S.vault&&!CR.key))return false;const td=today(),old=S.q.filter(p=>p.scanDate&&p.scanDate<td);if(!old.length)return false;
+  const sk=window.CloudSync&&CloudSync.skew?CloudSync.skew():0;if(Math.abs(sk)>30*60000){if(!A._skewWarned){A._skewWarned=1;Swal.fire({icon:'warning',title:'Phone clock is wrong',text:'This phone\'s date/time differs from the internet time by '+Math.round(Math.abs(sk)/60000)+' minutes. Fix it in the phone settings (set automatic date & time), otherwise dates on tokens and prescriptions will be wrong.'})}return false}
+  A.archiveGone(old);S.q=S.q.filter(p=>!(p.scanDate&&p.scanDate<td));if(S.act&&!S.q.some(p=>p.id===S.act))S.act=null;
+  S.ctr=Math.max(0,...S.q.map(p=>+String(p.tokenNo).slice(4)||0))+1;const days=[...new Set(old.map(p=>p.scanDate))].sort();
+  S.unclosed=[...new Set([...(S.unclosed||[]),...days])].slice(-31);UNDO=[];L('🌙 Day not closed: '+days.map(fd).join(', ')+'. '+old.length+' token(s) moved to past days automatically');commit();return true},
+archiveGone(list){const ids=new Set(S.arch.map(x=>x.id));let n=0;(list||[]).forEach(p=>{if(p&&p.id&&!ids.has(p.id)){S.arch.push(p);ids.add(p.id);n++}});return n},
+unclosedNote(){if(ROLE!=='adm'||!(S.unclosed||[]).length||A._ucShown)return;A._ucShown=1;
+  Swal.fire({icon:'warning',title:'Day not closed',html:'<div style="text-align:left;font-size:.88rem">'+S.unclosed.map(d=>'<b>'+fd(d)+'</b>').join(', ')+' was not closed with 🌙 Close day, so its tokens were moved to past days automatically. <b>The cash was not counted.</b> Check the Finance report for that day.</div>',confirmButtonText:'OK, noted',showCancelButton:true,cancelButtonText:'Remind me later'}).then(r=>{if(r.isConfirmed){L('Unclosed day(s) noted: '+S.unclosed.join(', '));S.unclosed=[];commit()}})},
 wipeLocal(at){HIST.A=HIST.R=true;S.q=[];S.arch=[];S.log=[];S.act=null;S.ctr=1;UNDO=[];S.wipeAt=at;S.qb=null;RXREC=[];window.RxPad&&RxPad.setRecords&&RxPad.setRecords([]);try{localStorage.removeItem('scc_rx_rec')}catch(e){}},
 dev(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}},
 lkLabel(){const d=A.dev(),el=$('lkd');if(el)el.textContent=d==='doc'?'👨‍⚕️ Doctor screen (Doctor or Admin PIN)':d==='rec'?'🧾 Reception phone (Reception or Admin PIN)':'Doctor · Reception · Admin'},
@@ -1652,16 +1676,30 @@ async find(){
    +'<p class="m" style="margin-top:24px">Signature of the doctor: ____________________ &nbsp; Reg. No.: ________</p></body></html>';
   PrintView.open(h,{title:'Patient record · '+r.value});L('Patient record printed ('+r.value+')');commit();
 },
-restore(e){
+restore(e){ // adds the backup's records to this phone; never deletes anything and never replaces the live queue
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=async()=>{
     try{
       let d;try{d=await A.readBackup(r.result)}catch(x){if(x&&x.message==='cancel')return;if(x&&x.message==='locked')return toast('Backup not opened','error');throw x}
-      if(!Array.isArray(d.q))throw 0;
-      const c=await Swal.fire({icon:'warning',title:'Replace all current data?',showCancelButton:true});
-      if(c.isConfirmed){HIST.A=HIST.R=true;if(Array.isArray(d.rx)){RXREC=d.rx;window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC)}const keep={sec:S.sec,vault:S.vault,lock:S.lock};['rx','enc','vault','sec','lock','sec0','app','backupAt','qb'].forEach(k=>delete d[k]);S={...S,...d,...keep};norm();L('Backup restored');commit();toast('Restored')}
-    }catch(x){toast('Invalid backup file','error')}
+      if(!d||!Array.isArray(d.q))throw 0;
+      await loadHist();
+      const td=today(),fresh=!S.q.length&&!S.arch.length&&!RXREC.length,have=new Set([...S.q,...S.arch].map(p=>p.id));
+      const bq=d.q.map(cleanP).filter(Boolean),ba=(Array.isArray(d.arch)?d.arch:[]).map(cleanP).filter(Boolean);
+      const pastAdd=[...ba,...bq.filter(p=>!p.scanDate||p.scanDate<td)].filter(p=>!have.has(p.id)),todayAdd=bq.filter(p=>p.scanDate===td&&!have.has(p.id));
+      const rxIds=new Set(RXREC.map(x=>x.id)),rxAdd=(Array.isArray(d.rx)?d.rx:[]).filter(x=>x&&x.id&&!rxIds.has(x.id));
+      const when=d.backupAt?new Date(d.backupAt).toLocaleString('en-IN'):'unknown date';
+      const c=await Swal.fire({icon:'question',title:'Restore this backup?',html:`<div style="text-align:left;font-size:.88rem">Backup made: <b>${esc(when)}</b><br>It will <b>add</b> to this phone:<br>• ${pastAdd.length} past visit(s)<br>• ${rxAdd.length} prescription(s)${fresh?'<br>• clinic details, fees, token designs, Rx format and medicine list':''}<br><br>Nothing on this phone is deleted, and the live queue on the clinic phones is not replaced.${todayAdd.length?`<br><br><label><input type="checkbox" id="rsq" checked style="width:auto"> Also put back today's ${todayAdd.length} patient(s) into the queue</label>`:''}</div>`,
+        showCancelButton:true,confirmButtonText:'Restore',preConfirm:()=>({q:!!($('rsq')&&$('rsq').checked)})});
+      if(!c.isConfirmed)return;
+      if(fresh){const set=cleanDeep({...d});['q','arch','log','rx','enc','vault','sec','lock','sec0','app','backupAt','qb','wipeAt','savedAt','act','ctr','keysAt','unclosed','auto','lastBkTest','clinicSet'].forEach(k=>delete set[k]);S={...S,...set};norm()}
+      HIST.A=HIST.R=true;
+      S.arch=S.arch.concat(pastAdd).sort((a,b)=>(a.scannedAt||a.timestamp||0)-(b.scannedAt||b.timestamp||0));
+      if(rxAdd.length){RXREC=RXREC.concat(rxAdd).sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);rxAdd.forEach(x=>window.CloudSync&&CloudSync.rxPut&&CloudSync.rxPut(x))}
+      if(c.value.q&&todayAdd.length){S.q=S.q.concat(todayAdd);S.ctr=Math.max(S.ctr||1,...todayAdd.map(p=>(+String(p.tokenNo).slice(4)||0)+1))}
+      if(Array.isArray(d.log)){const k=new Set(S.log.map(x=>x.t+'|'+x.a));S.log=S.log.concat(d.log.filter(x=>x&&!k.has(x.t+'|'+x.a)).map(x=>cleanDeep(x))).sort((a,b)=>(b.t||0)-(a.t||0)).slice(0,5000)}
+      L('Backup restored ('+pastAdd.length+' past visits, '+rxAdd.length+' prescriptions'+(c.value.q&&todayAdd.length?', '+todayAdd.length+' back in queue':'')+')');commit();toast('Restored')
+    }catch(x){console.warn(x);toast('Invalid backup file','error')}
   };
   r.readAsText(f);
   e.target.value='';
@@ -1676,14 +1714,14 @@ function render(){
  const f=($('srch').value||'').toLowerCase().trim(),w=S.q.filter(p=>p.status==='Waiting'),v=w.filter(p=>!f||p.name.toLowerCase().includes(f)||p.tokenNo.toLowerCase().includes(f));
  $('wc').textContent=w.length+' '+T('Waiting');
  const DUP={};S.q.forEach(p=>{if(p.status!=='Cancelled'){const k=p.tokenNo+'|'+p.scanDate;DUP[k]=(DUP[k]||0)+1}});
-  $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${esc(p.tokenNo)}</b>${DUP[p.tokenNo+'|'+p.scanDate]>1?' <span class="chip" style="background:#fee2e2;color:#b91c1c">DUPLICATE</span>':''} <span class="m">${p.visitType} • ₹${p.fee}${p.lateShift?` • <b style="color:#b45309">Late +${p.lateShift}</b>`:''}</span><br><b>${p.name?esc(p.name):'<span class="m">(name not entered)</span>'}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')">🖨</button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')">⏳</button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')">📢</button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')">🗑</button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
+  $('ql').innerHTML=v.map((p,idx)=>`<div class="row c" style="margin:0.375rem 0"><div><b style="color:#0284c7">#${idx+1} • ${esc(p.tokenNo)}</b>${DUP[p.tokenNo+'|'+p.scanDate]>1?' <span class="chip" style="background:#fee2e2;color:#b91c1c">DUPLICATE</span>':''} <span class="m">${esc(p.visitType)} • ₹${esc(p.fee)}${p.lateShift?` • <b style="color:#b45309">Late +${esc(p.lateShift)}</b>`:''}</span><br><b>${p.name?esc(p.name):'<span class="m">(name not entered)</span>'}</b><br><span class="m">${T('Scanned')} ${fd(p.scanDate)}, ${ft(p.scannedAt)}</span></div><div>${p.rxId?'<span class="chip" style="background:#ede9fe;color:#6d28d9">Rx ✓</span>':''}<button class="ib norec" title="Prescription" style="background:#ede9fe" onclick="A.rxFor('${p.id}')">📝</button><button class="ib s" title="Print QR Slip (Choose Design)" onclick="A.cardId('${p.id}')">🖨</button><button class="ib w" title="Late Pushback (+3 to +18)" onclick="A.late('${p.id}')">⏳</button><button class="ib e" title="Call Now" onclick="A.callId('${p.id}')">📢</button><button class="ib t" title="Cancel" onclick="A.del('${p.id}')">🗑</button></div></div>`).join('')||'<p class="m" style="text-align:center">No patients waiting</p>';
  {const t=today(),L2=RXREC.filter(x=>x.date===t).sort((a,b)=>(A.rxDone(a)-A.rxDone(b))||((b.ts||0)-(a.ts||0))),up=L2.filter(x=>!A.rxDone(x)).length;$('trx').style.display=PAD&&L2.length&&ROLE!=='rec'?'':'none';$('trxc').textContent=up?up+' to print':L2.length+' printed';$('trxc').style.background=up?'#fee2e2':'';$('trxc').style.color=up?'#b91c1c':'';
   $('trxl').innerHTML=L2.map(x=>`<div class="row c" style="margin:.3rem 0;${A.rxDone(x)?'opacity:.6':'border:2px solid #f59e0b'}"><div><b>${esc(x.p.name)}</b>${A.rxDone(x)?' <span class="chip">Printed ✓</span>':' <span class="chip" style="background:#fef3c7;color:#92400e">To print</span>'} <span class="m">${esc(x.p.token||'')} · ${esc(x.dx||'')}</span><br><span class="m">${ft(x.ts)} · ${(x.m||[]).length} medicine(s)</span></div><span style="display:flex;gap:.3rem"><button class="ib" title="Edit prescription" style="background:#ede9fe" onclick="A.rxEdit('${x.id}')">✏️</button><button class="ib s" title="Reprint" onclick="A.rxPrint('${x.id}')">🖨</button></span></div>`).join('')||'<p class="m" style="text-align:center">Today\'s prescriptions appear here to edit or reprint.</p>'}
  const a=S.q.find(p=>p.id===S.act);$('wrx').style.display=PAD&&a?'':'none';$('qrx').style.display=PAD&&a&&!a.rxId?'':'none';if(a)$('wrx').textContent=a.rxId?'📝 Open this patient\'s prescription':'📝 Write prescription for this patient';$('dtk').textContent=a?a.tokenNo:'#---';$('dnm').textContent=a?(a.name||'(name not entered)')+(a.age||a.sex?' · '+[a.age,a.sex].filter(Boolean).join(' / '):''):'Available';$('ap').checked=S.auto;
  const h=a&&a.name?[...S.arch,...S.q].filter(p=>p.status==='Completed'&&(p.name||'').toLowerCase()===a.name.toLowerCase()):[];$('dhi').textContent=h.length?`Returning patient, last seen ${fd(h[h.length-1].scanDate)}`:'';
  const c=S.q.filter(p=>p.status==='Completed'),tm=c.filter(p=>p.calledAtTimestamp&&p.completedAtTimestamp),av=tm.length?Math.round(tm.reduce((s,p)=>s+p.completedAtTimestamp-p.calledAtTimestamp,0)/tm.length/60000):0;
  $('st').innerHTML=[['Tokens',S.q.length],['Seen',c.length],['No-shows',S.q.filter(p=>p.status==='No-Show').length],['Avg time',av+'m'],['Revenue','₹'+c.reduce((s,p)=>s+(p.fee||0),0).toLocaleString('en-IN')]].map(([k,x])=>`<div class="c"><span class="m">${k}</span><div style="font-size:1.375rem;font-weight:900">${x}</div></div>`).join('');
- $('fb').innerHTML=[...c].reverse().map(p=>`<tr><td>${p.tokenNo}</td><td>${esc(p.name)}</td><td>${p.visitType}</td><td>${fd(p.scanDate)} ${ft(p.scannedAt)}<br>Seen ${ft(p.completedAtTimestamp)}</td><td>₹${p.fee}</td></tr>`).join('')||'<tr><td colspan="5">No completed visits yet</td></tr>';
+ $('fb').innerHTML=[...c].reverse().map(p=>`<tr><td>${esc(p.tokenNo)}</td><td>${esc(p.name)}</td><td>${esc(p.visitType)}</td><td>${fd(p.scanDate)} ${ft(p.scannedAt)}<br>Seen ${ft(p.completedAtTimestamp)}</td><td>₹${esc(p.fee)}</td></tr>`).join('')||'<tr><td colspan="5">No completed visits yet</td></tr>';
  {const lb=A.lastBk(),has=S.q.length+S.arch.length>0,age=lb?Date.now()-lb:Infinity,d=Math.floor(age/864e5),txt=!lb?'No backup yet':d<1?'Last backup: today, '+ft(lb):'Last backup: '+d+' day'+(d>1?'s':'')+' ago';
   const dp=DISK.h&&!DISK.ok&&ROLE==='adm',tdue=ROLE==='adm'&&has&&Date.now()-(S.lastBkTest||0)>30*864e5&&!(has&&age>864e5);$('bkb').style.display=dp||(has&&age>864e5)||tdue?'':'none';$('bkt').textContent=dp?'Hard-disk saving paused: tap Allow':tdue?'🧪 Monthly backup check due':txt;$('bkb').querySelector('button').textContent=dp?'Allow':tdue?'Test a backup':'Back up now';$('bkb').querySelector('button').onclick=dp?()=>DISK.perm():tdue?()=>A.testBackup():()=>A.backup();$('bks').textContent=txt+(lb?' ('+fd(dk(new Date(lb)))+')':'');}
  tr();A.anaRender&&A.anaRender();
@@ -1698,7 +1736,7 @@ window.A=A;
   let idbOK=true;try{const raw=await IDB.get();const d=raw?JSON.parse(raw):null;if(d&&(d.q||d.enc)&&(d.savedAt||0)>(S.savedAt||0)){S={...S,...d};norm()}}catch(e){idbOK=false}
   if(!lsOK&&!idbOK)$('stw').style.display='block';
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  try{A.minimal(localStorage.getItem('scc_min')==='1')}catch(e){}bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(async j=>{if(j!=='joined'){await A.clinicWizard(true);A.users()}})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
+  try{A.minimal(localStorage.getItem('scc_min')==='1')}catch(e){}bootData();try{A.dayRoll()}catch(e){}setInterval(()=>{try{A.dayRoll()}catch(e){}},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)try{A.dayRoll()}catch(e){}});window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(async j=>{if(j!=='joined'){await A.clinicWizard(true);A.users()}})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
 </script><script src="cloudsync.js"></script><script src="printview.js"></script><script src="rxpad.js"></script><script>

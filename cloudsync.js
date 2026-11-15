@@ -53,8 +53,8 @@ function rscal(v){return{wipeAt:v.wipeAt||0,ctr:v.ctr||1,act:v.act||null,auto:!!
 function payload(){return{rev:++C.rev,updatedAt:firebase.database.ServerValue.TIMESTAMP,by:DEV,day:(typeof today==='function'?today():'')}}
 function clone(o){return JSON.parse(JSON.stringify(o))}
 function locMap(){var m={};(S.q||[]).forEach(function(p,i){var o=clone(p);o.o=i;m[qKey(p)]=o});return m}
-function remMap(q){var m={};ghosts=[];if(Array.isArray(q))q.forEach(function(p,i){if(p&&p.id!=null){var o=clone(p);if(o.o==null)o.o=i;m[qKey(p)]=o}});
-  else Object.keys(q||{}).forEach(function(k){if(!q[k])return;if(q[k].id==null){ghosts.push(k);return}m[k]=clone(q[k])}); // a half record (an edit that reached the cloud after the patient was removed) is cleaned up
+function remMap(q){var m={};ghosts=[];if(Array.isArray(q))q.forEach(function(p,i){if(p&&p.id!=null){var o=window.cleanP?cleanP(p):clone(p);if(!o)return;if(o.o==null)o.o=i;m[qKey(p)]=o}});
+  else Object.keys(q||{}).forEach(function(k){if(!q[k])return;if(q[k].id==null){ghosts.push(k);return}var c=window.cleanP?cleanP(q[k]):clone(q[k]);if(c)m[k]=c}); // a half record (an edit that reached the cloud after the patient was removed) is cleaned up
   return m}
 function loadBase(){var b=S.qb;base=b&&b.cid===C.uid?{q:b.q||{},s:b.s||null}:{q:{},s:null}}
 // base is stored only when the cloud has confirmed every write, so a write lost by closing the app offline is resent, not treated as deleted
@@ -121,16 +121,24 @@ function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMet
 // ---- clinic devices (for 'lost phone') and the encrypted audit log, both under rxs/<clinic>
 function devName(){try{return localStorage.getItem('scc_device_name')||''}catch(e){return''}}
 function devBeat(){var r=rxRef();if(!r||keyState!=='ok')return;var u=navigator.userAgent,os=/Android/.test(u)?'Android':/iPhone|iPad/.test(u)?'iPhone/iPad':/Windows/.test(u)?'Windows PC':/Mac/.test(u)?'Mac':'Device';
-  r.child('dev/'+DEV).update({name:devName()||(os+' '+DEV.slice(0,4)),os:os,seen:Date.now(),mode:(function(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}})()}).catch(function(){})}
+  var au=null;try{au=firebase.auth().currentUser}catch(e){}
+  r.child('dev/'+DEV).update({name:devName()||(os+' '+DEV.slice(0,4)),os:os,seen:Date.now(),uid:au&&au.uid||null,mode:(function(){try{return localStorage.getItem('scc_device_role')||'any'}catch(e){return'any'}})()}).catch(function(){})}
 var LOGQ=[];
 function logKey(t){return String(t).padStart(13,'0')+'_'+DEV.slice(0,4)+Math.random().toString(36).slice(2,5)}
 function logPut(e){LOGQ.push(e);logFlush()}
 function logFlush(){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!LOGQ.length)return;var q=LOGQ.splice(0);
-  q.forEach(function(e){CR.enc(JSON.stringify(e)).then(function(x){count('up',120);return r.child('log/'+logKey(e.t)).set({i:x.i,c:x.c})}).catch(function(){LOGQ.push(e)})})}
+  q.forEach(function(e){CR.enc(JSON.stringify(e)).then(function(x){count('up',120);return r.child('log/'+logKey(e.t)).set({i:x.i,c:x.c,ts:e.t||Date.now()})}).catch(function(){LOGQ.push(e)})})}
 async function logFetch(days){var r=rxRef();if(!r||!CR.key)throw new Error('Cloud sync is off on this phone.');var s=await r.child('log').orderByKey().startAt(String(Date.now()-days*864e5).padStart(13,'0')).once('value');
   var v=s.val()||{},out=[];count('down',JSON.stringify(v).length);for(var k of Object.keys(v)){try{out.push(JSON.parse(await CR.dec(v[k])))}catch(e){}}return out.sort(function(a,b){return b.t-a.t})}
 async function devices(){var r=rxRef();if(!r)throw new Error('Cloud sync is off on this phone.');var v=(await r.child('dev').once('value')).val()||{};return Object.keys(v).map(function(k){return Object.assign({id:k,me:k===DEV},v[k])}).sort(function(a,b){return(b.seen||0)-(a.seen||0)})}
-function revoke(id,on){var r=rxRef();return r.child('dev/'+id).update(on?{revoked:true,revokedAt:Date.now()}:{revoked:null,revokedAt:null})}
+// Lost phone: the database itself refuses its cloud login (rxs/<clinic>/blocked/<login>), if that login is not used by any
+// other phone; the app on it erases its data when it sees the block. Returns 'blocked' or 'shared' (phones share one login).
+async function revoke(id,on){var r=rxRef(),d=(await r.child('dev/'+id).once('value')).val()||{};
+  if(!on){if(d.blockedUid)await r.child('blocked/'+d.blockedUid).remove();await r.child('dev/'+id).update({revoked:null,revokedAt:null,blockedUid:null});return'undone'}
+  var me=null;try{me=firebase.auth().currentUser.uid}catch(e){}
+  var all=(await r.child('dev').once('value')).val()||{},uid=d.uid,shared=!uid||uid===me||Object.keys(all).some(function(k){return k!==id&&all[k]&&all[k].uid===uid&&!all[k].revoked});
+  await r.child('dev/'+id).update({revoked:true,revokedAt:Date.now(),blockedUid:shared?null:uid});
+  if(!shared){await r.child('blocked/'+uid).set(true);return'blocked'}return'shared'}
 function devRemove(id){return rxRef().child('dev/'+id).remove()}
 function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Date.now()-RXWIN;
   devBeat();logFlush();
@@ -165,7 +173,7 @@ function statusUrl(tok,cd){return new URL('status.html?c='+C.uid+(isDefault()?''
 function poster(){
   var u=statusUrl(),w=window.open('','_blank');if(!w){Swal.fire({icon:'info',title:'Patient status link',html:'<code style="word-break:break-all">'+u+'</code>'});return}
   w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Token status QR</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:30px}h1{font-size:34px;margin:0}p{font-size:22px;margin:10px 0}#q{display:inline-block;margin:24px 0}code{font-size:12px;word-break:break-all;color:#555}@media print{button{display:none}}</style></head><body>'
-   +'<h1>'+(S.cfg&&S.cfg.name||'Clinic')+'</h1><p><b>Know your turn on your phone</b></p><p>మీ వంతు మీ ఫోన్‌లో చూడండి</p><div id="q"></div><p>1. Scan this QR &nbsp; 2. Type your token number (e.g. 12)</p><p>QR స్కాన్ చేసి, మీ టోకెన్ నంబర్ నమోదు చేయండి</p><p><code>'+u+'</code></p><button onclick="print()" style="font-size:20px;padding:12px 24px">Print poster</button>'
+   +'<h1>'+String(S.cfg&&S.cfg.name||'Clinic').replace(/[&<>"']/g,'')+'</h1><p><b>Know your turn on your phone</b></p><p>మీ వంతు మీ ఫోన్‌లో చూడండి</p><div id="q"></div><p>1. Scan this QR &nbsp; 2. Type your token number (e.g. 12)</p><p>QR స్కాన్ చేసి, మీ టోకెన్ నంబర్ నమోదు చేయండి</p><p><code>'+u+'</code></p><button onclick="print()" style="font-size:20px;padding:12px 24px">Print poster</button>'
    +'<script src="'+new URL('vendor/qrcode.min.js',location.href).href+'"><\/script><script>new QRCode(document.getElementById("q"),{text:'+JSON.stringify(u)+',width:320,height:320});<\/script></body></html>');
   w.document.close();
 }
@@ -180,6 +188,9 @@ function apply(v){
   Object.keys(ks).forEach(function(k){if(myWipe&&!lm[k]&&rm[k])return;if(noBase&&lm[k]&&!rm[k]&&(lm[k].timestamp||0)<=v.updatedAt)return;
     var m=merge1(b[k],lm[k],rm[k]);if(m)out.push(m)});
   out.sort(function(x,y){return((x.o||0)-(y.o||0))||((x.timestamp||0)-(y.timestamp||0))});
+  try{var td=typeof today==='function'?today():'',keep={};out.forEach(function(p){keep[qKey(p)]=1});
+    var gone=Object.keys(lm).filter(function(k){return !keep[k]&&b[k]&&((out.length===0&&(+v.ctr||1)===1)||(lm[k].scanDate&&lm[k].scanDate<td))}).map(function(k){var c=Object.assign({},lm[k]);delete c.o;return c});
+    if(gone.length&&window.A&&A.archiveGone)A.archiveGone(gone)}catch(e){}
   var rs=rscal(v),sc=mergeS(base.s,scal(),rs);
   // the cloud's queue becomes the new base; anything kept only from this phone is pushed right after
   base={q:rm,s:rs};legacyQ=Array.isArray(v.q);
@@ -189,7 +200,8 @@ function apply(v){
     C.rev=Math.max(C.rev,v.rev||0);keepBase();origSave();typeof render==='function'&&render()}finally{C.applying=false}
   dupWarn();push();
 }
-function listen(uid){
+function watchBlock(cid){try{var u=firebase.auth().currentUser;if(!u)return;firebase.database(app()).ref('rxs/'+cid+'/blocked/'+u.uid).on('value',function(x){if(x.val()===true){stop();if(window.A&&A.selfWipe)A.selfWipe()}},function(){})}catch(e){}}
+function listen(uid){watchBlock(uid);
   C.uid=uid;loadBase();C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
   var first=true;
   C.ref.on('value',function(snap){
@@ -203,6 +215,7 @@ function listen(uid){
     apply(v); // merging is safe for this phone's own echo too, and never skips another phone's change
   },function(e){set('err');console.warn(e);if(String(e&&e.code||e).indexOf('PERMISSION_DENIED')>=0)Swal.fire({icon:'error',title:'Cloud access not approved',text:'This login is not on the clinic approved list. Ask the admin to approve it in Firebase.'})});
   firebase.database(app()).ref('.info/connected').on('value',function(s){if(C.ref)set(s.val()?'on':'offline')});
+  firebase.database(app()).ref('.info/serverTimeOffset').on('value',function(s){C.skew=+s.val()||0});
 }
 function start(){
   var p=pref();if(!p.on||!p.email){set('off');return Promise.resolve()}
@@ -256,7 +269,7 @@ setInterval(devBeat,10*60000);
 function reserve(n){if(!C.ref||C.status!=='on')return Promise.resolve(n);var got=null;
   var t=C.ref.child('ctr').transaction(function(c){c=Math.max(+c||1,n);got=c;return c+1},null,false).then(function(r){return r.committed?got:n}).catch(function(){return n});
   return Promise.race([t,new Promise(function(ok){setTimeout(function(){ok(n)},2500)})])}
-window.CloudSync={reserve:reserve,conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
+window.CloudSync={reserve:reserve,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}
