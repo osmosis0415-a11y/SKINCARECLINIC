@@ -41,9 +41,25 @@ function fmt(b){return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':b<10737
 // ---- only send when something actually changed, and at most once every 0.8 s
 var lastBody='',lastPub='',tmr=null;
 function push(){if(!C.ref||C.applying)return;clearTimeout(tmr);tmr=setTimeout(doPush,800)}
+// ---- shared clinic logins: PIN/password hashes + wrapped data key live at scc/<clinic>/keys (signed-in clinic logins only)
+var lastKeySig=null,keyState='unknown'; // unknown | empty | ok | foreign (cloud has another phone's logins: never overwrite automatically)
+function keySig(){return JSON.stringify([S.sec||null,S.vault&&S.vault.w||null,S.vault&&S.vault.kid||null])}
+function pushKeys(){if(!C.ref||!S.vault||!S.sec||!CR.key)return;keyState='ok';if(!S.vault.kid){S.vault.kid=Math.random().toString(36).slice(2,12)}if(!S.keysAt)S.keysAt=Date.now();
+  var k={kid:S.vault.kid,at:S.keysAt,sec:S.sec,w:S.vault.w,by:DEV},pl=payload();pl.keys=k;lastKeySig=keySig();origSave();
+  // sent together with the queue fields so the database rules (which require day/rev/updatedAt) accept it
+  var j=JSON.stringify(pl);count('up',j.length);lastBody=JSON.stringify([pl.q,pl.ctr,pl.act,pl.auto,pl.fees,pl.day]);C.ref.update(JSON.parse(j)).catch(function(e){console.warn('keys',e);keyState='empty';lastKeySig=null})}
+function keysIn(k){
+  if(!k){keyState='empty';if(S.vault&&CR.key)pushKeys();return}
+  if(S.vault&&S.vault.kid&&k.kid===S.vault.kid){keyState='ok';
+    if((k.at||0)>(S.keysAt||0)){S.sec=k.sec;S.vault.w=k.w;S.keysAt=k.at;lastKeySig=keySig();origSave();typeof render==='function'&&render();if(k.by!==DEV)toast('Clinic logins updated')}
+    else if((k.at||0)<(S.keysAt||0))pushKeys();else lastKeySig=keySig();
+    return}
+  keyState='foreign';if(window.A&&A.adoptKeys)A.adoptKeys(k);
+}
 function doPush(){if(!C.ref||C.applying)return;
+  if((keyState==='ok'||keyState==='empty')&&S.vault&&CR.key&&keySig()!==lastKeySig){S.keysAt=Date.now();pushKeys()}
   var p=payload(),body=JSON.stringify([p.q,p.ctr,p.act,p.auto,p.fees,p.day]);
-  if(body!==lastBody){lastBody=body;var j=JSON.stringify(p);count('up',j.length);C.ref.set(JSON.parse(j)).catch(function(e){set('err');console.warn('cloud push',e)})}else C.rev--;
+  if(body!==lastBody){lastBody=body;var j=JSON.stringify(p);count('up',j.length);C.ref.update(JSON.parse(j)).catch(function(e){set('err');console.warn('cloud push',e)})}else C.rev--;
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
 function statusUrl(){return new URL('status.html?c='+C.uid,location.href).href}
 function poster(){
@@ -64,6 +80,7 @@ function listen(uid){
   var first=true;
   C.ref.on('value',function(snap){
     var v=snap.val();set('on');try{count('down',JSON.stringify(v||'').length+120)}catch(e){}if(!C.ref)return;
+    try{keysIn(v&&v.keys)}catch(e){console.warn('keys in',e)}
     if(first){first=false;
       if(!v){push();return}
       // first connect: keep whichever side changed most recently
@@ -113,7 +130,11 @@ var origSave=window.save;
 window.save=function(){origSave.apply(this,arguments);push()};
 addEventListener('online',function(){if(pref().on&&!C.ref&&window.SCC_READY!==false)start()});
 addEventListener('offline',function(){if(C.ref)set('offline')});
-window.CloudSync={menu:menu,start:start,status:function(){return C.status},usage:U};
+async function join(email,pw){await libs();app();await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);var u=(await firebase.auth().signInWithEmailAndPassword(email,pw)).user;
+  var a=(await firebase.database(app()).ref('allowed/'+u.uid).once('value')).val(),cid=typeof a==='string'&&a?a:a===true?u.uid:null;
+  if(!cid)throw new Error('This cloud login is not approved for a clinic yet.');
+  var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});return k}
+window.CloudSync={join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig()},menu:menu,start:start,status:function(){return C.status},usage:U};
 function go(){if(window.SCC_READY===false){set('off');addEventListener('scc-unlocked',function(){start()},{once:true})}else start()}
 chip();if(window.SCC_BOOTED)go();else addEventListener('scc-boot',go,{once:true});
 })();

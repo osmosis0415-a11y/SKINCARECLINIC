@@ -358,9 +358,16 @@ const SECRET={adm:p=>'pin:'+p,doc:p=>'pin:'+p,rcp:p=>'pin:'+p,pass:p=>'pass:'+p,
 async function vWrap(slot,plain){if(!CR.key||!S.vault)return;S.vault.w[slot]=await CR.wrap(SECRET[slot](plain))}
 async function vOpen(slot,plain){ // unlock the stored data with one secret; true if it worked
   if(!S.vault)return true;if(CR.key)return true;const w=S.vault.w[slot];if(!w)return false;
-  try{CR.key=await CR.unwrap(SECRET[slot](plain),w)}catch(e){return false}
-  if(S.enc){try{const b=JSON.parse(await CR.dec(S.enc));VK.forEach(k=>{if(b[k]!==undefined)S[k]=b[k]});RXREC=b.rx||[]}catch(e){CR.key=null;return false}}
+  let k;try{k=await CR.unwrap(SECRET[slot](plain),w)}catch(e){return false}
+  return openWith(k)}
+async function openWith(k){CR.key=k;
+  if(S.enc){try{const b=JSON.parse(await CR.dec(S.enc));VK.forEach(x=>{if(b[x]!==undefined)S[x]=b[x]});RXREC=b.rx||[]}catch(e){CR.key=null;return false}}
   norm();window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();return true}
+// stay unlocked across a page refresh for up to 12 h (this browser tab / app session only)
+async function sessSet(r){try{if(!r)return sessionStorage.removeItem('scc_sess');const o={r,exp:Date.now()+12*3600e3};if(CR.key)o.k=B64(await crypto.subtle.exportKey('raw',CR.key));sessionStorage.setItem('scc_sess',JSON.stringify(o))}catch(e){}}
+async function sessRestore(){try{const o=JSON.parse(sessionStorage.getItem('scc_sess')||'null');if(!o||o.exp<Date.now()||!S.sec||!ROLES[o.r])return false;
+  if(S.vault){if(!o.k)return false;const k=await crypto.subtle.importKey('raw',UB(o.k),{name:'AES-GCM',length:256},true,['encrypt','decrypt']);if(!(await openWith(k)))return false}
+  $('lock').style.display='none';ROLE=null;A.role(o.r,true);return true}catch(e){return false}}
 function dataReady(){if(window.SCC_READY)return;window.SCC_READY=true;dispatchEvent(new Event('scc-unlocked'));render()}
 let saveWarned=false,SQ=Promise.resolve();
 function wr(j){let ls=true;try{localStorage.setItem(KEY,j)}catch(e){ls=false;try{localStorage.removeItem(KEY)}catch(x){}}
@@ -633,12 +640,29 @@ pin(){
     if(!okd)return Swal.fire({icon:'error',title:'Cannot open patient data',text:r==='adm'?'The stored data could not be unlocked with this PIN. Use "Forgot PIN? Reset" with your finance password or recovery code.':'This login was set before encryption was turned on. Ask Admin to set the '+ROLES[r].n+' PIN again (Menu → Logins).'});
     $('lock').style.display='none';G.good();A.role(r);if(r==='adm'&&!S.vault)A.migrate(pv)})
 },
+async join(){
+  const f=await Swal.fire({title:'🔗 Join my clinic',html:'<p style="font-size:.85rem;text-align:left">Sign in with the clinic\'s cloud login. This phone will then use the same Admin, Doctor and Reception PINs as the other clinic phones.</p><input id="jn1" class="swal2-input" type="email" placeholder="Clinic cloud email"><input id="jn2" class="swal2-input" type="password" placeholder="Cloud password">',
+    showCancelButton:true,confirmButtonText:'Join',preConfirm:()=>{const e=$('jn1').value.trim(),w=$('jn2').value;if(!e||!w)return Swal.showValidationMessage('Enter email and password');return{e,w}}});
+  if(!f.isConfirmed)return false;
+  let k;try{k=await CloudSync.join(f.value.e,f.value.w)}catch(e){await Swal.fire({icon:'error',title:'Could not join',text:(e&&(e.message||e.code))||String(e)});return false}
+  if(!k||!k.sec||!k.w){await Swal.fire({icon:'info',title:'No clinic logins in the cloud yet',text:'Open the app on the main (Admin) phone first and make sure cloud sync is on there. It shares the logins automatically. Then try again.'});return false}
+  S.sec=k.sec;S.vault={v:1,kid:k.kid,w:k.w};S.keysAt=k.at;window.SCC_READY=false;save();A.lkLabel();
+  $('lock').style.display='flex';$('lkm').textContent='Joined. Enter your clinic PIN.';setTimeout(()=>$('pin').focus(),300);return true},
+async adoptKeys(k){
+  if(A._adopting||A._adoptLater===k.kid)return;A._adopting=true;
+  try{const r=await Swal.fire({icon:'info',title:'Use the clinic\'s shared logins?',html:'<p style="font-size:.86rem;text-align:left">The clinic\'s PINs are saved in the cloud, but this phone still has its own. Enter a <b>clinic</b> PIN (the Admin, Doctor or Reception PIN used on the main phone) to switch this phone over. The data on this phone stays.</p><input id="ak1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="Clinic PIN">',
+    showCancelButton:true,cancelButtonText:'Later',showDenyButton:ROLE==='adm',denyButtonText:'Make THIS phone\'s PINs the clinic\'s',confirmButtonText:'Switch',
+    preConfirm:async()=>{const v=$('ak1').value;if(!/^\d{4}$/.test(v))return Swal.showValidationMessage('4-digit PIN');for(const sl of ['adm','doc','rcp']){if(!k.w[sl])continue;try{return{key:await CR.unwrap('pin:'+v,k.w[sl]),sl}}catch(e){}}return Swal.showValidationMessage('That is not a clinic PIN')}});
+  if(r.isDenied){if(!S.vault||!CR.key)return toast('Turn on encryption on this phone first (log in as Admin)','warning');S.keysAt=Date.now();CloudSync.pushKeys();L('This phone\'s logins made the clinic\'s');toast('Other phones will be asked to switch');return}
+  if(!r.isConfirmed){A._adoptLater=k.kid;return}
+  CR.key=r.value.key;S.sec=k.sec;S.vault={v:1,kid:k.kid,w:k.w};S.keysAt=k.at;try{localStorage.removeItem('scc_rx_rec')}catch(e){}CloudSync.keysAdopted();L('Switched to the clinic\'s shared logins');commit();
+  const role={adm:'adm',doc:'doc',rcp:'rec'}[r.value.sl];A.role(role);toast('This phone now uses the clinic PINs')}finally{A._adopting=false}},
 async migrate(pin){
   const r=await Swal.fire({icon:'info',title:'🔐 Protect patient data',html:'<p style="text-align:left;font-size:.88rem">Patient names, queue, finance history and prescriptions on this device will be <b>encrypted</b>. Only the clinic PINs, the finance password or the recovery code can open them. A lost phone shows nothing readable.<br><br>Enter the finance password to switch it on. You will get a new recovery code.<br>Doctor and Reception PINs must be set again after this (Menu → Logins).</p><input id="mg1" type="password" class="swal2-input" placeholder="Finance password">',
     showCancelButton:true,confirmButtonText:'Encrypt now',cancelButtonText:'Later',preConfirm:()=>{const v=$('mg1').value;if(H(v)!==S.sec.pass)return Swal.showValidationMessage('Wrong finance password');return v}});
   if(!r.isConfirmed)return;
   const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
-  await CR.gen();S.vault={v:1,w:{}};await vWrap('adm',pin);await vWrap('pass',r.value);await vWrap('rec',rc);S.sec.rec=H(rc);delete S.sec.doc;delete S.sec.rcp;
+  await CR.gen();S.vault={v:1,kid:Math.random().toString(36).slice(2,12),w:{}};await vWrap('adm',pin);await vWrap('pass',r.value);await vWrap('rec',rc);S.sec.rec=H(rc);delete S.sec.doc;delete S.sec.rcp;
   try{localStorage.removeItem('scc_rx_rec')}catch(e){}window.SCC_READY=true;L('Encryption switched on');commit();
   await Swal.fire({icon:'success',title:'Encrypted. Write down your NEW recovery code',html:'<p style="font-size:1.6rem;font-weight:800;letter-spacing:.15em;text-align:center;margin:.5rem 0">'+rc.slice(0,4)+'-'+rc.slice(4)+'</p><p class="m" style="text-align:center">The old recovery code no longer works. Next: set the Doctor and Reception PINs again.</p>',confirmButtonText:'I have written it down',allowOutsideClick:false,allowEscapeKey:false});
   A.users();
@@ -648,6 +672,7 @@ async setup(reset){
     title:reset?'Set a new PIN & password':'First-time setup',
     html:'<input id="n1" type="password" inputmode="numeric" maxlength="4" class="swal2-input" placeholder="New 4-digit PIN"><input id="n2" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',
     allowOutsideClick:false,
+    showDenyButton:!reset,denyButtonText:'🔗 Join my clinic (use the clinic\'s PINs)',
     allowEscapeKey:false,
     confirmButtonText:'Save',
     preConfirm:()=>{
@@ -657,10 +682,11 @@ async setup(reset){
       return[a,b];
     }
   });
+  if(r.isDenied){const j=await A.join();if(j)return 'joined';return A.setup(reset)}
   const rc=Array.from(crypto.getRandomValues(new Uint8Array(8)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
   S.sec={pin:H(r.value[0]),pass:H(r.value[1]),rec:H(rc)};
   if(reset&&S.sec0){S.sec.doc=S.sec0.doc;S.sec.rcp=S.sec0.rcp}delete S.sec0;
-  if(!S.vault&&!reset){await CR.gen();S.vault={v:1,w:{}};window.SCC_READY=true;try{localStorage.removeItem('scc_rx_rec')}catch(e){}}
+  if(!S.vault&&!reset){await CR.gen();S.vault={v:1,kid:Math.random().toString(36).slice(2,12),w:{}};window.SCC_READY=true;try{localStorage.removeItem('scc_rx_rec')}catch(e){}}
   if(S.vault&&CR.key){await vWrap('adm',r.value[0]);await vWrap('pass',r.value[1]);await vWrap('rec',rc)}
   commit();
   $('lock').style.display='none';A.role('adm');
@@ -674,8 +700,8 @@ async auth(){
   if(H(r.value)===S.sec.pass){G.good();ok=true;A.go('fin')}else G.fail('password');
 },
 lock(){ok=false;A.go('rec')},
-role(r){ROLE=r;ok=false;const h=document.documentElement;h.classList.remove('r-adm','r-doc','r-rec');h.classList.add('r-'+r);$('rolec').textContent=ROLES[r].i;L('Logged in as '+ROLES[r].n);commit();render();A.go('rec')},
-logout(){if(ROLE==='adm'&&!S.sec.doc&&!S.sec.rcp){toast('No Doctor or Reception PIN yet. Set them first.','warning');return A.users()}if(ROLE)L('Logged out ('+ROLES[ROLE].n+')');ROLE=null;ok=false;document.documentElement.classList.remove('r-adm','r-doc','r-rec');$('rolec').textContent='';A.stop&&A.stop();commit();$('pin').value='';A.lkLabel();$('lock').style.display='flex';G.tick();setTimeout(()=>$('pin').focus(),200)},
+role(r,quiet){ROLE=r;ok=false;sessSet(r);const h=document.documentElement;h.classList.remove('r-adm','r-doc','r-rec');h.classList.add('r-'+r);$('rolec').textContent=ROLES[r].i;if(!quiet){L('Logged in as '+ROLES[r].n);commit()}render();A.go('rec')},
+logout(){sessSet(null);if(ROLE==='adm'&&!S.sec.doc&&!S.sec.rcp){toast('No Doctor or Reception PIN yet. Set them first.','warning');return A.users()}if(ROLE)L('Logged out ('+ROLES[ROLE].n+')');ROLE=null;ok=false;document.documentElement.classList.remove('r-adm','r-doc','r-rec');$('rolec').textContent='';A.stop&&A.stop();commit();$('pin').value='';A.lkLabel();$('lock').style.display='flex';G.tick();setTimeout(()=>$('pin').focus(),200)},
 async fresh(){
   if(ROLE!=='adm')return toast('Only Admin can do this','warning');
   const all=[...S.arch,...S.q],rx=(()=>{try{return JSON.parse(localStorage.getItem('scc_rx_rec')||'[]').length}catch(e){return 0}})();
@@ -1278,7 +1304,7 @@ $('nav').onclick=e=>{const b=e.target.closest('[data-t]');b&&A.go(b.dataset.t)};
   let idbOK=true;try{const raw=await IDB.get();const d=raw?JSON.parse(raw):null;if(d&&(d.q||d.enc)&&(d.savedAt||0)>(S.savedAt||0)){S={...S,...d};norm()}}catch(e){idbOK=false}
   if(!lsOK&&!idbOK)$('stw').style.display='block';
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec)A.setup().then(()=>A.users());else setTimeout(()=>$('pin').focus(),300);
+  bootData();window.SCC_BOOTED=true;dispatchEvent(new Event('scc-boot'));DISK.load();render();G.tick();A.lkLabel();if(!S.sec){A.setup().then(j=>{if(j!=='joined')A.users()})}else if(!(await sessRestore()))setTimeout(()=>$('pin').focus(),300);
 })();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').then(rg=>{const tell=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){const d=document.createElement('div');d.style.cssText='position:fixed;left:.75rem;right:.75rem;bottom:5rem;z-index:70;background:#0f172a;color:#fff;border-radius:1rem;padding:.8rem 1rem;font-weight:700;text-align:center;box-shadow:0 10px 30px #0005;cursor:pointer';d.textContent='✨ New version ready. Tap here to update';d.onclick=()=>location.reload();document.body.appendChild(d)}})};if(rg.installing)tell(rg.installing);rg.addEventListener('updatefound',()=>tell(rg.installing));setInterval(()=>rg.update().catch(()=>{}),30*60000)}).catch(()=>{});
 </script><script src="cloudsync.js"></script><script src="rxpad.js"></script><script>
