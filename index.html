@@ -1164,7 +1164,7 @@ async scan(raw,src){
     }
     const r=await Swal.fire({
       title:tk,
-      html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.svp(this.value)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="spl" class="swal2-input" placeholder="Place / village (optional)"><input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)">
+      html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.phIn(this)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="spl" class="swal2-input" placeholder="Place / village (optional)"><input id="sn1" class="swal2-input" placeholder="Patient full name" oninput="A.sv(this.value)">
             <select id="sv" class="swal2-select"><option value="1st">1st Visit — ₹${S.fees[0]}</option><option value="2nd">2nd Visit — ₹${S.fees[1]}</option></select>
             <p id="sh" class="m" style="display:none;color:#059669">Returning patient detected</p>`,
       showCancelButton:true,
@@ -1185,6 +1185,8 @@ last(n){
   return{l,days:Math.round((new Date(today()+'T00:00:00')-new Date(l+'T00:00:00'))/864e5)};
 },
 pf(){const d=String(($('sph1')||{}).value||'').replace(/\D/g,'').slice(-10);return{age:String(($('sag')||{}).value||'').replace(/\D/g,'').slice(0,3),sex:($('ssx')||{}).value||'',place:String(($('spl')||{}).value||'').trim(),phone:d.length===10?d:''}},
+phIn(e){ // mobile box takes digits only; letters typed here by mistake (cursor in the wrong box) go to the name box instead of being lost
+  const L=e.value.replace(/[\d+\s-]/g,'');if(L){e.value=e.value.replace(/[^\d+\s-]/g,'');const n=$('sn1');if(n){n.value=(n.value+L).replace(/^\s+/,'');n.focus();A.sv(n.value)}}A.svp(e.value)},
 svp(v){const d=String(v||'').replace(/\D/g,'').slice(-10);if(d.length!==10)return;
   const vs=[...S.arch,...S.q].filter(p=>p.phone===d).sort((a,b)=>(b.scannedAt||0)-(a.scannedAt||0)),rx=RXREC.filter(x=>x.p&&x.p.phone===d).sort((a,b)=>(b.ts||0)-(a.ts||0));
   const nm=(vs[0]&&vs[0].name)||(rx[0]&&rx[0].p.name);if(!nm)return;
@@ -1228,7 +1230,7 @@ async walkin(){
   }
   const r=await Swal.fire({
     title:`Walk-in Token ${pad(n)}`,
-    html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.svp(this.value)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="spl" class="swal2-input" placeholder="Place / village (optional)"><input id="sn1" class="swal2-input" placeholder="Patient full name (optional)" oninput="A.sv(this.value)">
+    html:`<input id="sph1" class="swal2-input" inputmode="tel" maxlength="14" placeholder="Mobile (optional, finds returning patients)" oninput="A.phIn(this)"><div style="display:flex;gap:.4rem;width:86%;margin:0 auto"><input id="sag" class="swal2-input" inputmode="numeric" maxlength="3" placeholder="Age" style="flex:1;width:auto"><select id="ssx" class="swal2-select" style="flex:1;width:auto"><option value="">Sex</option><option>M</option><option>F</option><option>Other</option></select></div><input id="spl" class="swal2-input" placeholder="Place / village (optional)"><input id="sn1" class="swal2-input" placeholder="Patient full name (optional)" oninput="A.sv(this.value)">
           <select id="sv" class="swal2-select" style="width:86%;margin:0.375rem auto">
             <option value="1st">1st Visit — ₹${S.fees[0]}</option>
             <option value="2nd">2nd Visit — ₹${S.fees[1]}</option>

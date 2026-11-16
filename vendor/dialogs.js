@@ -82,7 +82,7 @@
       if(b=pop.querySelector('.sw-cn'))b.onclick=function(){dismiss('cancel')};
       current={pop:pop,close:close,msg:null};
       if(o.didOpen)try{o.didOpen(pop)}catch(e){}
-      setTimeout(function(){var f=inp||pop.querySelector('input,select,textarea')||pop.querySelector('.sw-ok');f&&f.focus()},50);
+      setTimeout(function(){if(pop.contains(document.activeElement))return; /* the person is already typing in a box: never move the cursor */var f=inp||pop.querySelector('input,select,textarea')||pop.querySelector('.sw-ok');f&&f.focus()},50);
     });
   }
 
