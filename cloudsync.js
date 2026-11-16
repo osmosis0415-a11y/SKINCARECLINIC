@@ -208,13 +208,26 @@ function apply(v){
     C.rev=Math.max(C.rev,v.rev||0);keepBase();origSave();typeof render==='function'&&render()}finally{C.applying=false}
   dupWarn();push();
 }
+// ---- Doctor -> reception bell at scc/<clinic>/bell = {at,by,ack}. No patient data. A bell rings only once per phone,
+// only if it is less than 3 minutes old, and never for bells sent before this phone connected.
+var bellSeen=null,ackSeen=0;
+function bellIn(b){var at=b&&+b.at||0;
+  if(bellSeen===null){bellSeen=at;ackSeen=b&&b.ack&&+b.ack.at||0;return}
+  if(b&&b.ack&&b.by===DEV&&(+b.ack.at||0)>ackSeen){ackSeen=+b.ack.at;window.A&&A.bellAcked&&A.bellAcked(b)}
+  if(b&&b.ack&&b.by!==DEV&&window.A&&A.bellStop)A.bellStop(b); // answered on another phone: stop ringing here too
+  if(at>bellSeen){bellSeen=at;if(b.ack)return;if(b.by!==DEV&&Math.abs(Date.now()+(C.skew||0)-at)<180000&&window.A&&A.ring)A.ring(b)}}
+function bellSend(msg){if(!C.ref||C.status!=='on')return Promise.reject(new Error('offline'));
+  var b={at:Date.now()+(C.skew||0),by:DEV,msg:String(msg||'').slice(0,80),ack:null};count('up',120);return C.ref.child('bell').set(b)}
+function bellAck(b){if(!C.ref||!b)return Promise.resolve();count('up',80);
+  return C.ref.child('bell').transaction(function(c){if(!c||c.at!==b.at||c.ack)return;c.ack={at:Date.now()+(C.skew||0),by:DEV,name:devName()};return c},null,false).catch(function(){})}
 function watchBlock(cid){try{var u=firebase.auth().currentUser;if(!u)return;firebase.database(app()).ref('rxs/'+cid+'/blocked/'+u.uid).on('value',function(x){if(x.val()===true){stop();if(window.A&&A.selfWipe)A.selfWipe()}},function(){})}catch(e){}}
 function listen(uid){watchBlock(uid);
   C.uid=uid;loadBase();C.ref=firebase.database(app()).ref('scc/'+uid);C.pub=firebase.database(app()).ref('pub/'+uid);
-  var first=true;
+  var first=true;bellSeen=null;
   C.ref.on('value',function(snap){
     var v=snap.val();set('on');try{count('down',(v?bytesIn(v.q):0)+200)}catch(e){}if(!C.ref)return;
     try{keysIn(v&&v.keys)}catch(e){console.warn('keys in',e)}
+    try{bellIn(v&&v.bell)}catch(e){console.warn('bell',e)}
     if(first){first=false;
       if(!v){base={q:{},s:null};push();return}
       // first connect (also after working offline): merge both sides, nothing is overwritten
@@ -277,7 +290,7 @@ setInterval(devBeat,10*60000);
 function reserve(n){if(!C.ref||C.status!=='on')return Promise.resolve(n);var got=null;
   var t=C.ref.child('ctr').transaction(function(c){c=Math.max(+c||1,n);got=c;return c+1},null,false).then(function(r){return r.committed?got:n}).catch(function(){return n});
   return Promise.race([t,new Promise(function(ok){setTimeout(function(){ok(n)},2500)})])}
-window.CloudSync={reserve:reserve,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
+window.CloudSync={reserve:reserve,bell:bellSend,bellAck:bellAck,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}
