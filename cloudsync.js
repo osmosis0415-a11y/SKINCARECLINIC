@@ -46,7 +46,7 @@ function qKey(p){return String(p.id).replace(/[.#$\[\]\/]/g,'_')}
 // cloud that differs from base. Both are kept, field by field, so two phones working at the same moment never
 // erase each other's patients. base is saved (encrypted, with the queue) so this also works after the app was
 // closed offline and reopened.
-var base={q:{},s:null},legacyQ=false,pend=0,ghosts=[];
+var base={q:{},s:null},legacyQ=false,pend=0,ghosts=[],dirt={},pushNo=0;
 var SCAL=['wipeAt','ctr','act','auto','fees','day'];
 function scal(){return{wipeAt:S.wipeAt||0,ctr:S.ctr||1,act:S.act||null,auto:!!S.auto,fees:S.fees,day:(typeof today==='function'?today():'')}}
 function rscal(v){return{wipeAt:v.wipeAt||0,ctr:v.ctr||1,act:v.act||null,auto:!!v.auto,fees:v.fees||S.fees,day:v.day||''}}
@@ -56,11 +56,13 @@ function locMap(){var m={};(S.q||[]).forEach(function(p,i){var o=clone(p);o.o=i;
 function remMap(q){var m={};ghosts=[];if(Array.isArray(q))q.forEach(function(p,i){if(p&&p.id!=null){var o=window.cleanP?cleanP(p):clone(p);if(!o)return;if(o.o==null)o.o=i;m[qKey(p)]=o}});
   else Object.keys(q||{}).forEach(function(k){if(!q[k])return;if(q[k].id==null){ghosts.push(k);return}var c=window.cleanP?cleanP(q[k]):clone(q[k]);if(c)m[k]=c}); // a half record (an edit that reached the cloud after the patient was removed) is cleaned up
   return m}
-function loadBase(){var b=S.qb;base=b&&b.cid===C.uid?{q:b.q||{},s:b.s||null}:{q:{},s:null}}
-// base is stored only when the cloud has confirmed every write, so a write lost by closing the app offline is resent, not treated as deleted
-function keepBase(){if(pend)return;S.qb={cid:C.uid,q:base.q,s:base.s}}
+function loadBase(){var b=S.qb;base=b&&b.cid===C.uid?{q:b.q||{},s:b.s||null}:{q:{},s:null};dirt=b&&b.cid===C.uid&&b.d||{}}
+// base (last cloud state seen) is always stored; 'dirt' lists this phone's changes the cloud has not confirmed yet, so after
+// closing the app offline they are resent instead of being taken as deleted, and old values are never mistaken for new ones
+function keepBase(){S.qb={cid:C.uid,q:base.q,s:base.s,d:dirt}}
 function same(a,b){return canon(a)===canon(b)}
-function merge1(b,l,r){ // one patient: base, local, remote (undefined = absent)
+function merge1(b,l,r,d){ // one patient: base, local, remote (undefined = absent), d = unconfirmed change on this phone
+  if(d){if(!l)return null;if(!r)return l}
   if(b&&!l)return null;            // deleted on this phone (cancel / close day / undo): deletion wins
   if(b&&!r)return null;            // deleted on another phone: deletion wins
   if(!l)return r||null;            // new from another phone
@@ -68,7 +70,7 @@ function merge1(b,l,r){ // one patient: base, local, remote (undefined = absent)
   var bb=b||{},out=Object.assign({},r),ks={};Object.keys(l).concat(Object.keys(bb)).forEach(function(k){ks[k]=1});
   Object.keys(ks).forEach(function(k){if(!same(l[k],bb[k])){if(l[k]===undefined)delete out[k];else out[k]=l[k]}});
   return out}
-function mergeS(b,l,r){var out={},bb=b||{};SCAL.forEach(function(k){out[k]=!b?r[k]:(!same(l[k],bb[k])?l[k]:r[k])});
+function mergeS(b,l,r){var out={},bb=b||{};SCAL.forEach(function(k){out[k]=dirt['s/'+k]?l[k]:!b?r[k]:(!same(l[k],bb[k])?l[k]:r[k])});
   // counter: a reset (close day) on one side wins; if both phones moved it, the higher number wins so none repeats
   if(!b||(!same(l.ctr,bb.ctr)&&!same(r.ctr,bb.ctr)))out.ctr=Math.max(+l.ctr||1,+r.ctr||1);
   out.wipeAt=Math.max(l.wipeAt||0,r.wipeAt||0);return out}
@@ -164,9 +166,11 @@ function doPush(){if(!C.ref||C.applying)return;
     ghosts.forEach(function(k){if(!lm[k]){upd['q/'+k]=null;n++}});ghosts=[]}
   // only scalars this phone changed are sent, so a stale value never overwrites another phone's newer one
   SCAL.forEach(function(k){if(k!=='day'&&(!base.s||!same(ls[k],base.s[k]))){upd[k]=ls[k];n++}});
-  if(n){var p=payload();Object.assign(p,upd);var prev=base;base={q:lm,s:ls};legacyQ=false;pend++;
+  if(n){var p=payload();Object.assign(p,upd);var prev=base,no=Date.now()*1000+(++pushNo%1000),mine=[];base={q:lm,s:ls};legacyQ=false;pend++;
+    Object.keys(upd).forEach(function(k){var x=k==='q'?Object.keys(lm).map(function(q){return'q/'+q}):[k.indexOf('q/')===0?'q/'+k.split('/')[1]:'s/'+k];x.forEach(function(d){dirt[d]=no;mine.push(d)})});
+    keepBase();origSave();
     var j=JSON.stringify(p);count('up',j.length);
-    C.ref.update(p).then(function(){pend--;if(!pend){keepBase();origSave()}})
+    C.ref.update(p).then(function(){pend--;mine.forEach(function(d){if(dirt[d]===no)delete dirt[d]});keepBase();origSave()})
      .catch(function(e){pend--;base=prev;set('err');console.warn('cloud push',e)})}
   if(C.pub){var b=pub(),k=JSON.stringify([b.clinic,b.day,b.serving,b.waiting,b.done,b.noshow,b.avgMin]);if(k!==lastPub){lastPub=k;var t=JSON.stringify(b);count('up',t.length);C.pub.set(JSON.parse(t)).catch(function(e){console.warn('pub',e)})}}}
 function statusUrl(tok,cd){return new URL('status.html?c='+C.uid+(isDefault()?'':'&d='+encodeURIComponent(CONF.databaseURL.replace(/^https:\/\//,'')))+(tok?'&t='+encodeURIComponent(tok):'')+(cd?'&cd='+cd:''),location.href).href}
@@ -185,13 +189,17 @@ function apply(v){
   // first sync after this update (no saved base yet): the cloud is the reference; a patient only on this phone is kept
   // if it was added after the cloud last changed (e.g. registered offline), so old, already-closed patients don't come back
   var noBase=!base.s&&!!v.updatedAt;
-  Object.keys(ks).forEach(function(k){if(myWipe&&!lm[k]&&rm[k])return;if(noBase&&lm[k]&&!rm[k]&&(lm[k].timestamp||0)<=v.updatedAt)return;
-    var m=merge1(b[k],lm[k],rm[k]);if(m)out.push(m)});
+  Object.keys(ks).forEach(function(k){if(myWipe&&!lm[k]&&rm[k])return;if(noBase&&lm[k]&&!rm[k]&&!dirt['q/'+k]&&(lm[k].timestamp||0)<=v.updatedAt)return;
+    var m=merge1(b[k],lm[k],rm[k],dirt['q/'+k]);if(m)out.push(m)});
   out.sort(function(x,y){return((x.o||0)-(y.o||0))||((x.timestamp||0)-(y.timestamp||0))});
   try{var td=typeof today==='function'?today():'',keep={};out.forEach(function(p){keep[qKey(p)]=1});
     var gone=Object.keys(lm).filter(function(k){return !keep[k]&&b[k]&&((out.length===0&&(+v.ctr||1)===1)||(lm[k].scanDate&&lm[k].scanDate<td))}).map(function(k){var c=Object.assign({},lm[k]);delete c.o;return c});
     if(gone.length&&window.A&&A.archiveGone)A.archiveGone(gone)}catch(e){}
   var rs=rscal(v),sc=mergeS(base.s,scal(),rs);
+  // an unconfirmed change that the cloud already shows is confirmed (also clears marks left from before the app was reopened)
+  var om={};out.forEach(function(p){om[qKey(p)]=p});
+  if(!pend)Object.keys(dirt).forEach(function(d){var k=d.slice(2); // only when nothing is in flight: the local view of the cloud includes unsent writes
+   if(d[0]==='q'?same(om[k],rm[k]):same(sc[k],rs[k]))delete dirt[d]});
   // the cloud's queue becomes the new base; anything kept only from this phone is pushed right after
   base={q:rm,s:rs};legacyQ=Array.isArray(v.q);
   C.applying=true;
