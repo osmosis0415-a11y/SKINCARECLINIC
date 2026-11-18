@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="te"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Token Status · Skin Care Clinic</title><meta name="theme-color" content="#0284c7">
+<title>Token Status · Skin Care Clinic</title><meta name="theme-color" content="#0284c7"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta name="description" content="Live token queue status for patients.">
 <link rel="icon" href="icon-192.png">
 <style>
 @font-face{font-family:"PJS";src:url("vendor/PlusJakartaSans.woff2") format("woff2");font-weight:200 800}
@@ -21,7 +21,7 @@ button.al{background:#f59e0b;color:#1f1300;margin-top:4px}button.al.on{backgroun
 </style></head><body><div class="w">
 <h1 id="cn">Skin Care Clinic</h1><div class="sub"><span class="dot" id="dot"></span><span id="live">Connecting… / కనెక్ట్ అవుతోంది…</span></div>
 <div id="app"></div>
-<div class="foot">Only token numbers are shown here. No names. · ఇక్కడ పేర్లు చూపబడవు.</div>
+<div class="foot">Only token numbers are shown here. No names. · ఇక్కడ పేర్లు చూపబడవు.<br><a href="privacy.html">Privacy notice · గోప్యతా నోటీసు</a></div>
 </div>
 <script>
 'use strict';
@@ -48,7 +48,7 @@ function draw(){D=fix(D);
   if(D&&isToday)h+=`<div class="c"><div class="lb">Now serving · ఇప్పుడు</div><div class="big">${esc(D.serving||'—')}</div><div class="te">${D.waiting?D.waiting.length:0} waiting · ${D.waiting?D.waiting.length:0} మంది వేచి ఉన్నారు</div></div>`;
   else if(D)h+=`<div class="c"><div class="msg">${L("Today's queue has not started yet.",'ఈరోజు క్యూ ఇంకా ప్రారంభం కాలేదు.')}</div></div>`;
   if(!tok){
-    h+=`<div class="c"><div class="msg">${L('Enter your token number','మీ టోకెన్ నంబర్ నమోదు చేయండి')}</div><form id="f"><input id="ti" inputmode="numeric" placeholder="OPD-012" autocomplete="off"><button>Check · చూడండి</button></form></div>`;
+    h+=`<div class="c"><div class="msg">${L('Enter your token number','మీ టోకెన్ నంబర్ నమోదు చేయండి')}</div><form id="f"><input id="ti" aria-label="Token number" inputmode="numeric" placeholder="OPD-012" autocomplete="off"><button>Check · చూడండి</button></form></div>`;
   } else if(D&&isToday){
     const w=D.waiting||[], i=w.indexOf(tok), avg=D.avgMin||7;
     let cls='',body='';
