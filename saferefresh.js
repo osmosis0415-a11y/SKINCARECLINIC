@@ -11,11 +11,12 @@
 var KEY='scc_restore',busyWait=null,lastSoft=0;
 function $(id){return document.getElementById(id)}
 function vis(e){return !!(e&&e.offsetParent)}
-function rxOpen(){return vis($('rxDx'))||vis($('rxN'))}
+function rxOpen(){return vis($('rxpRoot'))||vis($('rxpQuick'))||vis($('rxpSetRoot'))||!!(window.RxDock&&RxDock.dirty())}
 function rxDirty(){
-  if(!rxOpen())return false;
+  if(window.RxDock&&RxDock.dirty())return true;
+  var r=$('rxpRoot');if(!vis(r))return false;
   var ids=['rxCC','rxDx','rxAd','rxIn','rxAl'];
-  for(var i=0;i<ids.length;i++){var e=$(ids[i]);if(e&&String(e.value||'').trim())return true}
+  for(var i=0;i<ids.length;i++){var e=r.querySelector('#'+ids[i]);if(e&&String(e.value||'').trim())return true}
   return false}
 function dialogOpen(){var d=document.querySelectorAll('.sw-pop');for(var i=0;i<d.length;i++)if(vis(d[i]))return true;return false}
 function busy(){return rxOpen()||dialogOpen()}
