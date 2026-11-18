@@ -48,12 +48,25 @@ function css(){if(document.getElementById('rxp-css'))return;var s=document.creat
 '.rxp input,.rxp select,.rxp textarea{width:100%;font:inherit;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px;background:#fff;min-height:42px}.rxp textarea{min-height:60px}'+
 '.rxp .g{background:transparent;padding:0;border:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.rxp .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}'+
 '.rxp button{font:inherit;font-weight:700;border:1px solid #cbd5e1;background:#fff;color:#0f172a;text-transform:none;letter-spacing:normal;border-radius:10px;padding:9px 12px;cursor:pointer;min-height:42px}.rxp button.p{background:#0369a1;border-color:#0369a1;color:#fff}.rxp button.d{color:#b91c1c}'+
-'.rxp .m{border:1px solid #e2e8f0;border-radius:12px;padding:8px;margin-bottom:8px;display:grid;grid-template-columns:90px 1fr 100px;gap:6px}.rxp .m .full{grid-column:1/-1}'+
+'.rxp .m{border:1px solid #e2e8f0;border-radius:12px;padding:8px;margin-bottom:8px;background:#fff}.rxp .m .full,.rxp .m>.muted{grid-column:1/-1}.rxp .m>.muted{margin-top:4px}'+
+'.rxp .f{min-width:0}.rxp .f>span{display:block;font-size:11px;font-weight:700;color:#64748b;margin:0 0 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+'.rxp .mh{display:grid;grid-template-columns:auto 96px 1fr auto;gap:6px;align-items:end}.rxp .mh .no{width:26px;height:26px;border-radius:99px;background:#e0f2fe;color:#075985;display:grid;place-items:center;font-size:13px;margin-bottom:8px}'+
+'.rxp .mh .x{min-height:42px;width:42px;padding:0;font-size:16px}.rxp .mg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}'+
+'.rxp #rxM{container-type:inline-size}.rxp .addb{width:100%;border-style:dashed;color:#0369a1;margin-top:2px}.rxp .top{position:sticky;top:0;z-index:3;background:#f1f5f9;margin:-12px -12px 8px;padding:8px 12px}.rxp .top h2{margin:0}'+
+'@container (min-width:620px){.rxp .mg{grid-template-columns:.9fr 1.5fr 1.4fr .9fr 1.2fr}.rxp .m .fn{grid-column:auto}}'+
 '.rxp .m .gn{text-transform:uppercase;font-weight:800}.rxp .warn{background:#fef3c7;color:#92400e;border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:8px}'+
 '.rxp .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e2e8f0;padding:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:2}'+
 '.rxp .muted{color:#64748b;font-size:12px}.rxp .chip{display:inline-block;background:#e0f2fe;color:#075985;border-radius:99px;padding:3px 9px;font-size:12px;font-weight:700;margin:2px;cursor:pointer;border:0}'+
 '.rxp.dock{position:relative;inset:auto;z-index:1;background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:auto;box-shadow:0 10px 15px -3px #00000008}.rxp.dock .w{max-width:none;padding:8px 12px 0}.rxp.dock .cd{border-radius:12px;padding:10px;margin-bottom:8px;background:#f8fafc}.rxp.dock .bar{position:sticky;left:auto;right:auto;bottom:0;margin:0 -12px;border-radius:0 0 18px 18px}'+
-'@media(max-width:560px){.rxp .m{grid-template-columns:1fr 1fr}.rxp .m .gn{grid-column:1/-1}}';document.head.appendChild(s)}
+'.rxp{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.rxp .bar{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}.rxp:not(.dock) .w{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}'+
+'@media(pointer:coarse){.rxp input,.rxp select,.rxp textarea{font-size:16px;min-height:46px}.rxp button{min-height:46px}.rxp .chip{padding:8px 12px;font-size:13px;margin:3px}.rxp .mh .x{min-height:46px;width:46px}}'+
+'@media(max-width:600px){.rxp .w{padding-left:8px;padding-right:8px}.rxp .top{margin:-12px -8px 8px;padding:8px}.rxp h2{font-size:18px}.rxp .cd{padding:10px;border-radius:12px}'+
+ '.rxp .g{grid-template-columns:1fr 1fr}.rxp .m{display:grid;grid-template-columns:26px 1fr 1fr 46px;gap:6px;align-items:end}.rxp .m .mh,.rxp .m .mg{display:contents}'+
+ '.rxp .m .no{grid-area:1/1;margin-bottom:10px}.rxp .m .fg{grid-area:1/2/2/4}.rxp .m .x{grid-area:1/4}.rxp .m .ff{grid-area:2/1/3/3}.rxp .m .fs{grid-area:2/3/3/5}'+
+ '.rxp .m .fd{grid-area:3/1/4/3}.rxp .m .ft{grid-area:3/3/4/5}.rxp .m .fu{grid-area:4/1/5/3}.rxp .m .fn{grid-area:4/3/5/5}.rxp .m>.muted{grid-column:1/-1;margin-top:0}'+
+ '.rxp .bar{flex-wrap:nowrap;gap:6px;padding-left:8px;padding-right:8px}.rxp .bar button{flex:1 1 0;min-width:0;padding:8px 4px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rxp .lg{display:none}'+
+ '.rxp .bar:has(#rxpFin){flex-wrap:wrap}.rxp .bar:has(#rxpFin) #rxpFin{flex-basis:100%}}'+
+'';document.head.appendChild(s)}
 var NEEDS_STRENGTH=['TAB','CAP','SYP','SUSP','DROPS','INJ'];
 function missing(rx,c){c=c||CFG;var m=[],p=rx.p||{};
   if(!String(p.name||'').trim())m.push('Patient name');if(!String(p.age||'').trim())m.push('Patient age');if(!p.sex)m.push('Patient sex');
@@ -88,31 +101,36 @@ RxPad={
   var root=el('<div class="rxp'+(dock?' dock':'')+'" id="'+(dock?'rxpDock':'rxpRoot')+'"></div>');(dock||document.body).appendChild(root);
   if(seed.set&&!existing)applyTpl(seed.set);
   var hist=RxPad.history(rx.p.name,rx.p.phone);
-  function medRow(m,i){return '<div class="m" data-i="'+i+'"><select data-k="f">'+FORMS.map(function(f){return'<option'+(m.f===f?' selected':'')+'>'+f+'</option>'}).join('')+'</select>'+
-    '<input class="gn" data-k="g" list="rxpDrugs" placeholder="GENERIC NAME" value="'+esc(m.g)+'"><input data-k="s" placeholder="Strength (e.g. 250 MG)" value="'+esc(m.s)+'">'+
-    '<select data-k="d"><option value="">Dose / frequency *</option>'+DOSES.map(function(x){return'<option'+(m.d===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
-    '<select data-k="t">'+TIMES.map(function(x){return'<option'+(m.t===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>'+
-    '<input data-k="u" placeholder="Duration * e.g. 14 days" value="'+esc(m.u)+'"><input class="full" data-k="n" placeholder="Note (optional)" value="'+esc(m.n||'')+'">'+
-    (function(){var fx=m.g&&fmlFind(m.g,m.s,m.f);return(m._t?'<div class="muted full">from: '+esc(m._t)+'</div>':'')+(fx?'<div class="muted full">💊 clinic list'+(fx.brand?' · pharmacy: '+esc(fx.brand):'')+(fx.sched?' · <b style="color:#b91c1c">Schedule '+esc(fx.sched)+'</b>':'')+'</div>':(m.g&&FML().length?'<div class="muted full" style="color:#b45309">Not on the clinic medicine list</div>':''))})()+'<button class="d full" data-del="'+i+'">✕ Remove medicine</button></div>'}
+  function medRow(m,i){var F=function(lb,cls,h){return'<div class="f '+cls+'"><span>'+lb+'</span>'+h+'</div>'};
+    return '<div class="m" data-i="'+i+'"><div class="mh"><b class="no">'+(i+1)+'</b>'+
+    F('Form','ff','<select data-k="f">'+FORMS.map(function(f){return'<option'+(m.f===f?' selected':'')+'>'+f+'</option>'}).join('')+'</select>')+
+    F('Generic name *','fg','<input class="gn" data-k="g" list="rxpDrugs" placeholder="GENERIC NAME" autocapitalize="characters" autocomplete="off" value="'+esc(m.g)+'">')+
+    '<button class="d x" data-del="'+i+'" title="Remove medicine" aria-label="Remove medicine '+(i+1)+'">✕</button></div>'+
+    '<div class="mg">'+F('Strength','fs','<input data-k="s" placeholder="250 MG" autocapitalize="characters" value="'+esc(m.s)+'">')+
+    F('Dose *','fd','<select data-k="d"><option value="">Choose…</option>'+DOSES.map(function(x){return'<option'+(m.d===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>')+
+    F('When','ft','<select data-k="t">'+TIMES.map(function(x){return'<option'+(m.t===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select>')+
+    F('Duration *','fu','<input data-k="u" placeholder="e.g. 14 days" value="'+esc(m.u)+'">')+
+    F('Note','fn full','<input data-k="n" placeholder="Optional" value="'+esc(m.n||'')+'">')+'</div>'+
+    (function(){var fx=m.g&&fmlFind(m.g,m.s,m.f);return(m._t?'<div class="muted full">from: '+esc(m._t)+'</div>':'')+(fx?'<div class="muted full">💊 clinic list'+(fx.brand?' · pharmacy: '+esc(fx.brand):'')+(fx.sched?' · <b style="color:#b91c1c">Schedule '+esc(fx.sched)+'</b>':'')+'</div>':(m.g&&FML().length?'<div class="muted full" style="color:#b45309">Not on the clinic medicine list</div>':''))})()+'</div>'}
   function draw(){
    var T=allTpl(),drugs={};Object.keys(T).forEach(function(k){(T[k].m||[]).forEach(function(x){drugs[x[1]]=1})});(CFG.myDrugs||[]).forEach(function(x){drugs[up(x)]=1});REC.slice(-200).forEach(function(r){r.m.forEach(function(x){drugs[x.g]=1})});FML().forEach(function(x){drugs[x.g]=1});
-   root.innerHTML='<div class="w">'+(dock?'':'<div class="row" style="justify-content:space-between"><h2>📝 Prescription</h2><button id="rxpX">✕ Close</button></div>')+
+   root.innerHTML='<div class="w">'+(dock?'':'<div class="row top" style="justify-content:space-between"><h2>📝 Prescription'+(rx.p.token?' <small class="muted">'+esc(rx.p.token)+'</small>':'')+'</h2><button id="rxpX">✕ Close</button></div>')+
    (!CFG.regNo||!CFG.docEn?'<div class="warn">⚠ Add the doctor\'s name, qualification and <b>Registration No.</b> in Rx settings. They are required on every prescription.</div>':'')+
    '<div class="cd"><div class="g"><div><label>Patient name *</label><input id="rxN" value="'+esc(rx.p.name)+'" style="text-transform:uppercase"></div><div><label>Age *</label><input id="rxA" inputmode="numeric" value="'+esc(rx.p.age)+'"></div>'+
    '<div><label>Sex *</label><select id="rxS"><option></option>'+['M','F','Other'].map(function(s){return'<option'+(rx.p.sex===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div>'+
-   '<div><label>Address / place *</label><input id="rxPl" value="'+esc(rx.p.place)+'"></div><div><label>Mobile (optional)</label><input id="rxPh" inputmode="tel" value="'+esc(rx.p.phone)+'"></div><div><label>Weight kg (required under 12 yrs)</label><input id="rxW" inputmode="decimal" value="'+esc(rx.p.wt)+'"></div>'+
+   '<div><label>Address / place *</label><input id="rxPl" value="'+esc(rx.p.place)+'"></div><div><label>Mobile (optional)</label><input id="rxPh" inputmode="tel" value="'+esc(rx.p.phone)+'"></div><div><label>Weight kg (if under 12 yrs)</label><input id="rxW" inputmode="decimal" value="'+esc(rx.p.wt)+'"></div>'+
    '<div><label>Date</label><input id="rxD" type="date" value="'+rx.date+'"></div></div>'+
    (hist.length?'<p class="muted" style="margin:8px 0 0">Previous visits: '+hist.slice(0,3).map(function(h){return dshow(h.date)+' ('+esc(h.dx||'—')+')'}).join(', ')+' <button id="rxpRep" style="min-height:32px;padding:4px 10px">↻ Repeat last Rx</button></p>':'')+'</div>'+
    '<div class="cd"><label>Chief complaints / findings</label><textarea id="rxCC">'+esc(rx.cc)+'</textarea>'+
    '<label>Diagnosis / provisional diagnosis *</label><input id="rxDx" style="text-transform:uppercase;font-weight:700" value="'+esc(rx.dx)+'">'+
    '<label>Known drug allergies</label><input id="rxAl" placeholder="NIL / e.g. SULFA" value="'+esc(rx.allergy)+'">'+
    '<label>Saved prescription sets ★ and templates (edit before printing)</label><div>'+Object.keys(T).map(function(k){var on=(rx.tpls||[]).indexOf(k)>=0;return'<button class="chip" data-tpl="'+esc(k)+'" style="'+(on?'background:#0369a1;color:#fff':k.charAt(0)==='★'?'background:#dcfce7;color:#166534':'')+'">'+(on?'✓ ':'')+esc(k)+'</button>'}).join('')+'</div><p class="muted" style="margin:6px 0 0">Tap more than one for several diagnoses: each adds its diagnosis and medicines. Tap a ✓ one again to remove it.</p></div>'+
-   '<div class="cd"><div class="row" style="justify-content:space-between"><b>℞ Medicines (generic names, CAPITALS)</b><button id="rxpAdd">＋ Add medicine</button></div><div id="rxM" style="margin-top:8px">'+(rx.m.length?rx.m.map(medRow).join(''):'<p class="muted">No medicines yet. Use a template or ＋ Add medicine.</p>')+'</div>'+
+   '<div class="cd"><div class="row" style="justify-content:space-between"><b>℞ Medicines (generic names, CAPITALS)</b><button id="rxpAdd">＋ Add medicine</button></div><div id="rxM" style="margin-top:8px">'+(rx.m.length?rx.m.map(medRow).join(''):'<p class="muted">No medicines yet. Use a template or ＋ Add medicine.</p>')+'</div>'+(rx.m.length?'<button id="rxpAdd2" class="addb">＋ Add another medicine</button>':'')+
    '<datalist id="rxpDrugs">'+Object.keys(drugs).sort().map(function(d){return'<option value="'+esc(d)+'">'}).join('')+'</datalist></div>'+
    '<div class="cd"><label>Investigations advised</label><input id="rxIn" value="'+esc(rx.inv)+'"><label>Advice / instructions</label><textarea id="rxAd">'+esc(rx.adv)+'</textarea>'+
    '<label>Review after</label><div class="row"><select id="rxRv" style="flex:1"><option value="">—</option>'+[[7,'1 week'],[14,'2 weeks'],[21,'3 weeks'],[30,'1 month'],[45,'6 weeks'],[60,'2 months'],[90,'3 months'],[180,'6 months']].map(function(x){return'<option value="'+x[0]+'"'+(String(rx.review)===String(x[0])?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select><span class="muted" id="rxRvD"></span></div></div>'+
    '<p class="muted">'+(opts.storeNote||'Stored only on this device.')+' Sets and templates are starting points; the doctor must verify every medicine, dose and duration.</p></div>'+
-   '<div class="bar">'+(canSet()?'<button id="rxpSet">⚙ Rx settings</button>':'')+'<button id="rxpSet2">★ Save as set</button><button id="rxpSave">💾 Save</button><button'+(opts.finish&&opts.finish.show(rx)?'':' class="p"')+' id="rxpPrint">🖨 Print Rx</button>'+(opts.finish&&opts.finish.show(rx)?'<button class="p" id="rxpFin" style="background:#15803d;border-color:#15803d">'+esc(opts.finish.label(rx))+'</button>':'')+'</div>';
+   '<div class="bar">'+(canSet()?'<button id="rxpSet">⚙<span class="lg"> Rx</span> settings</button>':'')+'<button id="rxpSet2">★ Save<span class="lg"> as</span> set</button><button id="rxpSave">💾 Save</button><button'+(opts.finish&&opts.finish.show(rx)?'':' class="p"')+' id="rxpPrint">🖨 Print Rx</button>'+(opts.finish&&opts.finish.show(rx)?'<button class="p" id="rxpFin" style="background:#15803d;border-color:#15803d">'+esc(opts.finish.label(rx))+'</button>':'')+'</div>';
    if(opts.minimal&&opts.minimal()){['rxCC','rxAl','rxIn','rxPh','rxD'].forEach(function(id){var e=root.querySelector('#'+id);if(!e)return;var box=e.parentNode;if(box&&box.parentNode&&box.parentNode.classList&&box.parentNode.classList.contains('g')){box.style.display='none'}else{e.style.display='none';var l=e.previousElementSibling;if(l&&l.tagName==='LABEL')l.style.display='none'}});
      var ag=parseFloat(rx.p.age);if(!(ag<12)){var w=root.querySelector('#rxW');if(w)w.parentNode.style.display='none'}}
    bind()}
@@ -134,13 +152,16 @@ RxPad={
    root.querySelectorAll('#rxM .m').forEach(function(r){var m=rx.m[+r.dataset.i];r.querySelectorAll('[data-k]').forEach(function(f){m[f.dataset.k]=f.dataset.k==='g'?up(f.value).trim():f.value})})}
   function bind(){
    var xb=root.querySelector('#rxpX');if(xb)xb.onclick=function(){root.remove()};
-   root.querySelector('#rxpAdd').onclick=function(){read();rx.m.push({f:'TAB',g:'',s:'',d:'',t:'After food',u:''});draw()};
+   var addMed=function(){read();rx.m.push({f:'TAB',g:'',s:'',d:'',t:'After food',u:''});draw();var rows=root.querySelectorAll('#rxM .m'),last=rows[rows.length-1];if(last){last.scrollIntoView({block:'center'});var g=last.querySelector('.gn');if(g)try{g.focus({preventScroll:true})}catch(e){}}};
+   root.querySelector('#rxpAdd').onclick=addMed;var a2=root.querySelector('#rxpAdd2');if(a2)a2.onclick=addMed;
    root.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){read();rx.m.splice(+b.dataset.del,1);draw()}});
    root.querySelectorAll('[data-tpl]').forEach(function(b){b.onclick=function(){read();applyTpl(b.dataset.tpl);draw()}});
    root.querySelector('#rxpSet2').onclick=function(){read();if(!rx.m.filter(function(m){return m.g}).length)return alert('Add medicines first, then save them as a set.');var nm=prompt('Name for this prescription set (e.g. ACNE - MILD):',rx.dx||'');if(!nm)return;nm=up(nm).trim();if(sets()[nm]&&!confirm('A set called '+nm+' exists. Replace it?'))return;saveSet(nm,{dx:rx.dx,inv:rx.inv,review:rx.review,cc:rx.cc,m:rx.m.filter(function(m){return m.g}).map(function(m){return[m.f,m.g,m.s,m.d,m.t,m.u,m.n||'']})});flash('Set saved');draw()};
    var rep=root.querySelector('#rxpRep');if(rep)rep.onclick=function(){read();var h=hist[0];rx.dx=rx.dx||h.dx;rx.m=JSON.parse(JSON.stringify(h.m));draw()};
    root.querySelectorAll('.gn').forEach(function(i){i.oninput=function(){var p=i.selectionStart;i.value=up(i.value);try{i.setSelectionRange(p,p)}catch(e){}};
-     i.onchange=function(){read();var row=i.closest('.m'),m=rx.m[+row.dataset.i],fx=fmlFind(m.g);if(fx){m.g=fx.g;if(!m.s)m.s=fx.s;if(fx.f)m.f=fx.f;if(!m.d)m.d=fx.d;if(!m.t||m.t==='After food')m.t=fx.t||m.t;if(!m.u)m.u=fx.u}draw()}});
+     i.onchange=function(){read();var row=i.closest('.m'),m=rx.m[+row.dataset.i],fx=fmlFind(m.g);if(!fx)return;m.g=fx.g;if(!m.s)m.s=fx.s;if(fx.f)m.f=fx.f;if(!m.d)m.d=fx.d;if(!m.t||m.t==='After food')m.t=fx.t||m.t;if(!m.u)m.u=fx.u;
+       setTimeout(function(){var a=document.activeElement,r=a&&a.closest&&a.closest('#rxM .m'),k=a&&a.dataset&&a.dataset.k,ri=r&&r.dataset.i,id=a&&a.id;draw();  // keep the field the doctor tapped next
+         var n=ri!=null&&k?root.querySelector('#rxM .m[data-i="'+ri+'"] [data-k="'+k+'"]'):(id?root.querySelector('#'+id):null);if(n)try{n.focus({preventScroll:true})}catch(e){}},0)}});
    var rv=root.querySelector('#rxRv'),rvd=root.querySelector('#rxRvD');var sh=function(){rvd.textContent=rv.value?'on '+dshow(addDays(root.querySelector('#rxD').value||dk(),+rv.value)):''};rv.onchange=sh;sh();
    var sb=root.querySelector('#rxpSet');if(sb)sb.onclick=function(){read();RxPad.settings(function(){draw()})};
    root.querySelector('#rxpSave').onclick=function(){read();save();flash('Saved')};
