@@ -34,6 +34,7 @@ Rule: one feature per session; every release bumps the cache name in `sw.js` and
 Headless Chrome at 360 px: first-time setup → walk-in → token slip → backup → restore on a fresh profile. No console errors, no CSP violations.
 
 ## Changelog
+- **clinic-v49 (19 Nov 2026):** referrer policy no-referrer → strict-origin, so the Firebase key website lock keeps working (sends only the site name, never the full link).
 - **clinic-v48 (19 Nov 2026):** launch hardening: noindex, CSP, no-referrer, privacy notice, 404, a11y labels, global error log (`scc_errlog` + audit log), removed fake default phone; uptime workflow; this file. Backup → restore tested end to end.
 - **clinic-v47 (19 Nov 2026):** UX pass 1: contrast, tap sizes, compact phone header, cancel-token confirm, hide backup banner for the day.
 - **clinic-v46 (18 Nov 2026):** daily email backup (one-tap share + Apps Script).
