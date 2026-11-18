@@ -1,0 +1,50 @@
+# Free downtime alert. Every 30 minutes GitHub checks that the clinic app,
+# the patient status page and the cloud database answer. If any check fails,
+# it opens an issue in this repo, and GitHub emails the repo owner.
+name: Uptime check
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check site, status page and database
+        id: c
+        run: |
+          set +e
+          SITE="https://osmosis0415-a11y.github.io/SKINCARECLINIC"
+          DB="https://clinic-kiosk-a23db-default-rtdb.asia-southeast1.firebasedatabase.app/.json"
+          fail=""
+          for path in "/" "/status.html" "/sw.js"; do
+            ok=0
+            for try in 1 2 3; do
+              code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 20 "$SITE$path")
+              if [ "$code" = "200" ] && grep -qi "clinic" /tmp/body; then ok=1; break; fi
+              sleep 20
+            done
+            [ $ok = 1 ] || fail="$fail\n- $SITE$path answered HTTP $code"
+          done
+          # The database refuses anonymous reads (401) when it is up and locked, which is what we want.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$DB")
+          case "$code" in 401|403) ;; 200) fail="$fail\n- DATABASE IS OPEN TO THE PUBLIC (HTTP 200). Re-publish docs/firebase-database-rules.json now." ;; *) fail="$fail\n- Firebase database answered HTTP $code" ;; esac
+          printf "%b" "$fail" > /tmp/fail
+          if [ -n "$fail" ]; then echo "down=1" >> $GITHUB_OUTPUT; printf "%b\n" "$fail"; else echo "All OK"; fi
+      - name: Open an issue (GitHub emails you)
+        if: steps.c.outputs.down == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          open=$(gh issue list --label downtime --state open --json number --jq 'length')
+          if [ "$open" = "0" ]; then
+            gh label create downtime --color B60205 --force >/dev/null
+            gh issue create --label downtime --title "Clinic app problem $(TZ=Asia/Kolkata date '+%d %b %H:%M IST')" \
+              --body "$(printf 'The automatic check found a problem:\n'; cat /tmp/fail; printf '\n\nClose this issue once it is fixed.')"
+          fi
+          exit 1
