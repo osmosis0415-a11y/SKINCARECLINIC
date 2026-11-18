@@ -301,7 +301,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 <section id="set">
 <div class="c" style="border:2px solid #0284c7"><div class="sh"><span class="t d">🛡 Admin portal</span><span class="chip bl">Admin only</span></div>
 <p class="m" style="margin:0 0 .5rem;font-size:.8rem">PINs and passwords can only be changed here. Changes reach every clinic phone signed in to the cloud.</p>
-<div class="grid"><button onclick="A.clinicWizard()">🏥 Clinic details (name, doctor, Reg. No., fees)</button><button class="g" onclick="A.cloudSetup()">☁ Clinic cloud / add a phone (QR)</button><button onclick="A.users()">👥 Logins: Doctor / Reception PINs &amp; this phone's role</button><button class="g" onclick="A.secret('pin')">🔑 Change Admin PIN</button><button class="g" onclick="A.secret('pass')">🔒 Change finance password</button><button class="g" onclick="A.newRec()">🧾 New recovery code</button>
+<div class="grid"><button onclick="A.clinicWizard()">🏥 Clinic details (name, doctor, Reg. No., fees)</button><button class="g" onclick="A.pairQR()">📲 Add a new device (QR)</button><button onclick="A.cloudSetup()">☁ Clinic cloud (connect / switch)</button><button onclick="A.users()">👥 Logins: Doctor / Reception PINs &amp; this phone's role</button><button class="g" onclick="A.secret('pin')">🔑 Change Admin PIN</button><button class="g" onclick="A.secret('pass')">🔒 Change finance password</button><button class="g" onclick="A.newRec()">🧾 New recovery code</button>
 <button class="g" onclick="window.RxPad&&RxPad.settings()">📝 Rx format &amp; saved prescription sets</button><button class="g" onclick="A.meds()">💊 Clinic medicine list</button><button class="g" onclick="A.find()">🔎 Patient records</button><button class="g" onclick="A.devices()">📱 Clinic devices / lost phone</button><button class="g" onclick="A.clinicLog()">📜 Full clinic log (all phones)</button><button class="g" onclick="A.testBackup()">🧪 Test a backup (monthly)</button><button class="g" onclick="A.go('ana')">📊 Live analytics</button><button class="g" onclick="A.printers()">🖨 Printer setup (A4 / A5)</button><button class="g" onclick="A.guides()">📄 Staff guides (A4 / A5)</button></div>
 <label style="margin-top:.6rem">Auto-lock when idle (minutes, 0 = never)<input id="sidle" type="number" min="0" max="240" onchange="S.cfg.idleMin=Math.max(0,+this.value||0);save();toast('Saved')"></label></div>
 <div class="c">
@@ -794,14 +794,43 @@ async pin(){
     $('lock').style.display='none';G.good();if(r==='adm')A._admAt=Date.now();A.role(r);if(r==='adm'&&!S.vault)A.migrate(pv)})
 },
 async join(){
-  const f=await Swal.fire({title:'🔗 Join my clinic',html:'<p style="font-size:.85rem;text-align:left">Sign in with the clinic\'s cloud login. This phone will then use the same Admin, Doctor and Reception PINs as the other clinic phones.</p><input id="jn0" class="swal2-input" placeholder="Clinic cloud code (leave empty for Skin Care Clinic)"><input id="jn1" class="swal2-input" type="email" placeholder="Clinic cloud email"><input id="jn2" class="swal2-input" type="password" placeholder="Cloud password">',
-    showCancelButton:true,confirmButtonText:'Join',didOpen:()=>{if(!CloudSync.isDefault())$('jn0').value='(this phone is connected to '+CloudSync.conf().projectId+')',$('jn0').disabled=true},preConfirm:()=>{const e=$('jn1').value.trim(),w=$('jn2').value,c=$('jn0').value.trim();if(!e||!w)return Swal.showValidationMessage('Enter email and password');let conf=null;if(c&&!$('jn0').disabled){try{conf=CloudSync.parseConf(c)}catch(x){return Swal.showValidationMessage(x.message)}}return{e,w,conf}}});
-  if(f.isConfirmed&&f.value.conf&&CloudSync.setConf(f.value.conf))return false;
-  if(!f.isConfirmed)return false;
-  let k;try{k=await CloudSync.join(f.value.e,f.value.w)}catch(e){await Swal.fire({icon:'error',title:'Could not join',text:(e&&(e.message||e.code))||String(e)});return false}
-  if(!k||!k.sec||!k.w){await Swal.fire({icon:'info',title:'No clinic logins in the cloud yet',text:'Open the app on the main (Admin) phone first and make sure cloud sync is on there. It shares the logins automatically. Then try again.'});return false}
-  S.sec=k.sec;S.vault={v:1,kid:k.kid,w:k.w};S.keysAt=k.at;window.SCC_READY=false;save();A.lkLabel();
+  // New devices join only by scanning the one-time QR from the Admin phone (Admin → 📲 Add a new device).
+  let t=window.CloudSync&&CloudSync.pairPending();
+  if(!t){t=await A.pairScan();if(!t)return false}
+  Swal.fire({title:'Joining the clinic…',text:'Connecting to the clinic cloud',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+  let k;try{k=await CloudSync.pairUse(t)}catch(e){await Swal.fire({icon:'error',title:'Could not join',text:(e&&e.message)||String(e)});return false}
+  Swal.close();
+  if(!k||!k.sec||!k.w){await Swal.fire({icon:'info',title:'No clinic logins in the cloud yet',text:'Open the app on the main (Admin) phone first and make sure cloud sync is on there. It shares the logins automatically. Then show a new QR and scan again.'});return false}
+  S.sec=k.sec;S.vault={v:1,kid:k.kid,w:k.w};S.keysAt=k.at;window.SCC_READY=false;save();A.lkLabel();L('Joined the clinic by QR');
   $('lock').style.display='flex';$('lkm').textContent='Joined. Enter your clinic PIN.';setTimeout(()=>$('pin').focus(),300);return true},
+async pairScan(){
+  let sc=null,got=null;const stop=async()=>{if(sc){try{if(sc.isScanning)await sc.stop();sc.clear()}catch(e){}sc=null}};
+  const r=await Swal.fire({title:'📷 Join my clinic',html:'<p style="font-size:.85rem;text-align:left">On the <b>Admin</b> phone open <b>Admin → 📲 Add a new device</b>, then point this camera at the QR.</p><div id="jqr" style="width:100%;max-width:320px;margin:.4rem auto;border-radius:12px;overflow:hidden;background:#0f172a;min-height:200px"></div><label class="m" style="display:block;margin-top:.4rem;cursor:pointer;text-decoration:underline">Camera not working? Use a photo of the QR<input id="jqf" type="file" accept="image/*" style="display:none"></label><p id="jqm" class="m" style="color:#b91c1c;min-height:1em"></p>',
+    showCancelButton:true,showConfirmButton:false,cancelButtonText:'Cancel',
+    didOpen:()=>{const ok=t=>{if(!CloudSync.pairParse(t)){$('jqm').textContent='That is not the clinic pairing QR.';return}got=t;stop().then(()=>Swal.clickConfirm())};
+      $('jqf').onchange=async e=>{const f=e.target.files[0];if(!f)return;await stop();try{const q=new Html5Qrcode('jqr');const t=await q.scanFile(f,true);q.clear();ok(t)}catch(x){$('jqm').textContent='Could not read a QR in that photo.'}};
+      if(location.protocol==='file:'){$('jqm').textContent='The camera needs the app opened from its web link.';return}
+      setTimeout(async()=>{try{sc=new Html5Qrcode('jqr');await sc.start({facingMode:'environment'},{fps:10,qrbox:220},ok,()=>{})}catch(e){$('jqm').textContent='Camera unavailable or blocked. Allow the camera, or use a photo of the QR.'}},200)},
+    willClose:()=>{stop()},preConfirm:()=>got});
+  await stop();return r.isConfirmed?got:null},
+async pairQR(){
+  if(ROLE!=='adm')return toast('Only Admin','warning');
+  if(!window.CloudSync||CloudSync.status()!=='on')return Swal.fire({icon:'info',title:'Turn on cloud sync first',text:'Tap the ☁ badge at the top and sign in with the clinic cloud login on this phone. Then open Admin → 📲 Add a new device again.'});
+  let pw=null,typed=false;if(S.cpw&&CR.key){try{pw=await CR.dec(S.cpw)}catch(e){pw=null}}
+  if(!pw){const r=await Swal.fire({title:'📲 Add a new device',html:'<p style="font-size:.85rem;text-align:left">Enter the clinic <b>cloud password</b> once. It is kept encrypted on this phone, so next time the QR shows straight away.</p><input id="pq1" type="password" class="swal2-input" placeholder="Cloud password" autocomplete="current-password">',
+    showCancelButton:true,confirmButtonText:'Show QR',preConfirm:()=>{const v=$('pq1').value;if(!v)return Swal.showValidationMessage('Enter the cloud password');return v}});
+    if(!r.isConfirmed)return;pw=r.value;typed=true}
+  Swal.fire({title:'Making a one-time QR…',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+  let p;try{p=await CloudSync.pairMake(pw)}catch(e){if(e&&e.badPw&&!typed){delete S.cpw;save();Swal.close();return A.pairQR()}return Swal.fire({icon:'error',title:'Could not make the QR',text:(e&&e.message)||String(e)})}
+  if(typed&&CR.key){try{S.cpw=await CR.enc(pw);save()}catch(e){}}
+  L('Device pairing QR shown');let unw=null,tm=null,joined=false;
+  const r=await Swal.fire({title:'📲 Scan with the new device',html:'<p style="font-size:.85rem">On the new phone/tablet: open the app link (or scan this with its camera), tap <b>📷 Join my clinic</b> and scan.</p><div id="pqr" style="display:flex;justify-content:center;margin:.6rem 0"></div><p class="m">Works <b>once</b>. Expires in <b id="pqt">5:00</b>.</p>',
+    confirmButtonText:'Done',
+    didOpen:()=>{try{new QRCode($('pqr'),{text:p.url,width:240,height:240,correctLevel:QRCode.CorrectLevel.M})}catch(e){}
+      tm=setInterval(()=>{const s=Math.max(0,Math.round((p.exp-Date.now())/1000));const el=$('pqt');if(el)el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');if(!s){clearInterval(tm);Swal.update({title:'⌛ QR expired',html:'<p>Open 📲 Add a new device again for a new QR.</p>'})}},1000);
+      unw=CloudSync.pairWatch(p.id,()=>{joined=true;clearInterval(tm);Swal.update({icon:'success',title:'✅ Device joined',html:'<p>The new device is connected. It now asks for a clinic PIN (Admin, Doctor or Reception).</p>'})})},
+    willClose:()=>{clearInterval(tm);unw&&unw()}});
+  if(!joined)CloudSync.pairCancel(p.id);else{L('New device joined by QR');commit()}},
 async adoptKeys(k){
   if(A._adopting||A._adoptLater===k.kid)return;A._adopting=true;
   try{const r=await Swal.fire({icon:'info',title:'Use the clinic\'s shared logins?',html:'<p style="font-size:.86rem;text-align:left">The clinic\'s PINs are saved in the cloud, but this phone still has its own. Enter a <b>clinic</b> PIN (the Admin, Doctor or Reception PIN used on the main phone) to switch this phone over. The data on this phone stays.</p><input id="ak1" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="Clinic PIN">',
@@ -1058,11 +1087,9 @@ async clinicWizard(first){
 async cloudSetup(){
   if(ROLE!=='adm')return toast('Only Admin','warning');const cs=window.CloudSync,cf=cs.conf(),def=cs.isDefault(),link=location.origin+location.pathname+'?cloud='+cs.code();
   const r=await Swal.fire({title:'☁ Clinic cloud',html:`<div style="text-align:left;font-size:.85rem">This phone uses the cloud project <b>${esc(cf.projectId)}</b>${def?' (Skin Care Clinic)':''}.<br><br>
-   <b>Add another phone to this clinic:</b> scan this QR with the new phone's camera, open the link, then tap <b>🔗 Join my clinic</b>.<div id="cqr" style="display:flex;justify-content:center;margin:.6rem 0"></div>
-   <details><summary class="m">Show code</summary><code style="font-size:.6rem;word-break:break-all">${esc(link)}</code></details><br>
+   <b>Add another phone to this clinic:</b> use <b>Admin → 📲 Add a new device (QR)</b>.<br><br>
    <b>Connect this phone to a different clinic's cloud</b> (a new clinic's own free Firebase project): paste its clinic code or the Firebase web config.<textarea id="cpaste" class="swal2-input" style="height:5rem" placeholder="const firebaseConfig = { apiKey: ... }  or a clinic code"></textarea></div>`,
    showCancelButton:true,cancelButtonText:'Close',confirmButtonText:'Connect this phone',showDenyButton:!def,denyButtonText:'Use Skin Care Clinic cloud',
-   didOpen:()=>{try{new QRCode($('cqr'),{text:link,width:200,height:200})}catch(e){}},
    preConfirm:()=>{const t=$('cpaste').value;if(!t.trim())return Swal.showValidationMessage('Paste a clinic code or Firebase config first');try{return cs.parseConf(t)}catch(e){return Swal.showValidationMessage(e.message)}}});
   if(r.isConfirmed){const k=await Swal.fire({icon:'warning',title:'Switch clinic cloud?',text:'This phone will sign out of the current cloud and connect to project "'+r.value.projectId+'". Its own data stays on it. Then sign in with that clinic\'s cloud login (☁ badge).',showCancelButton:true,confirmButtonText:'Switch'});if(!k.isConfirmed)return;L('Cloud switched to '+r.value.projectId);commit();if(!cs.setConf(r.value))location.reload()}
   else if(r.isDenied){L('Cloud switched back to default');commit();if(!cs.setConf(null))location.reload()}},
@@ -1077,11 +1104,12 @@ async migrate(pin){
   A.users();
 },
 async setup(reset){
+  if(!reset&&window.CloudSync&&CloudSync.pairPending()){const j=await A.join();if(j)return 'joined'}
   const r=await Swal.fire({
     title:reset?'Set a new PIN & password':'First-time setup',
     html:'<input id="n1" aria-label="New PIN" type="password" inputmode="numeric" maxlength="6" class="swal2-input" placeholder="New PIN (6 digits safer)"><input id="n2" aria-label="Finance password" type="password" class="swal2-input" placeholder="Finance password (6+ chars)">',
     allowOutsideClick:false,
-    showDenyButton:!reset,denyButtonText:'🔗 Join my clinic (use the clinic\'s PINs)',
+    showDenyButton:!reset,denyButtonText:'📷 Join my clinic (scan QR from Admin)',
     allowEscapeKey:false,
     confirmButtonText:'Save',
     preConfirm:()=>{

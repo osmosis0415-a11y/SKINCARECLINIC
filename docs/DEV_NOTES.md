@@ -42,3 +42,13 @@ Headless Chrome at 360 px: first-time setup → walk-in → token slip → backu
 - **clinic-v48 (19 Nov 2026):** launch hardening: noindex, CSP, no-referrer, privacy notice, 404, a11y labels, global error log (`scc_errlog` + audit log), removed fake default phone; uptime workflow; this file. Backup → restore tested end to end.
 - **clinic-v47 (19 Nov 2026):** UX pass 1: contrast, tap sizes, compact phone header, cancel-token confirm, hide backup banner for the day.
 - **clinic-v46 (18 Nov 2026):** daily email backup (one-tap share + Apps Script).
+
+## Adding a device by QR (Nov 2026)
+New devices join only by scanning the one-time QR from Admin → 📲 Add a new device (QR).
+- The Admin phone (cloud sync on) checks the cloud password, then writes `pair/<random id>` = {c, i, exp}:
+  the cloud email + password, AES-GCM encrypted with a random 256-bit key. Valid 5 minutes.
+- The key is only in the QR, after `#` (never sent to a server). Without the QR the database entry is unreadable.
+- The new device reads `pair/<id>` (public read of that one id only; the list is not readable), decrypts,
+  signs in, fetches the clinic logins, and deletes the entry, so a QR works once. The Admin phone shows "✅ Device joined".
+- The cloud password is kept on the Admin phone encrypted with the clinic data key (`S.cpw`) so the QR appears at once next time.
+- Needs the `pair` rule in docs/firebase-database-rules.json published in Firebase → Realtime Database → Rules.

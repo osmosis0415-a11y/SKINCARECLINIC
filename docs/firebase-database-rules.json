@@ -60,6 +60,13 @@
           }
         }
       }
+    },
+    "pair": {
+      "$id": {
+        ".read": true,
+        ".write": "auth != null && root.child('allowed').child(auth.uid).exists()",
+        ".validate": "newData.hasChildren(['c', 'i', 'exp']) && newData.child('exp').isNumber() && newData.child('exp').val() <= now + 600000"
+      }
     }
   }
 }

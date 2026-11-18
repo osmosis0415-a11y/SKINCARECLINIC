@@ -284,13 +284,42 @@ async function join(email,pw){await libs();app();await firebase.auth().setPersis
   var k=(await firebase.database(app()).ref('scc/'+cid+'/keys').once('value')).val();setPref({on:true,email:email});
   // connect properly once the clinic PIN has opened the data on this phone
   stop();keyState='unknown';lastKeySig=null;addEventListener('scc-unlocked',function(){start()},{once:true});return k}
+// ---- Add a device by QR (one-time, 5 minutes). The admin phone stores the cloud login at pair/<id>, AES-GCM
+// encrypted with a random key. That key exists only inside the QR (after '#', which browsers never send to a
+// server), so the database copy is unreadable on its own. The new device deletes the entry once it has joined.
+var PAIR_MS=5*60000;
+function bu(a){var s='';a=new Uint8Array(a);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function ubu(t){t=String(t).replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';return Uint8Array.from(atob(t),function(c){return c.charCodeAt(0)})}
+async function pairMake(pw){await libs();app();var u=firebase.auth().currentUser;if(!u||!u.email)throw new Error('Turn on cloud sync on this phone first (tap the ☁ badge and sign in).');
+  try{await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw))}catch(e){var x=new Error('Wrong cloud password');x.badPw=true;throw x}
+  var id=bu(crypto.getRandomValues(new Uint8Array(16))),kr=crypto.getRandomValues(new Uint8Array(32)),iv=crypto.getRandomValues(new Uint8Array(12)),exp=Date.now()+PAIR_MS;
+  var k=await crypto.subtle.importKey('raw',kr,'AES-GCM',false,['encrypt']);
+  var c=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,new TextEncoder().encode(JSON.stringify({e:u.email,w:pw,x:exp})));
+  var ref=firebase.database(app()).ref('pair/'+id);await ref.set({c:bu(c),i:bu(iv),exp:exp});
+  setTimeout(function(){ref.remove().catch(function(){})},PAIR_MS+5000);
+  return{id:id,exp:exp,url:location.origin+location.pathname+'#pair='+id+'.'+bu(kr)+(isDefault()?'':'.'+codeOf(CONF))}}
+// tells the admin phone when the QR has been used (the entry disappears)
+function pairWatch(id,cb){var ref=firebase.database(app()).ref('pair/'+id),seen=false,f=ref.on('value',function(s){if(s.exists())seen=true;else if(seen){ref.off('value',f);cb()}});return function(){ref.off('value',f)}}
+function pairCancel(id){try{firebase.database(app()).ref('pair/'+id).remove().catch(function(){})}catch(e){}}
+function pairParse(t){var m=String(t||'').match(/pair=([A-Za-z0-9_-]{16,})\.([A-Za-z0-9_-]{40,})(?:\.([A-Za-z0-9_-]{40,}))?/);return m?{id:m[1],k:m[2],code:m[3]||''}:null}
+var PEND=(function(){var p=pairParse(location.hash);if(p){try{sessionStorage.setItem('scc_pair',location.hash)}catch(e){}history.replaceState(null,'',location.pathname+location.search)}
+  else{try{p=pairParse(sessionStorage.getItem('scc_pair'))}catch(e){}}return p})();
+async function pairUse(t){var p=typeof t==='string'?pairParse(t):t;if(!p)throw new Error('This is not a clinic pairing QR. On the Admin phone open Admin → 📲 Add a new device.');
+  try{sessionStorage.removeItem('scc_pair')}catch(e){}PEND=null;
+  if(p.code){var c=parseConf(p.code);if(c.databaseURL!==CONF.databaseURL){try{sessionStorage.setItem('scc_pair','#pair='+p.id+'.'+p.k+'.'+p.code)}catch(e){}if(setConf(c))return new Promise(function(){})}}
+  var r=await fetch(String(CONF.databaseURL).replace(/\/$/,'')+'/pair/'+p.id+'.json',{cache:'no-store'});
+  var d=r.ok?await r.json():null;if(!d||!d.c)throw new Error('This QR has expired or was already used. Ask Admin to show a new one.');
+  var j;try{var k=await crypto.subtle.importKey('raw',ubu(p.k),'AES-GCM',false,['decrypt']);j=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ubu(d.i)},k,ubu(d.c))))}
+  catch(e){throw new Error('This QR could not be read. Ask Admin to show a new one.')}
+  if(!j.x||j.x<Date.now()-60000)throw new Error('This QR has expired. Ask Admin to show a new one.');
+  var keys=await join(j.e,j.w);try{await firebase.database(app()).ref('pair/'+p.id).remove()}catch(e){}return keys}
 setInterval(devBeat,10*60000);
 // Walk-in numbers are handed out by the cloud (one number per tap, even if two phones tap together).
 // Offline or slow: falls back to this phone's own counter after 2.5 s.
 function reserve(n){if(!C.ref||C.status!=='on')return Promise.resolve(n);var got=null;
   var t=C.ref.child('ctr').transaction(function(c){c=Math.max(+c||1,n);got=c;return c+1},null,false).then(function(r){return r.committed?got:n}).catch(function(){return n});
   return Promise.race([t,new Promise(function(ok){setTimeout(function(){ok(n)},2500)})])}
-window.CloudSync={reserve:reserve,bell:bellSend,bellAck:bellAck,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
+window.CloudSync={reserve:reserve,bell:bellSend,bellAck:bellAck,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pairMake:pairMake,pairWatch:pairWatch,pairCancel:pairCancel,pairUse:pairUse,pairParse:pairParse,pairPending:function(){return PEND},pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}
