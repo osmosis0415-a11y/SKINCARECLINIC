@@ -16,7 +16,8 @@ Rule: one feature per session; every release bumps the cache name in `sw.js` and
 | `status.html` | Public patient token-status page. Shows token numbers only, never names. Reads `pub/<clinic>`. |
 | `privacy.html` | Bilingual privacy notice (DPDP Act 2023), printable for the reception wall. |
 | `404.html` | Page-not-found for GitHub Pages. |
-| `sw.js` | Offline cache. **Bump `C` on every release.** Add any new file to `FILES`. |
+| `saferefresh.js` | Safe refresh: ⟳ header button, F5/Ctrl+R/Cmd+R intercepted → saves, re-renders, reconnects Firebase, checks for an app update. Updates install only when no Rx pad/dialog is open, then reopen the same screen (sessionStorage `scc_restore`). Warns before closing the tab with an unsaved Rx. Ctrl+Shift+R = full reload. API `SafeRefresh.soft()`, `.applyUpdate()`. |
+| `sw.js` | Offline cache. **Bump `C` on every release.** Add any new file to `FILES`. Accepts the message `'skip'` (skipWaiting). |
 | `vendor/` | Local copies of html5-qrcode, jsPDF, qrcodejs, icons, dialogs (Swal-like, classes `sw-pop`, `sw-ok`, `sw-no`), font. |
 | `docs/firebase-database-rules.json` | Database security rules. Paste into Firebase → Realtime Database → Rules. |
 | `docs/NEW_CLINIC_SETUP.md`, `docs/EMAIL_BACKUP_SETUP.md` | Setup guides. |
@@ -34,6 +35,7 @@ Rule: one feature per session; every release bumps the cache name in `sw.js` and
 Headless Chrome at 360 px: first-time setup → walk-in → token slip → backup → restore on a fresh profile. No console errors, no CSP violations.
 
 ## Changelog
+- **clinic-v50 (19 Nov 2026):** safe refresh (saferefresh.js): refresh on the laptop without losing an open prescription, search or screen; app updates wait until the Rx is finished; update banner uses it too.
 - **clinic-v49 (19 Nov 2026):** referrer policy no-referrer → strict-origin, so the Firebase key website lock keeps working (sends only the site name, never the full link).
 - **clinic-v48 (19 Nov 2026):** launch hardening: noindex, CSP, no-referrer, privacy notice, 404, a11y labels, global error log (`scc_errlog` + audit log), removed fake default phone; uptime workflow; this file. Backup → restore tested end to end.
 - **clinic-v47 (19 Nov 2026):** UX pass 1: contrast, tap sizes, compact phone header, cancel-token confirm, hide backup banner for the day.
