@@ -133,7 +133,7 @@ RxPad={
    '<div class="bar">'+(canSet()?'<button id="rxpSet">⚙<span class="lg"> Rx</span> settings</button>':'')+'<button id="rxpSet2">★ Save<span class="lg"> as</span> set</button><button id="rxpSave">💾 Save</button><button'+(opts.finish&&opts.finish.show(rx)?'':' class="p"')+' id="rxpPrint">🖨 Print Rx</button>'+(opts.finish&&opts.finish.show(rx)?'<button class="p" id="rxpFin" style="background:#15803d;border-color:#15803d">'+esc(opts.finish.label(rx))+'</button>':'')+'</div>';
    if(opts.minimal&&opts.minimal()){['rxCC','rxAl','rxIn','rxPh','rxD'].forEach(function(id){var e=root.querySelector('#'+id);if(!e)return;var box=e.parentNode;if(box&&box.parentNode&&box.parentNode.classList&&box.parentNode.classList.contains('g')){box.style.display='none'}else{e.style.display='none';var l=e.previousElementSibling;if(l&&l.tagName==='LABEL')l.style.display='none'}});
      var ag=parseFloat(rx.p.age);if(!(ag<12)){var w=root.querySelector('#rxW');if(w)w.parentNode.style.display='none'}}
-   bind()}
+   bind();if(RxPad.onDraw)try{RxPad.onDraw(root,rx,{read:read,draw:draw,cfg:CFG,dock:!!dock})}catch(e){console.warn('onDraw',e)}}
   function applyTpl(k){var t=allTpl()[k];if(!t)return;rx.tpls=rx.tpls||[];var was=rx.tpls.indexOf(k)>=0;
      var dxs=String(rx.dx||'').split(/\s*[+,;]\s*/).map(function(x){return up(x).trim()}).filter(Boolean),tdx=up(t.dx||'').trim();
      if(rx.tpls.indexOf(k)>=0){ // tap again = remove this diagnosis and its medicines

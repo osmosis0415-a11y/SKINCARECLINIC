@@ -17,6 +17,7 @@ Rule: one feature per session; every release bumps the cache name in `sw.js` and
 | `privacy.html` | Bilingual privacy notice (DPDP Act 2023), printable for the reception wall. |
 | `404.html` | Page-not-found for GitHub Pages. |
 | `rxdock.js` | Docked Rx pad (laptop/tablet ≥1000 px, Doctor/Admin, Reception screen): pad pinned on the right, always shows the patient in the cabin (`S.act`); Call Next loads the next patient; typed-but-unsaved Rx kept as in-memory drafts (chips); Full screen / Hide pad (localStorage `scc_rxdock`). Wraps `render()` and `A.rx()`. Uses `RxPad.open(p,seed,existing,{dock:el})`. API `RxDock.sync/dirty/hide/show/reopen`. |
+| `peddose.js` | Child dose helper for the Rx pad (hooks `RxPad.onDraw`). Shows when age < 18 y or weight < 40 kg: pick a derm drug → dose by mg/kg, weight band or age → mL / tablets in Indian strengths (plus matching items from the clinic medicine list) → ＋ Add to Rx (note carries mL + Telugu). Adds a 👶 dose line / ⚠ age warning under every matching medicine row, topical age limits, fingertip-unit table. Data table `DB`, `TOP`, `FTU` at the top of the file; API `PedDose.calc/find/ageMonths`. |
 | `saferefresh.js` | Safe refresh: ⟳ header button, F5/Ctrl+R/Cmd+R intercepted → saves, re-renders, reconnects Firebase, checks for an app update. Updates install only when no Rx pad/dialog is open, then reopen the same screen (sessionStorage `scc_restore`). Warns before closing the tab with an unsaved Rx. Ctrl+Shift+R = full reload. API `SafeRefresh.soft()`, `.applyUpdate()`. |
 | `sw.js` | Offline cache. **Bump `C` on every release.** Add any new file to `FILES`. Accepts the message `'skip'` (skipWaiting). |
 | `vendor/` | Local copies of html5-qrcode, jsPDF, qrcodejs, icons, dialogs (Swal-like, classes `sw-pop`, `sw-ok`, `sw-no`), font. |
@@ -36,6 +37,7 @@ Rule: one feature per session; every release bumps the cache name in `sw.js` and
 Headless Chrome at 360 px: first-time setup → walk-in → token slip → backup → restore on a fresh profile. No console errors, no CSP violations.
 
 ## Changelog
+- **clinic-v55 (19 Nov 2026):** child dose helper (peddose.js): 40 oral derm drugs (antihistamines, antibiotics, antifungals, antivirals, ivermectin, steroids/immune drugs, propranolol, zinc, analgesics) with weight-based doses and Indian strengths; topical age limits; rxpad.js gained the `RxPad.onDraw` hook.
 - **clinic-v51 (19 Nov 2026):** docked Rx pad for the doctor's laptop (rxdock.js); rxpad.js gained a dock mode; auto-lock and safe refresh wait while a prescription is unsaved.
 - **clinic-v50 (19 Nov 2026):** safe refresh (saferefresh.js): refresh on the laptop without losing an open prescription, search or screen; app updates wait until the Rx is finished; update banner uses it too.
 - **clinic-v49 (19 Nov 2026):** referrer policy no-referrer → strict-origin, so the Firebase key website lock keeps working (sends only the site name, never the full link).
