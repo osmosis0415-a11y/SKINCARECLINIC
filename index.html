@@ -445,6 +445,8 @@ S.cfg={
 S.log=S.log||[];S.q=S.q||[];S.arch=S.arch||[];S.lock={f:0,until:0,lvl:0,...(S.lock||{})};
 }
 norm();
+// prescriptions from before 'Start fresh' never come back (from storage or the cloud)
+function rxLive(a){const w=S.wipeAt||0;return(a||[]).filter(x=>x&&((x.ts||0)>w||x.rs))} // rs: brought back on purpose from a backup
 function bootData(){if(S.vault){if(!CR.key){VK.forEach(k=>S[k]=k==='act'||k==='qb'?null:[]);S.arch=[];RXREC=[]}}else{try{RXREC=JSON.parse(localStorage.getItem('scc_rx_rec')||'[]')}catch(e){RXREC=[]}loadHist()}window.SCC_READY=!S.vault||!!CR.key}
 const IDB={db:null,open(){return this.db||(this.db=new Promise((ok,no)=>{try{const r=indexedDB.open('SkinCareClinic',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}}))},
  async get(k='S'){const d=await this.open();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>no(q.error)})},
@@ -484,7 +486,7 @@ async function vOpen(slot,plain){ // unlock the stored data with one secret; tru
   return openWith(k)}
 async function openWith(k){CR.key=k;
   if(S.enc){try{const b=JSON.parse(await CR.dec(S.enc));VK.forEach(x=>{if(b[x]!==undefined)S[x]=b[x]});if(b.arch)S.arch=b.arch;if(b.rx)RXREC=b.rx}catch(e){CR.key=null;return false}}
-  norm();window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();loadHist();setTimeout(secScrub,0);return true}
+  norm();RXREC=rxLive(RXREC);window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);dataReady();loadHist();setTimeout(secScrub,0);return true}
 // stay unlocked across a page refresh for up to 12 h (this browser tab / app session only)
 async function sessSet(r){try{if(!r)return sessionStorage.removeItem('scc_sess');const o={r,exp:Date.now()+12*3600e3};if(CR.key)o.k=B64(await crypto.subtle.exportKey('raw',CR.key));sessionStorage.setItem('scc_sess',JSON.stringify(o))}catch(e){}}
 async function sessRestore(){try{const o=JSON.parse(sessionStorage.getItem('scc_sess')||'null');if(!o||o.exp<Date.now()||!S.sec||!ROLES[o.r])return false;
@@ -502,7 +504,7 @@ async function hRead(k){const raw=await IDB.get(k);if(!raw)return null;return JS
 function loadHist(){if(HIST.p)return HIST.p;HIST.p=(async()=>{for(const T of ['A','R']){try{const idx=await hRead(T+'I');if(!idx){HIST[T]=true;continue}
     let all=[];for(const m of idx){const l=await hRead(T+':'+m);if(l){all=all.concat(l);SIGS[T][m]=hsig(l)}}
     const cur=HC[T].get()||[],ids=new Set(cur.map(x=>x.id));HC[T].set(cur.concat(all.filter(x=>!ids.has(x.id))).sort((a,b)=>((a.ts||a.scannedAt||0)-(b.ts||b.scannedAt||0))));HIST[T]=true}catch(e){console.warn('history',T,e);HIST[T]=true}}
-  window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);try{render()}catch(e){}})();return HIST.p}
+  RXREC=rxLive(RXREC);window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);try{render()}catch(e){}})();return HIST.p}
 function hParts(){const out=[];for(const T of ['A','R']){if(!HIST[T])continue;const all=HC[T].get();const q=hsig(all);if(q===QK[T])continue;QK[T]=q;const g=hgroups(T);let idxCh=false;
   for(const m in g){const sg=hsig(g[m]);if(SIGS[T][m]!==sg){if(SIGS[T][m]===undefined)idxCh=true;SIGS[T][m]=sg;out.push([T+':'+m,JSON.stringify(g[m])])}}
   for(const m of Object.keys(SIGS[T]))if(!g[m]){delete SIGS[T][m];idxCh=true;out.push([T+':'+m,null])}
@@ -865,7 +867,7 @@ async rxAlert(x){return; // prescriptions are printed only at the doctor's side
   if(!ROLE||document.querySelector('.sw-ov')||document.getElementById('rxpRoot'))return toast('📝 Prescription ready: '+x.p.name,'info');
   const r=await Swal.fire({icon:'info',title:'📝 Prescription ready',html:'<b style="font-size:1.15rem">'+esc(x.p.name)+'</b><br><span class="m">'+esc(x.p.token||'')+' · '+esc(x.dx||'')+' · '+(x.m||[]).length+' medicine(s)</span>',confirmButtonText:'🖨 Print now',showCancelButton:true,cancelButtonText:'Later',timer:60000});
   if(r.isConfirmed)A.rxPrint(x.id)},
-rxIn(id,o){try{if(!CR.key)return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if(i<0){RXREC.push(x);if(x.date===today()&&Date.now()-(x.ts||0)<10*60e3)setTimeout(()=>A.rxAlert(x),800)}else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
+rxIn(id,o){try{if(!CR.key||!o||o.del||(o.ts||0)<=(S.wipeAt||0))return;CR.dec(o).then(t=>{const x=JSON.parse(t),i=RXREC.findIndex(r=>r.id===id);if((x.ts||0)<=(S.wipeAt||0))return;if(i<0){RXREC.push(x);if(x.date===today()&&Date.now()-(x.ts||0)<10*60e3)setTimeout(()=>A.rxAlert(x),800)}else if((x.ts||0)>(RXREC[i].ts||0))RXREC[i]=x;else return;
   RXREC.sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords(RXREC);clearTimeout(A._rxT);A._rxT=setTimeout(()=>{save();render()},700)}).catch(()=>{})}catch(e){}},
 metaIn(m){m=cleanDeep(m);if((m.at||0)>(S.rxMetaAt||0)){S.rxSets=m.sets||{};if(m.clinic){Object.assign(S.cfg,m.clinic);S.clinicSet=true}if(Array.isArray(m.formulary))S.formulary=m.formulary;if(m.formOnly!==undefined)S.formOnly=!!m.formOnly;if(m.cfg){S.rxCfg=m.cfg;window.RxPad&&RxPad.setCfg(m.cfg)}S.rxMetaAt=m.at;save()}else if((m.at||0)<(S.rxMetaAt||0))CloudSync.metaPut()},
 async qrEnc(rx){if(!CR.key)return 'SCC0.'+rx.id;const i=crypto.getRandomValues(new Uint8Array(12)),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:i},CR.key,new TextEncoder().encode(rx.id))),b=new Uint8Array(12+c.length);b.set(i);b.set(c,12);
@@ -1142,13 +1144,15 @@ role(r,quiet){ROLE=r;ok=false;sessSet(r);setTimeout(()=>{try{A.unclosedNote()}ca
 logout(auto){sessSet(null);if(!auto&&ROLE==='adm'&&!S.sec.doc&&!S.sec.rcp){toast('No Doctor or Reception PIN yet. Set them first.','warning');return A.users()}if(ROLE)L('Logged out ('+ROLES[ROLE].n+')');ROLE=null;ok=false;document.documentElement.classList.remove('r-adm','r-doc','r-rec');$('rolec').textContent='';A.stop&&A.stop();commit();$('pin').value='';A.lkLabel();$('lock').style.display='flex';G.tick();setTimeout(()=>$('pin').focus(),200)},
 async fresh(){
   if(ROLE!=='adm')return toast('Only Admin can do this','warning');
-  const all=[...S.arch,...S.q],rx=(()=>{try{return JSON.parse(localStorage.getItem('scc_rx_rec')||'[]').length}catch(e){return 0}})();
-  const r=await Swal.fire({icon:'warning',title:'Start fresh?',html:`<div style="text-align:left;font-size:.88rem"><b>Will be permanently deleted:</b><br>• ${all.length} token(s) and patient record(s), including today's queue and all past days<br>• Finance history, audit log and ${rx} saved prescription(s)<br>• Token numbering restarts at OPD-001<br><br><b>Kept:</b> clinic details, fees, token designs, Rx format, announcement settings, PINs, cloud login.<br><br>Other phones signed in to the cloud clear their patient data too when they next connect.<br><br><label><input type="checkbox" id="fz1" checked style="width:auto"> Download a backup first (recommended)</label><br><br>Type <b>FRESH</b> to confirm:</div><input id="fz2" class="swal2-input" placeholder="FRESH" autocomplete="off">`,
+  const all=[...S.arch,...S.q],rx=(RXREC||[]).length;
+  const r=await Swal.fire({icon:'warning',title:'Start fresh?',html:`<div style="text-align:left;font-size:.88rem"><b>Will be permanently deleted:</b><br>• ${all.length} token(s) and patient record(s), including today's queue and all past days<br>• Finance history, this phone's activity log and ${rx} saved prescription(s), also the prescription copies in the cloud<br>• Token numbering restarts at OPD-001<br><br><b>Kept:</b> clinic details, fees, token designs, Rx format, announcement settings, PINs, cloud login, and the cloud security log (who did what), which cannot be erased.<br><br>Other phones signed in to the cloud clear their patient data too when they next connect.<br><br><label><input type="checkbox" id="fz1" checked style="width:auto"> Download a backup first (recommended)</label><br><br>Type <b>FRESH</b> to confirm:</div><input id="fz2" class="swal2-input" placeholder="FRESH" autocomplete="off">`,
     showCancelButton:true,confirmButtonText:'Delete everything',confirmButtonColor:'#dc2626',
     preConfirm:()=>{if($('fz2').value.trim().toUpperCase()!=='FRESH')return Swal.showValidationMessage('Type FRESH to confirm');return{bk:$('fz1').checked}}});
   if(!r.isConfirmed)return;
   if(r.value.bk)A.backup();
-  A.wipeLocal(Date.now());
+  const at=Date.now();A.wipeLocal(at);
+  if(window.CloudSync&&CloudSync.status()==='on'){Swal.fire({title:'Clearing the cloud copies…',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+    try{await Promise.race([CloudSync.rxPurge(at),new Promise(ok=>setTimeout(ok,10000))])}catch(e){console.warn('rx purge',e)}}
   L('Started fresh: all patient data cleared ('+all.length+' tokens, '+rx+' prescriptions)');
   commit();
   Swal.fire({icon:'success',title:'Done. The app is fresh.',text:'Token numbering starts again at OPD-001.',timer:2200,showConfirmButton:false});
@@ -1776,7 +1780,7 @@ restore(e){ // adds the backup's records to this phone; never deletes anything a
       if(fresh){const set=cleanDeep({...d});['q','arch','log','rx','enc','vault','sec','lock','sec0','app','backupAt','qb','wipeAt','savedAt','act','ctr','keysAt','unclosed','auto','lastBkTest','clinicSet'].forEach(k=>delete set[k]);S={...S,...set};norm()}
       HIST.A=HIST.R=true;
       S.arch=S.arch.concat(pastAdd).sort((a,b)=>(a.scannedAt||a.timestamp||0)-(b.scannedAt||b.timestamp||0));
-      if(rxAdd.length){RXREC=RXREC.concat(rxAdd).sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);rxAdd.forEach(x=>window.CloudSync&&CloudSync.rxPut&&CloudSync.rxPut(x))}
+      if(rxAdd.length){rxAdd.forEach(x=>{x.rs=1});RXREC=RXREC.concat(rxAdd).sort((a,b)=>(a.ts||0)-(b.ts||0));window.RxPad&&RxPad.setRecords&&RxPad.setRecords(RXREC);rxAdd.forEach(x=>window.CloudSync&&CloudSync.rxPut&&CloudSync.rxPut(x))}
       if(c.value.q&&todayAdd.length){S.q=S.q.concat(todayAdd);S.ctr=Math.max(S.ctr||1,...todayAdd.map(p=>(+String(p.tokenNo).slice(4)||0)+1))}
       if(Array.isArray(d.log)){const k=new Set(S.log.map(x=>x.t+'|'+x.a));S.log=S.log.concat(d.log.filter(x=>x&&!k.has(x.t+'|'+x.a)).map(x=>cleanDeep(x))).sort((a,b)=>(b.t||0)-(a.t||0)).slice(0,5000)}
       L('Backup restored ('+pastAdd.length+' past visits, '+rxAdd.length+' prescriptions'+(c.value.q&&todayAdd.length?', '+todayAdd.length+' back in queue':'')+')');commit();toast('Restored')

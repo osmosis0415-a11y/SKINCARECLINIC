@@ -119,6 +119,10 @@ var RXWIN=45*864e5,rxOn=false,rxQ=null;
 function rxRef(){return C.uid?firebase.database(app()).ref('rxs/'+C.uid):null}
 function rxPut(rec){var r=rxRef();if(!r||keyState!=='ok'||!CR.key||!rec||!rec.id)return;
   CR.enc(JSON.stringify(rec)).then(function(e){var o={ts:rec.ts||Date.now(),i:e.i,c:e.c};count('up',JSON.stringify(o).length);return r.child('r/'+rec.id).set(o)}).catch(function(e){console.warn('rx put',e)})}
+// 'Start fresh': the database keeps prescriptions until they are 45 days old (deleting newer ones is refused), so
+// each one up to the wipe is overwritten with an empty marker. Other phones then never download it again.
+async function rxPurge(at){var r=rxRef();if(!r)return 0;var s=await r.child('r').orderByChild('ts').endAt(at).once('value'),upd={},n=0;
+  s.forEach(function(c){var v=c.val()||{};if(!v.del){upd[c.key]={ts:v.ts||0,del:true};n++}});if(n)await r.child('r').update(upd);return n}
 function metaPut(){var r=rxRef();if(!r||keyState!=='ok')return;var m={at:S.rxMetaAt||Date.now(),sets:S.rxSets||{},cfg:S.rxCfg||null,formulary:S.formulary||[],formOnly:!!S.formOnly,clinic:(function(){var c=S.cfg||{},o={};['name','doc','addr','phone','teHeader','timings','waitText','lateText'].forEach(function(k){if(c[k]!==undefined)o[k]=c[k]});return o})()};var j=JSON.stringify(m);count('up',j.length);r.child('meta').set(JSON.parse(j)).catch(function(e){console.warn('meta',e)})}
 // ---- clinic devices (for 'lost phone') and the encrypted audit log, both under rxs/<clinic>
 function devName(){try{return localStorage.getItem('scc_device_name')||''}catch(e){return''}}
@@ -142,15 +146,15 @@ async function revoke(id,on){var r=rxRef(),d=(await r.child('dev/'+id).once('val
   await r.child('dev/'+id).update({revoked:true,revokedAt:Date.now(),blockedUid:shared?null:uid});
   if(!shared){await r.child('blocked/'+uid).set(true);return'blocked'}return'shared'}
 function devRemove(id){return rxRef().child('dev/'+id).remove()}
-function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Date.now()-RXWIN;
+function rxStart(){if(rxOn||keyState!=='ok'||!CR.key)return;var r=rxRef();if(!r)return;rxOn=true;var t0=Math.max(Date.now()-RXWIN,(S.wipeAt||0)+1); // nothing from before 'Start fresh'
   devBeat();logFlush();
   r.child('dev/'+DEV+'/revoked').on('value',function(x){if(x.val()===true&&window.A&&A.selfWipe)A.selfWipe()});
   r.child('meta').on('value',function(s){var m=s.val();count('down',JSON.stringify(m||'').length);if(!m){if(S.rxSets||S.rxCfg||S.formulary)metaPut();return}if(window.A&&A.metaIn)A.metaIn(m)});
   var q=rxQ=r.child('r').orderByChild('ts').startAt(t0);
   q.once('value').then(function(s){var have={},v=s.val()||{};Object.keys(v).forEach(function(k){have[k]=v[k].ts||0});count('down',JSON.stringify(v).length);
     (typeof RXREC!=='undefined'?RXREC:[]).forEach(function(x){if((x.ts||0)>=t0&&(!have[x.id]||have[x.id]<x.ts))rxPut(x)});
-    var on=function(c){var o=c.val();if(o&&window.A&&A.rxIn)A.rxIn(c.key,o)};q.on('child_added',on);q.on('child_changed',on);
-    if(typeof ROLE!=='undefined'&&ROLE==='adm'){r.child('r').orderByChild('ts').endAt(Date.now()-60*864e5).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){});
+    var on=function(c){var o=c.val();if(o&&!o.del&&(o.ts||0)>(S.wipeAt||0)&&window.A&&A.rxIn)A.rxIn(c.key,o)};q.on('child_added',on);q.on('child_changed',on);
+    if(typeof ROLE!=='undefined'&&ROLE==='adm'){if(S.wipeAt)rxPurge(S.wipeAt).catch(function(){});r.child('r').orderByChild('ts').endAt(Date.now()-60*864e5).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){});
       r.child('log').orderByKey().endAt(String(Date.now()-400*864e5).padStart(13,'0')).once('value').then(function(o){o.forEach(function(c){c.ref.remove()})}).catch(function(){})}})
    .catch(function(e){rxOn=false;console.warn('rx sync',e)})}
 function doPush(){if(!C.ref||C.applying)return;
@@ -319,7 +323,7 @@ setInterval(devBeat,10*60000);
 function reserve(n){if(!C.ref||C.status!=='on')return Promise.resolve(n);var got=null;
   var t=C.ref.child('ctr').transaction(function(c){c=Math.max(+c||1,n);got=c;return c+1},null,false).then(function(r){return r.committed?got:n}).catch(function(){return n});
   return Promise.race([t,new Promise(function(ok){setTimeout(function(){ok(n)},2500)})])}
-window.CloudSync={reserve:reserve,bell:bellSend,bellAck:bellAck,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,pairMake:pairMake,pairWatch:pairWatch,pairCancel:pairCancel,pairUse:pairUse,pairParse:pairParse,pairPending:function(){return PEND},pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
+window.CloudSync={reserve:reserve,bell:bellSend,bellAck:bellAck,skew:function(){return C.ref?C.skew||0:0},conf:function(){return CONF},isDefault:isDefault,code:function(){return codeOf(CONF)},parseConf:parseConf,setConf:setConf,logPut:logPut,logFetch:logFetch,devices:devices,revoke:revoke,devRemove:devRemove,devBeat:devBeat,me:function(){return DEV},rxPut:rxPut,metaPut:metaPut,join:join,rxPurge:rxPurge,pairMake:pairMake,pairWatch:pairWatch,pairCancel:pairCancel,pairUse:pairUse,pairParse:pairParse,pairPending:function(){return PEND},pushKeys:pushKeys,keysAdopted:function(){keyState='ok';lastKeySig=keySig();setTimeout(rxStart,0)},menu:menu,start:start,trackUrl:function(tok,cd){return C.uid?statusUrl(tok,cd):''},status:function(){return C.status},usage:U};
 (function(){var m=location.search.match(/[?&]cloud=([A-Za-z0-9_-]+)/);if(!m)return;var c;try{c=parseConf(m[1])}catch(e){return}
   history.replaceState(null,'',location.pathname);if(c.databaseURL===CONF.databaseURL)return;
   var fresh=!(window.S&&S.sec)||typeof S==='undefined';try{fresh=!S.sec}catch(e){}

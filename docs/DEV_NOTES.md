@@ -52,3 +52,11 @@ New devices join only by scanning the one-time QR from Admin → 📲 Add a new 
   signs in, fetches the clinic logins, and deletes the entry, so a QR works once. The Admin phone shows "✅ Device joined".
 - The cloud password is kept on the Admin phone encrypted with the clinic data key (`S.cpw`) so the QR appears at once next time.
 - Needs the `pair` rule in docs/firebase-database-rules.json published in Firebase → Realtime Database → Rules.
+
+## Start fresh and prescriptions (Nov 2026)
+- Bug: after 🧹 Start fresh, today's prescriptions came back because the cloud copies (rxs/<clinic>/r) were downloaded again.
+- Now: prescriptions with ts <= S.wipeAt are ignored everywhere (local load, cloud download, live updates) via rxLive()
+  and the rxIn/rxStart filters. Records restored from a backup on purpose are marked rs:1 and kept.
+- Start fresh overwrites each cloud copy up to the wipe with {ts, del:true} (the rules refuse deleting records newer than
+  45 days). The Admin phone also does this on connect for any earlier wipe.
+- The Start fresh dialog now counts prescriptions correctly and says the cloud security log is kept.
